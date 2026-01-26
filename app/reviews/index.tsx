@@ -9,7 +9,7 @@ import { Text } from "@/components/ui/text"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ErrorView } from "@/components/ui/error-view"
 import { EmptyState } from "@/components/ui/empty-state"
-import { AnkiCard, GradeButtons, ReviewProgressBar } from "@/components/reviews"
+import { AnkiCard, GradeButtons, ReviewProgressBar, ReviewActions } from "@/components/reviews"
 import { useAvailableReviews } from "@/hooks/useAvailableReviews"
 import {
   useReviewStore,
@@ -32,9 +32,13 @@ export default function ReviewSessionScreen() {
     isActive,
     isFlipped,
     isWrapUp,
+    canUndo,
     startSession,
     flipCard,
     gradeItem,
+    markCorrectOverride,
+    askAgainLater,
+    undoLastAnswer,
     enableWrapUp,
     endSession,
     reset,
@@ -170,27 +174,37 @@ export default function ReviewSessionScreen() {
           completed={progress.completed}
         />
 
-        {!isWrapUp && remainingCount > wrapUpBatchSize && (
-          <Button
-            variant="outline"
-            size="sm"
-            onPress={handleWrapUp}
-            className="flex-row items-center gap-1"
-          >
-            <Flag size={14} color={colorScheme === "dark" ? "#fff" : "#000"} />
-            <Text className="text-xs">Wrap Up</Text>
-          </Button>
-        )}
+        <View className="flex-row items-center gap-1">
+          {/* Wrap Up button */}
+          {!isWrapUp && remainingCount > wrapUpBatchSize && (
+            <Button
+              variant="outline"
+              size="sm"
+              onPress={handleWrapUp}
+              className="flex-row items-center gap-1"
+            >
+              <Flag size={14} color={colorScheme === "dark" ? "#fff" : "#000"} />
+              <Text className="text-xs">Wrap Up</Text>
+            </Button>
+          )}
 
-        {isWrapUp && (
-          <View className="bg-amber-500/20 px-2 py-1 rounded">
-            <Text className="text-xs text-amber-600 dark:text-amber-400">
-              Wrap Up
-            </Text>
-          </View>
-        )}
+          {isWrapUp && (
+            <View className="bg-amber-500/20 px-2 py-1 rounded mr-1">
+              <Text className="text-xs text-amber-600 dark:text-amber-400">
+                Wrap Up
+              </Text>
+            </View>
+          )}
 
-        {!isWrapUp && remainingCount <= wrapUpBatchSize && <View className="w-16" />}
+          {/* Actions menu */}
+          <ReviewActions
+            canUndo={canUndo}
+            isFlipped={isFlipped}
+            onUndo={undoLastAnswer}
+            onAskAgainLater={askAgainLater}
+            onMarkCorrect={markCorrectOverride}
+          />
+        </View>
       </View>
 
       {/* Card */}

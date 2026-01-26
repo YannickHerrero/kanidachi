@@ -58,6 +58,17 @@ export interface SessionSummary {
   results: ItemResult[]
 }
 
+// History entry for undo functionality
+interface HistoryEntry {
+  queue: ReviewItem[]
+  currentIndex: number
+  results: Map<number, ItemResult>
+  wrongItemsToReturn: Array<{ item: ReviewItem; returnAfterIndex: number }>
+  itemsProcessed: number
+  isFlipped: boolean
+  wrapUpCount: number
+}
+
 interface ReviewState {
   // Session state
   isActive: boolean
@@ -82,6 +93,10 @@ interface ReviewState {
   // Card state
   isFlipped: boolean
 
+  // Undo history
+  history: HistoryEntry[]
+  canUndo: boolean
+
   // Session status
   isSubmitting: boolean
   error: string | null
@@ -90,6 +105,9 @@ interface ReviewState {
   startSession: (items: ReviewItem[], ordering?: ReviewOrdering) => void
   flipCard: () => void
   gradeItem: (correct: boolean) => void
+  markCorrectOverride: () => void // Override incorrect answer as correct
+  askAgainLater: () => void // Return item to end of queue without penalty
+  undoLastAnswer: () => void // Undo the last graded item
   enableWrapUp: (batchSize?: number) => void
   endSession: () => SessionSummary
   reset: () => void
@@ -97,6 +115,7 @@ interface ReviewState {
 
 const WRONG_ITEM_DELAY = 5 // Wrong items return after 5 other items
 const DEFAULT_WRAPUP_BATCH = 10
+const MAX_HISTORY_SIZE = 10 // Keep up to 10 undo states
 
 export const useReviewStore = create<ReviewState>((set, get) => ({
   // Initial state
@@ -110,6 +129,8 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
   isWrapUp: false,
   wrapUpCount: 0,
   isFlipped: false,
+  history: [],
+  canUndo: false,
   isSubmitting: false,
   error: null,
 
@@ -128,6 +149,8 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       isWrapUp: false,
       wrapUpCount: 0,
       isFlipped: false,
+      history: [],
+      canUndo: false,
       error: null,
     })
   },
@@ -145,10 +168,23 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       itemsProcessed,
       isWrapUp,
       wrapUpCount,
+      history,
     } = get()
 
     const currentItem = queue[currentIndex]
     if (!currentItem) return
+
+    // Save current state for undo (before making changes)
+    const historyEntry: HistoryEntry = {
+      queue: [...queue],
+      currentIndex,
+      results: new Map(results),
+      wrongItemsToReturn: [...wrongItemsToReturn],
+      itemsProcessed,
+      isFlipped: true, // It was flipped when graded
+      wrapUpCount,
+    }
+    const newHistory = [...history, historyEntry].slice(-MAX_HISTORY_SIZE)
 
     // Get or create result for this assignment
     const existingResult = results.get(currentItem.assignment.id)
@@ -232,6 +268,8 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
         itemsProcessed: newItemsProcessed,
         wrapUpCount: newWrapUpCount,
         isFlipped: false,
+        history: newHistory,
+        canUndo: true,
         isActive: false, // Session ends
       })
     } else {
@@ -243,8 +281,133 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
         itemsProcessed: newItemsProcessed,
         wrapUpCount: newWrapUpCount,
         isFlipped: false,
+        history: newHistory,
+        canUndo: true,
       })
     }
+  },
+
+  // Override incorrect answer as correct (for Anki mode when user realizes they knew it)
+  markCorrectOverride: () => {
+    const { queue, currentIndex, results, history } = get()
+
+    const currentItem = queue[currentIndex]
+    if (!currentItem) return
+
+    // Save current state for undo
+    const historyEntry: HistoryEntry = {
+      queue: [...queue],
+      currentIndex,
+      results: new Map(results),
+      wrongItemsToReturn: [...get().wrongItemsToReturn],
+      itemsProcessed: get().itemsProcessed,
+      isFlipped: true,
+      wrapUpCount: get().wrapUpCount,
+    }
+    const newHistory = [...history, historyEntry].slice(-MAX_HISTORY_SIZE)
+
+    // Check if there's an existing result (marked wrong before)
+    const existingResult = results.get(currentItem.assignment.id)
+    const newResults = new Map(results)
+
+    if (existingResult && !existingResult.correct) {
+      // Override the wrong answer - decrease wrong counts
+      newResults.set(currentItem.assignment.id, {
+        ...existingResult,
+        correct: true,
+        meaningWrongCount: Math.max(0, existingResult.meaningWrongCount - 1),
+        readingWrongCount: Math.max(0, existingResult.readingWrongCount - 1),
+      })
+    } else if (!existingResult) {
+      // No existing result, mark as correct
+      newResults.set(currentItem.assignment.id, {
+        assignmentId: currentItem.assignment.id,
+        subjectId: currentItem.subject.id,
+        correct: true,
+        meaningWrongCount: 0,
+        readingWrongCount: 0,
+      })
+    }
+
+    // Move to next item (don't add to wrong items queue)
+    const { itemsProcessed, isWrapUp, wrapUpCount } = get()
+    const nextIndex = currentIndex + 1
+    const newItemsProcessed = itemsProcessed + 1
+
+    // Check session completion
+    const isComplete = nextIndex >= queue.length
+    let newWrapUpCount = wrapUpCount
+    if (isWrapUp && wrapUpCount > 0) {
+      newWrapUpCount = wrapUpCount - 1
+    }
+    const wrapUpComplete = isWrapUp && newWrapUpCount === 0
+
+    if (isComplete || wrapUpComplete) {
+      set({
+        results: newResults,
+        currentIndex: nextIndex,
+        itemsProcessed: newItemsProcessed,
+        wrapUpCount: newWrapUpCount,
+        isFlipped: false,
+        history: newHistory,
+        canUndo: true,
+        isActive: false,
+      })
+    } else {
+      set({
+        results: newResults,
+        currentIndex: nextIndex,
+        itemsProcessed: newItemsProcessed,
+        wrapUpCount: newWrapUpCount,
+        isFlipped: false,
+        history: newHistory,
+        canUndo: true,
+      })
+    }
+  },
+
+  // Ask again later - put item at end of queue without any penalty
+  askAgainLater: () => {
+    const { queue, currentIndex } = get()
+
+    const currentItem = queue[currentIndex]
+    if (!currentItem) return
+
+    // Remove current item and add it to end of queue
+    const newQueue = [...queue]
+    newQueue.splice(currentIndex, 1) // Remove from current position
+    newQueue.push(currentItem) // Add to end
+
+    // Don't increment currentIndex since we removed the item
+    // The next item slides into the current position
+    set({
+      queue: newQueue,
+      isFlipped: false,
+    })
+  },
+
+  // Undo the last graded item
+  undoLastAnswer: () => {
+    const { history } = get()
+
+    if (history.length === 0) return
+
+    // Pop the last history entry
+    const lastEntry = history[history.length - 1]
+    const newHistory = history.slice(0, -1)
+
+    set({
+      queue: lastEntry.queue,
+      currentIndex: lastEntry.currentIndex,
+      results: lastEntry.results,
+      wrongItemsToReturn: lastEntry.wrongItemsToReturn,
+      itemsProcessed: lastEntry.itemsProcessed,
+      isFlipped: lastEntry.isFlipped,
+      wrapUpCount: lastEntry.wrapUpCount,
+      history: newHistory,
+      canUndo: newHistory.length > 0,
+      isActive: true, // Re-activate session if it ended
+    })
   },
 
   enableWrapUp: (batchSize = DEFAULT_WRAPUP_BATCH) => {
@@ -300,6 +463,8 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       isWrapUp: false,
       wrapUpCount: 0,
       isFlipped: false,
+      history: [],
+      canUndo: false,
       isSubmitting: false,
       error: null,
     })

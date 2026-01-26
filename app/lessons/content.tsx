@@ -2,7 +2,7 @@ import * as React from "react"
 import { View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useRouter, Stack } from "expo-router"
-import { ChevronLeft, ChevronRight } from "lucide-react-native"
+import { ChevronLeft, ChevronRight, FastForward } from "lucide-react-native"
 
 import { Button } from "@/components/ui/button"
 import { Text } from "@/components/ui/text"
@@ -94,12 +94,21 @@ export default function LessonContentScreen() {
           {progress.current} / {progress.total}
         </Text>
 
+        {/* Skip to Quiz button - always visible, Start Quiz when all viewed */}
         {isLastItem && allViewed ? (
           <Button size="sm" onPress={handleStartQuiz}>
             <Text className="text-primary-foreground">Start Quiz</Text>
           </Button>
         ) : (
-          <View className="w-20" />
+          <Button
+            variant="ghost"
+            size="sm"
+            onPress={handleStartQuiz}
+            className="flex-row items-center gap-1"
+          >
+            <FastForward size={16} color={colorScheme === "dark" ? "#9ca3af" : "#6b7280"} />
+            <Text className="text-muted-foreground text-xs">Skip to Quiz</Text>
+          </Button>
         )}
       </View>
 
