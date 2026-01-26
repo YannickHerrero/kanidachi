@@ -260,26 +260,26 @@ This section tracks features that were intentionally deferred during initial imp
 
 ### From Phase 3 (Subject Browsing)
 
-**Browse Enhancements:**
+**Implemented:**
+- [x] Level progress indicator in grid cells (mini progress bars)
+- [x] Rich text formatting for mnemonics (highlight radical/kanji/reading tags)
+- [x] Filter search results by type (radical/kanji/vocab)
+
+**Deferred to Future Phases (require additional infrastructure):**
+- [ ] Audio playback (deferred to Phase 4 - needs audio player)
+- [ ] Editable user notes (requires Study Materials API sync)
+- [ ] Editable user synonyms (requires Study Materials API sync)
+- [ ] SRS stage history display (requires review_statistics sync)
+- [ ] Review accuracy statistics per subject (requires review_statistics sync)
+
+**UX Enhancements (nice-to-have):**
 - [ ] SRS category browsing (browse all Apprentice items, all Guru items, etc.)
-- [ ] Level progress indicator in grid cells (mini progress bars)
 - [ ] "Show remaining" view for current level (items not yet passed)
 - [ ] "Show Answers" toggle to hide meanings/readings while browsing
 - [ ] Horizontal swipe between levels (PageView-style navigation)
-
-**Subject Detail Enhancements:**
-- [ ] Audio playback (deferred to Phase 4)
-- [ ] Editable user notes (create/update via API)
-- [ ] Editable user synonyms (create/update via API)
-- [ ] Rich text formatting for mnemonics (highlight radical/kanji/reading tags)
-- [ ] SRS stage history display
-- [ ] Review accuracy statistics per subject
 - [ ] "Practice" button to start a practice review for this subject
-
-**Search Enhancements:**
-- [ ] Romaji-to-hiragana conversion for reading searches
+- [ ] Romaji-to-hiragana conversion for reading searches (needs wanakana library)
 - [ ] Search history / recent searches
-- [ ] Filter search results by type (radical/kanji/vocab)
 - [ ] Filter search results by SRS stage
 
 ### From Dashboard
