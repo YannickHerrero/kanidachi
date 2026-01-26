@@ -1,8 +1,11 @@
 import * as React from "react"
-import { View } from "react-native"
+import { View, Pressable } from "react-native"
+import { useRouter } from "expo-router"
+import { ChevronRight } from "lucide-react-native"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Text } from "@/components/ui/text"
+import { useColorScheme } from "@/lib/useColorScheme"
 
 // WaniKani SRS colors
 const SRS_COLORS = {
@@ -28,6 +31,8 @@ export function SrsBreakdown({
   enlightened,
   burned,
 }: SrsBreakdownProps) {
+  const router = useRouter()
+  const { colorScheme } = useColorScheme()
   const total = apprentice + guru + master + enlightened + burned
 
   // Calculate percentages for each segment
@@ -44,6 +49,12 @@ export function SrsBreakdown({
     { key: "burned", count: burned, color: SRS_COLORS.burned, label: "Burned" },
   ]
 
+  const handleCategoryPress = (category: string) => {
+    router.push(`/browse/srs/${category}`)
+  }
+
+  const chevronColor = colorScheme === "dark" ? "#6b7280" : "#9ca3af"
+
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -56,8 +67,9 @@ export function SrsBreakdown({
             const width = getWidth(segment.count)
             if (width === 0) return null
             return (
-              <View
+              <Pressable
                 key={segment.key}
+                onPress={() => handleCategoryPress(segment.key)}
                 style={{
                   width: `${width}%`,
                   backgroundColor: segment.color,
@@ -67,19 +79,29 @@ export function SrsBreakdown({
           })}
         </View>
 
-        {/* Legend */}
-        <View className="flex-row flex-wrap gap-x-4 gap-y-2">
+        {/* Legend - clickable items */}
+        <View className="gap-2">
           {segments.map((segment) => (
-            <View key={segment.key} className="flex-row items-center gap-2">
+            <Pressable
+              key={segment.key}
+              onPress={() => handleCategoryPress(segment.key)}
+              className="flex-row items-center py-1"
+              disabled={segment.count === 0}
+            >
               <View
-                className="w-3 h-3 rounded-full"
+                className="w-3 h-3 rounded-full mr-2"
                 style={{ backgroundColor: segment.color }}
               />
-              <Text className="text-sm text-muted-foreground">
-                {segment.label}:{" "}
-                <Text className="font-medium text-foreground">{segment.count}</Text>
+              <Text className="text-sm text-muted-foreground flex-1">
+                {segment.label}
               </Text>
-            </View>
+              <Text className="font-medium text-foreground mr-1">
+                {segment.count}
+              </Text>
+              {segment.count > 0 && (
+                <ChevronRight size={16} color={chevronColor} />
+              )}
+            </Pressable>
           ))}
         </View>
 
