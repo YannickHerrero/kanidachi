@@ -16,6 +16,7 @@ import {
   selectRemainingCount,
 } from "@/stores/reviews"
 import { useColorScheme } from "@/lib/useColorScheme"
+import { useSettingsStore } from "@/stores/settings"
 
 export default function ReviewSessionScreen() {
   const router = useRouter()
@@ -39,12 +40,15 @@ export default function ReviewSessionScreen() {
   const progress = useReviewStore(selectProgress)
   const remainingCount = useReviewStore(selectRemainingCount)
 
+  const reviewOrdering = useSettingsStore((s) => s.reviewOrdering)
+  const wrapUpBatchSize = useSettingsStore((s) => s.wrapUpBatchSize)
+
   // Start session when items are loaded
   React.useEffect(() => {
     if (items.length > 0 && !isActive) {
-      startSession(items)
+      startSession(items, reviewOrdering)
     }
-  }, [items, isActive, startSession])
+  }, [items, isActive, startSession, reviewOrdering])
 
   // Handle session end (no more items)
   React.useEffect(() => {
@@ -64,7 +68,7 @@ export default function ReviewSessionScreen() {
   }
 
   const handleWrapUp = () => {
-    enableWrapUp(10)
+    enableWrapUp(wrapUpBatchSize)
   }
 
   const handleBack = () => {
@@ -142,7 +146,7 @@ export default function ReviewSessionScreen() {
           completed={progress.completed}
         />
 
-        {!isWrapUp && remainingCount > 10 && (
+        {!isWrapUp && remainingCount > wrapUpBatchSize && (
           <Button
             variant="outline"
             size="sm"
@@ -162,7 +166,7 @@ export default function ReviewSessionScreen() {
           </View>
         )}
 
-        {!isWrapUp && remainingCount <= 10 && <View className="w-16" />}
+        {!isWrapUp && remainingCount <= wrapUpBatchSize && <View className="w-16" />}
       </View>
 
       {/* Card */}

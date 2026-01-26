@@ -1,7 +1,8 @@
 import * as React from "react"
 import { useDatabase } from "@/db/provider"
-import { getAvailableLessons, getSubjectsByIds } from "@/db/queries"
+import { getAvailableLessons, getSubjectsByIds, getCurrentUser } from "@/db/queries"
 import type { LessonItem } from "@/stores/lessons"
+import { useSettingsStore, type LessonOrdering } from "@/stores/settings"
 
 export type SubjectTypeFilter = "all" | "radical" | "kanji" | "vocabulary"
 
@@ -13,6 +14,61 @@ interface UseAvailableLessonsResult {
   refetch: () => Promise<void>
   setTypeFilter: (filter: SubjectTypeFilter) => void
   typeFilter: SubjectTypeFilter
+  userLevel: number | null
+}
+
+/**
+ * Sort lesson items based on ordering preference
+ */
+function sortLessonItems(
+  items: LessonItem[],
+  ordering: LessonOrdering,
+  currentLevel?: number | null
+): LessonItem[] {
+  const sorted = [...items]
+
+  switch (ordering) {
+    case "ascending_level":
+      return sorted.sort((a, b) => {
+        if (a.subject.level !== b.subject.level) {
+          return a.subject.level - b.subject.level
+        }
+        const typeOrder = { radical: 0, kanji: 1, vocabulary: 2, kana_vocabulary: 3 }
+        return (
+          (typeOrder[a.subject.type as keyof typeof typeOrder] ?? 4) -
+          (typeOrder[b.subject.type as keyof typeof typeOrder] ?? 4)
+        )
+      })
+
+    case "current_level_first":
+      return sorted.sort((a, b) => {
+        const aIsCurrent = currentLevel && a.subject.level === currentLevel
+        const bIsCurrent = currentLevel && b.subject.level === currentLevel
+
+        if (aIsCurrent && !bIsCurrent) return -1
+        if (!aIsCurrent && bIsCurrent) return 1
+
+        if (a.subject.level !== b.subject.level) {
+          return a.subject.level - b.subject.level
+        }
+
+        const typeOrder = { radical: 0, kanji: 1, vocabulary: 2, kana_vocabulary: 3 }
+        return (
+          (typeOrder[a.subject.type as keyof typeof typeOrder] ?? 4) -
+          (typeOrder[b.subject.type as keyof typeof typeOrder] ?? 4)
+        )
+      })
+
+    case "shuffled":
+      for (let i = sorted.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        ;[sorted[i], sorted[j]] = [sorted[j], sorted[i]]
+      }
+      return sorted
+
+    default:
+      return sorted
+  }
 }
 
 export function useAvailableLessons(): UseAvailableLessonsResult {
@@ -21,6 +77,9 @@ export function useAvailableLessons(): UseAvailableLessonsResult {
   const [isLoading, setIsLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
   const [typeFilter, setTypeFilter] = React.useState<SubjectTypeFilter>("all")
+  const [userLevel, setUserLevel] = React.useState<number | null>(null)
+
+  const lessonOrdering = useSettingsStore((s) => s.lessonOrdering)
 
   const fetchLessons = React.useCallback(async () => {
     if (!db) return
@@ -29,6 +88,11 @@ export function useAvailableLessons(): UseAvailableLessonsResult {
     setError(null)
 
     try {
+      // Get current user level
+      const user = await getCurrentUser(db)
+      const currentLevel = user?.level ?? null
+      setUserLevel(currentLevel)
+
       // Get assignments available for lessons
       const assignments = await getAvailableLessons(db)
 
@@ -56,25 +120,17 @@ export function useAvailableLessons(): UseAvailableLessonsResult {
         }
       }
 
-      // Sort by level, then by type (radicals first, then kanji, then vocab)
-      lessonItems.sort((a, b) => {
-        if (a.subject.level !== b.subject.level) {
-          return a.subject.level - b.subject.level
-        }
-        const typeOrder = { radical: 0, kanji: 1, vocabulary: 2, kana_vocabulary: 3 }
-        const aOrder = typeOrder[a.subject.type as keyof typeof typeOrder] ?? 4
-        const bOrder = typeOrder[b.subject.type as keyof typeof typeOrder] ?? 4
-        return aOrder - bOrder
-      })
+      // Sort based on user's preference
+      const sortedItems = sortLessonItems(lessonItems, lessonOrdering, currentLevel)
 
-      setItems(lessonItems)
+      setItems(sortedItems)
     } catch (err) {
       console.error("[useAvailableLessons] Error:", err)
       setError(err instanceof Error ? err.message : "Failed to load lessons")
     } finally {
       setIsLoading(false)
     }
-  }, [db])
+  }, [db, lessonOrdering])
 
   // Initial fetch
   React.useEffect(() => {
@@ -101,5 +157,6 @@ export function useAvailableLessons(): UseAvailableLessonsResult {
     refetch: fetchLessons,
     setTypeFilter,
     typeFilter,
+    userLevel,
   }
 }

@@ -11,12 +11,14 @@ import { SubjectGrid, FilterBar } from "@/components/lessons"
 import { useAvailableLessons } from "@/hooks/useAvailableLessons"
 import { useLessonStore, selectSelectedCount } from "@/stores/lessons"
 import { useColorScheme } from "@/lib/useColorScheme"
+import { useSettingsStore } from "@/stores/settings"
 
 export default function LessonPickerScreen() {
   const router = useRouter()
   const { colorScheme } = useColorScheme()
 
-  const { filteredItems, items, isLoading, error, typeFilter, setTypeFilter } = useAvailableLessons()
+  const { filteredItems, items, isLoading, error, typeFilter, setTypeFilter, userLevel } =
+    useAvailableLessons()
 
   const {
     selectedSubjectIds,
@@ -28,13 +30,14 @@ export default function LessonPickerScreen() {
   } = useLessonStore()
 
   const selectedCount = useLessonStore(selectSelectedCount)
+  const lessonOrdering = useSettingsStore((s) => s.lessonOrdering)
 
   // Set available items when loaded
   React.useEffect(() => {
     if (items.length > 0) {
-      setAvailableItems(items)
+      setAvailableItems(items, lessonOrdering, userLevel ?? undefined)
     }
-  }, [items, setAvailableItems])
+  }, [items, setAvailableItems, lessonOrdering, userLevel])
 
   // Calculate filter counts
   const counts = React.useMemo(() => {
@@ -50,7 +53,7 @@ export default function LessonPickerScreen() {
 
   const handleStartLessons = () => {
     if (selectedCount > 0) {
-      startContent()
+      startContent(lessonOrdering, userLevel ?? undefined)
       router.push("/lessons/content")
     }
   }
