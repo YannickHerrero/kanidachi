@@ -2,11 +2,12 @@ import * as React from "react"
 import { ScrollView, View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useRouter, useLocalSearchParams, Stack } from "expo-router"
-import { ChevronLeft } from "lucide-react-native"
+import { ChevronLeft, GraduationCap } from "lucide-react-native"
 
 import { Button } from "@/components/ui/button"
 import { Text } from "@/components/ui/text"
 import { Skeleton } from "@/components/ui/skeleton"
+import { usePracticeStore } from "@/stores/practice"
 import {
   SubjectHeader,
   Meanings,
@@ -40,8 +41,17 @@ export default function SubjectDetailScreen() {
     error,
   } = useSubject(subjectId)
 
+  const startPractice = usePracticeStore((s) => s.startSession)
+
   const handleBack = () => {
     router.back()
+  }
+
+  const handlePractice = () => {
+    if (data) {
+      startPractice([{ subject: data.subject, assignment: data.assignment }])
+      router.push("/practice")
+    }
   }
 
   const iconColor = colorScheme === "dark" ? "#fff" : "#000"
@@ -100,6 +110,18 @@ export default function SubjectDetailScreen() {
             className="bg-black/20 rounded-full"
           >
             <ChevronLeft size={24} color="#fff" />
+          </Button>
+        </View>
+
+        {/* Practice button overlay */}
+        <View className="absolute top-12 right-4 z-10">
+          <Button
+            variant="ghost"
+            size="icon"
+            onPress={handlePractice}
+            className="bg-black/20 rounded-full"
+          >
+            <GraduationCap size={24} color="#fff" />
           </Button>
         </View>
 
