@@ -13,6 +13,7 @@ import { LessonCard } from "@/components/dashboard/lesson-card"
 import { LevelProgress } from "@/components/dashboard/level-progress"
 import { SrsBreakdown } from "@/components/dashboard/srs-breakdown"
 import { ForecastChart } from "@/components/dashboard/forecast-chart"
+import { BrowseCard } from "@/components/dashboard/browse-card"
 import { useDashboardData } from "@/hooks/useDashboardData"
 import { useColorScheme } from "@/lib/useColorScheme"
 
@@ -115,6 +116,9 @@ export default function Dashboard() {
           <ReviewCard count={reviewCount} />
           <LessonCard count={lessonCount} />
         </View>
+
+        {/* Browse Card */}
+        <BrowseCard />
 
         {/* Level Progress */}
         <LevelProgress
