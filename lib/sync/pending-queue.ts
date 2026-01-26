@@ -8,6 +8,7 @@ import {
 } from "@/db/schema"
 import { wanikaniClient } from "@/lib/wanikani/client"
 import { WaniKaniError } from "@/lib/wanikani/errors"
+import { rateLimiter } from "@/lib/wanikani/rate-limiter"
 
 type Database = SQLJsDatabase | ExpoSQLiteDatabase | null
 
@@ -123,17 +124,33 @@ async function processPendingItem(
 
 /**
  * Process all pending progress items in the queue
+ * @param db Database instance
+ * @param reserveQuota Number of API requests to reserve for other operations (e.g., sync)
  */
-export async function processQueue(db: Database): Promise<QueueProcessResult> {
+export async function processQueue(
+  db: Database,
+  reserveQuota = 5
+): Promise<QueueProcessResult> {
   if (!db) {
     return { processed: 0, failed: 0, remaining: 0, authError: false }
   }
 
-  // Get all pending items, oldest first
+  // Calculate how many items we can process based on rate limit
+  const requestsRemaining = rateLimiter.requestsRemaining
+  const maxItemsToProcess = Math.max(0, requestsRemaining - reserveQuota)
+
+  if (maxItemsToProcess === 0) {
+    console.log("[PendingQueue] Rate limit reached, skipping processing")
+    const allItems = await db.select().from(pendingProgress)
+    return { processed: 0, failed: 0, remaining: allItems.length, authError: false }
+  }
+
+  // Get pending items, oldest first, limited by rate quota
   const items = await db
     .select()
     .from(pendingProgress)
     .orderBy(pendingProgress.createdAt)
+    .limit(maxItemsToProcess)
 
   if (items.length === 0) {
     return { processed: 0, failed: 0, remaining: 0, authError: false }

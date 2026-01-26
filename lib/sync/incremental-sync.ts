@@ -24,6 +24,7 @@ import type {
   WKLevelProgression,
   WKUser,
 } from "@/lib/wanikani/types"
+import { WaniKaniError } from "@/lib/wanikani/errors"
 
 type Database = SQLJsDatabase | ExpoSQLiteDatabase
 
@@ -413,5 +414,155 @@ export async function performIncrementalSync(db: Database): Promise<void> {
     console.error("[sync] Incremental sync failed:", error)
     failSync(message)
     throw error
+  }
+}
+
+/**
+ * Quick sync - lightweight sync that only fetches user + assignments
+ * Use this for:
+ * - App foreground sync (to catch reviews done elsewhere)
+ * - After pending queue processing
+ * 
+ * This is silent (no UI state updates) and optimized for frequent calls.
+ * Returns true if sync completed successfully, false otherwise.
+ */
+export async function performQuickSync(db: Database): Promise<boolean> {
+  const { setUser } = useAuthStore.getState()
+
+  try {
+    console.log("[sync] Starting quick sync...")
+
+    // 1. Fetch user (always, to check level/vacation status)
+    const userData = await wanikaniClient.getUser()
+    setUser(userData)
+
+    const userRow = transformUser(userData)
+    await db
+      .insert(user)
+      .values(userRow)
+      .onConflictDoUpdate({
+        target: user.id,
+        set: userRow,
+      })
+
+    // 2. Fetch assignments (most critical for review availability)
+    const assignmentsMeta = await getSyncMetadata(db, "assignments")
+    let updatedAfter = assignmentsMeta?.lastSyncAt
+
+    // If no sync metadata, use last hour as fallback to avoid full download
+    if (!updatedAfter) {
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
+      updatedAfter = oneHourAgo.toISOString()
+    }
+
+    const updatedAssignments = await wanikaniClient.getAllAssignments(
+      { updated_after: updatedAfter }
+    )
+
+    if (updatedAssignments.length > 0) {
+      console.log(`[sync] Quick sync: ${updatedAssignments.length} assignments updated`)
+      for (const assignment of updatedAssignments) {
+        const row = transformAssignment(assignment)
+        await db
+          .insert(assignments)
+          .values(row)
+          .onConflictDoUpdate({
+            target: assignments.id,
+            set: row,
+          })
+      }
+    }
+
+    // Update sync metadata
+    await db.update(syncMetadata)
+      .set({ lastSyncAt: new Date().toISOString() })
+      .where(eq(syncMetadata.id, "assignments"))
+
+    console.log("[sync] Quick sync completed successfully")
+    return true
+  } catch (error) {
+    // Handle auth errors specially
+    if (error instanceof WaniKaniError && error.isAuthError) {
+      console.error("[sync] Quick sync auth error:", error.message)
+      throw error // Re-throw auth errors so caller can handle logout
+    }
+
+    // Log other errors but don't throw - quick sync is best-effort
+    console.error("[sync] Quick sync failed:", error)
+    return false
+  }
+}
+
+/**
+ * Full refresh sync - fetches all data types with updated_after
+ * Use this for pull-to-refresh when user explicitly wants latest data
+ * 
+ * Similar to performQuickSync but includes review_statistics and level_progressions
+ * Still silent (no UI state updates).
+ */
+export async function performFullRefreshSync(db: Database): Promise<boolean> {
+  const { setUser } = useAuthStore.getState()
+
+  try {
+    console.log("[sync] Starting full refresh sync...")
+
+    // 1. User
+    const userData = await wanikaniClient.getUser()
+    setUser(userData)
+    const userRow = transformUser(userData)
+    await db.insert(user).values(userRow).onConflictDoUpdate({ target: user.id, set: userRow })
+
+    // Helper to get updated_after with 1 hour fallback
+    const getUpdatedAfter = async (key: string) => {
+      const meta = await getSyncMetadata(db, key)
+      if (meta?.lastSyncAt) return meta.lastSyncAt
+      return new Date(Date.now() - 60 * 60 * 1000).toISOString()
+    }
+
+    // 2. Assignments
+    const assignmentsUpdatedAfter = await getUpdatedAfter("assignments")
+    const updatedAssignments = await wanikaniClient.getAllAssignments({ updated_after: assignmentsUpdatedAfter })
+    if (updatedAssignments.length > 0) {
+      console.log(`[sync] Full refresh: ${updatedAssignments.length} assignments`)
+      for (const assignment of updatedAssignments) {
+        const row = transformAssignment(assignment)
+        await db.insert(assignments).values(row).onConflictDoUpdate({ target: assignments.id, set: row })
+      }
+    }
+    await db.update(syncMetadata).set({ lastSyncAt: new Date().toISOString() }).where(eq(syncMetadata.id, "assignments"))
+
+    // 3. Review Statistics (for accuracy updates)
+    const reviewStatsUpdatedAfter = await getUpdatedAfter("review_statistics")
+    const updatedReviewStats = await wanikaniClient.getAllReviewStatistics({ updated_after: reviewStatsUpdatedAfter })
+    if (updatedReviewStats.length > 0) {
+      console.log(`[sync] Full refresh: ${updatedReviewStats.length} review statistics`)
+      for (const stat of updatedReviewStats) {
+        const row = transformReviewStatistic(stat)
+        await db.insert(reviewStatistics).values(row).onConflictDoUpdate({ target: reviewStatistics.id, set: row })
+      }
+    }
+    await db.update(syncMetadata).set({ lastSyncAt: new Date().toISOString() }).where(eq(syncMetadata.id, "review_statistics"))
+
+    // 4. Level Progressions (for level-up detection)
+    const levelProgressionsUpdatedAfter = await getUpdatedAfter("level_progressions")
+    const updatedLevelProgressions = await wanikaniClient.getAllLevelProgressions({ updated_after: levelProgressionsUpdatedAfter })
+    if (updatedLevelProgressions.length > 0) {
+      console.log(`[sync] Full refresh: ${updatedLevelProgressions.length} level progressions`)
+      for (const progression of updatedLevelProgressions) {
+        const row = transformLevelProgression(progression)
+        await db.insert(levelProgressions).values(row).onConflictDoUpdate({ target: levelProgressions.id, set: row })
+      }
+    }
+    await db.update(syncMetadata).set({ lastSyncAt: new Date().toISOString() }).where(eq(syncMetadata.id, "level_progressions"))
+
+    console.log("[sync] Full refresh sync completed successfully")
+    return true
+  } catch (error) {
+    if (error instanceof WaniKaniError && error.isAuthError) {
+      console.error("[sync] Full refresh sync auth error:", error.message)
+      throw error
+    }
+    console.error("[sync] Full refresh sync failed:", error)
+    return false
   }
 }

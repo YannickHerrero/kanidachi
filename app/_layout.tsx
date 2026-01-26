@@ -22,6 +22,7 @@ import {
   configureAndroidNotificationChannel,
 } from "@/lib/notifications";
 import { useReviewNotifications } from "@/hooks/useReviewNotifications";
+import { useAppStateSync } from "@/hooks/useAppStateSync";
 
 
 export {
@@ -58,6 +59,13 @@ function BackgroundSyncInitializer() {
 function NotificationManager() {
   // This hook handles badge updates and notification scheduling
   useReviewNotifications();
+  return null;
+}
+
+// Component to trigger sync when app comes to foreground
+function AppStateSyncManager() {
+  // This hook triggers sync when app returns from background
+  useAppStateSync();
   return null;
 }
 
@@ -149,6 +157,7 @@ export default function RootLayout() {
       <PortalHost />
       <BackgroundSyncInitializer />
       {Platform.OS !== "web" && <NotificationManager />}
+      {Platform.OS !== "web" && <AppStateSyncManager />}
     </DatabaseProvider>
   );
 }

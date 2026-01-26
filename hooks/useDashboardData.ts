@@ -8,6 +8,9 @@ import {
   getReviewForecast,
   getCurrentUser,
 } from "@/db/queries"
+import { performFullRefreshSync } from "@/lib/sync/incremental-sync"
+import { checkIsOnline } from "@/hooks/useNetworkStatus"
+import { useAuthStore } from "@/stores/auth"
 
 export interface DashboardData {
   /** Number of reviews available now */
@@ -120,9 +123,24 @@ export function useDashboardData() {
     fetchData()
   }, [fetchData])
 
-  const refetch = React.useCallback(() => {
+  const refetch = React.useCallback(async () => {
+    // On pull-to-refresh, do a full sync to get latest from server
+    const isOnline = await checkIsOnline()
+    const authStatus = useAuthStore.getState().status
+
+    if (isOnline && authStatus === "authenticated" && db) {
+      try {
+        console.log("[useDashboardData] Pull-to-refresh, triggering full sync...")
+        await performFullRefreshSync(db)
+      } catch (error) {
+        console.error("[useDashboardData] Full sync failed:", error)
+        // Continue with local data refresh even if sync fails
+      }
+    }
+
+    // Then refresh local data
     return fetchData(true)
-  }, [fetchData])
+  }, [fetchData, db])
 
   return {
     ...data,
