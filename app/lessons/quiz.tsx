@@ -1,6 +1,7 @@
 import * as React from "react"
 import { View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
+import { useNavigation, type NavigationProp, type ParamListBase } from "@react-navigation/native"
 import { useRouter, Stack } from "expo-router"
 import { X } from "lucide-react-native"
 
@@ -20,6 +21,7 @@ import { addPendingProgress, markLessonsCompleted } from "@/db/queries"
 
 export default function LessonQuizScreen() {
   const router = useRouter()
+  const navigation = useNavigation<NavigationProp<ParamListBase>>()
   const { colorScheme } = useColorScheme()
   const { db } = useDatabase()
 
@@ -29,12 +31,13 @@ export default function LessonQuizScreen() {
 
   const [isFlipped, setIsFlipped] = React.useState(false)
   const [isSubmitting, setIsSubmitting] = React.useState(false)
+  const isCompletingRef = React.useRef(false)
 
   // Redirect if in select phase (user navigated here without going through the flow)
   // We allow "content" phase briefly during the transition from content -> quiz
   // as Zustand state update may not have propagated yet when this screen mounts
   React.useEffect(() => {
-    if (phase === "select") {
+    if (phase === "select" && !isCompletingRef.current) {
       router.replace("/lessons")
     }
   }, [phase, router])
@@ -46,10 +49,19 @@ export default function LessonQuizScreen() {
     }
   }, [phase])
 
+  const resetToDashboard = () => {
+    reset()
+    navigation.reset({
+      index: 0,
+      routes: [{ name: "index" }],
+    })
+  }
+
   const handleComplete = async () => {
     if (!db || isSubmitting) return
 
     setIsSubmitting(true)
+    isCompletingRef.current = true
 
     try {
       // 1. Update local assignments immediately (optimistic update)
@@ -69,13 +81,12 @@ export default function LessonQuizScreen() {
       }
 
       // Reset store and go back to dashboard
-      reset()
-      router.replace("/")
+      resetToDashboard()
     } catch (error) {
       console.error("[LessonQuiz] Error saving progress:", error)
       // Still go back even on error - progress is queued locally
-      reset()
-      router.replace("/")
+      isCompletingRef.current = true
+      resetToDashboard()
     }
   }
 
@@ -89,8 +100,8 @@ export default function LessonQuizScreen() {
   }
 
   const handleEndSession = () => {
-    reset()
-    router.replace("/")
+    isCompletingRef.current = true
+    resetToDashboard()
   }
 
   if (!currentItem && phase === "quiz") {
