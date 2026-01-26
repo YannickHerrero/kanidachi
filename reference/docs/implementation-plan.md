@@ -225,24 +225,39 @@ Kanidachi is a WaniKani client for Android and iOS with these key characteristic
 
 ---
 
-## Phase 6: Statistics & Polish (Week 5)
+## Phase 6: Statistics & Polish (Week 5) ✅ COMPLETED
 
 ### 6.1 Statistics
-- [ ] `app/stats.tsx` - Statistics screen
-- [ ] `components/stats/accuracy-chart.tsx` - Accuracy over time
-- [ ] `components/stats/level-timeline.tsx` - Level progression
-- [ ] `components/stats/leech-list.tsx` - Problem items
+- [x] `app/stats.tsx` - Statistics screen with summary cards
+- [x] `hooks/useStatistics.ts` - Statistics data fetching hook
+- [x] `components/stats/accuracy-chart.tsx` - Overall accuracy and accuracy by type
+- [x] `components/stats/level-timeline.tsx` - Level progression with time spent
+- [x] `components/stats/leech-list.tsx` - Problem items (low accuracy)
+- [x] `components/dashboard/stats-card.tsx` - Dashboard navigation card
+- [x] Statistics queries in `db/queries.ts` (overall accuracy, accuracy by type, leeches, level timeline)
 
 ### 6.2 Error Handling & Edge Cases
-- [ ] Network error UI states
-- [ ] Empty states (no reviews, no lessons)
-- [ ] Sync conflict resolution
-- [ ] Token expiration handling
+- [x] `components/ui/error-view.tsx` - Reusable error state component (network, server, auth, generic)
+- [x] `components/ui/empty-state.tsx` - Reusable empty state component (reviews, lessons, search)
+- [x] `components/ui/network-status-bar.tsx` - Network/sync status indicator
+- [x] Network error UI states in reviews, lessons, search screens
+- [x] Empty states for no reviews, no lessons, no search results
+- [x] Token expiration handling with automatic logout via `forceLogout` action
+- [x] Auth error detection in background sync queue processing
+
+**Deferred:**
+- [ ] Sync conflict resolution (requires more API infrastructure for proper handling)
 
 ### 6.3 Performance Optimization
-- [ ] FlashList for large lists
-- [ ] Image/audio preloading
-- [ ] Database query optimization
+- [x] Audio preloading for upcoming review items (`preloadAudio` in `lib/audio/cache.ts`)
+- [x] Database query optimization via indexes (migration `0001_add_indexes.sql`)
+  - Indexes on subjects (level, type, type+level)
+  - Indexes on assignments (subject_id, available_at, srs_stage, level, review/lesson queries)
+  - Indexes on review_statistics (percentage_correct)
+  - Indexes on level_progressions (level)
+  - Indexes on audio_cache (subject_id+voice_actor_id)
+
+**Note:** FlashList estimatedItemSize was investigated but not supported in v2.0.2
 
 ---
 
@@ -316,8 +331,8 @@ This section tracks features that were intentionally deferred during initial imp
 - [ ] Sync study materials to WaniKani API
 
 **Advanced Features:**
-- [ ] Leech detection and highlighting
-- [ ] Critical items list (low accuracy items)
+- [x] Leech detection and highlighting (implemented in Phase 6.1 - Statistics screen)
+- [x] Critical items list (low accuracy items) (implemented as leech list in Phase 6.1)
 - [ ] SRS stage history per item
 - [ ] Review accuracy history per item
 - [ ] Export/import session data
@@ -335,7 +350,7 @@ app/
   login.tsx             # Authentication
   sync.tsx              # Initial sync progress
   settings.tsx          # Settings
-  stats.tsx             # Statistics (planned)
+  stats.tsx             # Statistics
   lessons/
     index.tsx           # Lesson picker
     content.tsx         # Lesson content viewer
@@ -357,6 +372,8 @@ components/
     level-progress.tsx  # Current level progress
     srs-breakdown.tsx   # SRS stage breakdown
     forecast-chart.tsx  # 24-hour forecast
+    browse-card.tsx     # Browse navigation card
+    stats-card.tsx      # Statistics navigation card
   lessons/
     subject-cell.tsx    # Selectable subject cell
     subject-grid.tsx    # Grid of subjects by level
@@ -388,7 +405,10 @@ components/
     parts-of-speech.tsx # Part of speech badges
     audio-player.tsx    # Audio playback component
     radical-image.tsx   # Radical image display (SVG/PNG)
-  stats/                # (planned)
+  stats/
+    accuracy-chart.tsx    # Overall accuracy visualization
+    level-timeline.tsx    # Level progression timeline
+    leech-list.tsx        # Problem items list
   settings/
     ThemeItem.tsx           # Theme selection
     NotificationItem.tsx    # Notification settings with time picker
@@ -399,6 +419,9 @@ components/
     CacheSettingsItem.tsx   # Clear audio cache
     LogoutItem.tsx          # Sign out and clear data
   ui/                   # Shared UI components
+    error-view.tsx        # Reusable error state component
+    empty-state.tsx       # Reusable empty state component
+    network-status-bar.tsx # Network/sync status indicator
   primitives/           # Low-level primitives
 
 lib/
@@ -450,6 +473,7 @@ hooks/
   useLevelProgress.ts       # Level progress for grid
   useAudio.ts               # Audio playback hook
   useReviewNotifications.ts # Badge and notification management
+  useStatistics.ts          # Statistics data fetching
   useColorScheme.ts         # Theme hook
   useFrameworkReady.ts      # Framework initialization
 ```
@@ -480,13 +504,21 @@ hooks/
 
 ## Progress Tracking
 
-### Current Phase: 6 - Statistics & Polish
-### Completed Phases: 1, 2, 3, 4, 5
+### Current Phase: COMPLETE - All core phases finished
+### Completed Phases: 1, 2, 3, 4, 5, 6
 
 ---
 
 ## Changelog
 
+- **2026-01-26**: Completed Phase 6 - Statistics & Polish
+  - 6.1: Statistics screen with accuracy chart, level timeline, and leech list
+  - 6.2: Error handling with reusable ErrorView and EmptyState components
+  - 6.3: Performance optimization with audio preloading and database indexes
+  - Added token expiration handling with automatic logout
+  - Added network status bar component for offline/sync indication
+  - Created database migration for query performance indexes
+  - Deferred: Sync conflict resolution (requires more API infrastructure)
 - **2026-01-26**: Completed Phase 5 - Settings & Notifications
   - 5.1: Comprehensive settings screen with sections for appearance, study, audio, notifications, storage, and account
   - 5.2: Push notification system with permissions, scheduling, daily reminders, and badge count
