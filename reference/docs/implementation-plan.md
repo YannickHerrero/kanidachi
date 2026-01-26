@@ -148,7 +148,7 @@ Kanidachi is a WaniKani client for Android and iOS with these key characteristic
 - [x] `components/subject/subject-chip.tsx` - Tappable subject pill
 - [x] `components/subject/visually-similar.tsx` - Similar kanji display
 - [x] `components/subject/parts-of-speech.tsx` - Part of speech badges
-- [ ] `components/subject/audio-player.tsx` - Audio playback (deferred to Phase 4)
+- [x] `components/subject/audio-player.tsx` - Audio playback (implemented in Phase 4)
 
 ### 3.3 Data Layer
 - [x] `hooks/useSubject.ts` - Fetch subject with related data
@@ -183,31 +183,45 @@ Kanidachi is a WaniKani client for Android and iOS with these key characteristic
 
 ---
 
-## Phase 5: Settings & Notifications (Week 4-5)
+## Phase 5: Settings & Notifications (Week 4-5) ✅ COMPLETED
 
 ### 5.1 Settings Screen
-- [x] `app/settings.tsx` - Updated with audio settings
-- [x] `components/settings/` - Setting components (Theme, Notification, Audio)
-- [x] `stores/settings.ts` - Settings store with MMKV persistence (created in Phase 4)
+- [x] `app/settings.tsx` - Comprehensive settings screen with sections
+- [x] `components/settings/ThemeItem.tsx` - Theme selection (light/dark/system)
+- [x] `components/settings/AudioSettingItem.tsx` - Auto-play audio toggles
+- [x] `components/settings/VoiceActorSettingItem.tsx` - Preferred voice actor selection
+- [x] `components/settings/LessonSettingsItem.tsx` - Lesson batch size & ordering
+- [x] `components/settings/ReviewSettingsItem.tsx` - Review ordering & wrap-up batch size
+- [x] `components/settings/CacheSettingsItem.tsx` - Clear audio cache option
+- [x] `components/settings/LogoutItem.tsx` - Sign out and clear all data
+- [x] `components/settings/NotificationItem.tsx` - Notification preferences with time picker
+- [x] `stores/settings.ts` - Settings store with MMKV persistence
 
-**Settings to implement:**
-- [ ] Preferred voice actor selection (infrastructure ready, UI pending)
-- [x] Auto-play audio toggle (lesson and review separate toggles)
-- [ ] Lesson batch size
-- [ ] Lesson ordering preference
-- [ ] Review ordering preference
-- [ ] Wrap-up batch size
-- [x] Theme selection (light/dark/system) - already existed
-- [x] Notification preferences - already existed
-- [ ] Clear cache option
-- [ ] Logout / clear data
+**Implemented Settings:**
+- [x] Preferred voice actor selection
+- [x] Auto-play audio toggle (separate for lessons and reviews)
+- [x] Lesson batch size (3, 5, 10, 15, 20)
+- [x] Lesson ordering preference (ascending level, current level first, shuffled)
+- [x] Review ordering preference (random, SRS stage, level)
+- [x] Wrap-up batch size (5, 10, 15, 20, 25)
+- [x] Theme selection (light/dark/system)
+- [x] Notification preferences with time picker
+- [x] Clear audio cache option
+- [x] Sign out / clear all data
 
 ### 5.2 Push Notifications
-- [ ] `lib/notifications/scheduler.ts` - Notification scheduling
-- [ ] `lib/notifications/permissions.ts` - Permission handling
-- [ ] Schedule notifications for upcoming reviews
-- [ ] Configurable notification times
-- [ ] Badge count for available reviews
+- [x] `lib/notifications/permissions.ts` - Permission handling
+- [x] `lib/notifications/scheduler.ts` - Notification scheduling
+- [x] `hooks/useReviewNotifications.ts` - Badge and notification management
+- [x] Configure notification handler in app layout
+- [x] Android notification channel for reviews
+- [x] Schedule daily review reminders
+- [x] Configurable notification times
+- [x] Badge count for available reviews (auto-updates on app active)
+
+**Dependencies Added:**
+- `expo-device` - Device detection for notifications
+- `@react-native-community/datetimepicker` - Time picker for notification settings
 
 ---
 
@@ -240,21 +254,21 @@ This section tracks features that were intentionally deferred during initial imp
 
 **Lesson Enhancements:**
 - [x] Audio playback in lesson content (implemented in Phase 4)
-- [ ] Lesson ordering options (ascending level, shuffled, by type, current level first)
-- [ ] Batch size configuration for lessons
+- [x] Lesson ordering options (ascending level, shuffled, current level first) - implemented in Phase 5
+- [x] Batch size configuration for lessons - implemented in Phase 5
 - [ ] "Skip to Quiz" option to bypass content viewing
 - [ ] Component radicals/kanji display in lesson content
 - [ ] Visually similar kanji display for kanji lessons
 
 **Review Enhancements:**
 - [x] Audio playback on card back (implemented in Phase 4)
-- [ ] Review ordering options (random, SRS stage, level)
+- [x] Review ordering options (random, SRS stage, level) - implemented in Phase 5
+- [x] Configurable wrap-up batch size - implemented in Phase 5
 - [ ] "Ask Again Later" - return item without penalty
 - [ ] "Mark Correct Override" - override wrong answer
 - [ ] Undo last answer
 - [ ] Minimize penalty option (reduce SRS penalty)
 - [ ] Session item limit setting
-- [ ] Configurable wrap-up batch size
 
 **Card Display Enhancements:**
 - [ ] Abbreviated mnemonic with "Show more" expand option
@@ -316,7 +330,7 @@ This section tracks features that were intentionally deferred during initial imp
 
 ```
 app/
-  _layout.tsx           # Root layout with auth routing
+  _layout.tsx           # Root layout with auth routing + notifications
   index.tsx             # Dashboard
   login.tsx             # Authentication
   sync.tsx              # Initial sync progress
@@ -329,11 +343,11 @@ app/
   reviews/
     index.tsx           # Review session
     summary.tsx         # Session summary
-  browse/               # (planned)
+  browse/
     index.tsx           # Browse home
     level/[level].tsx   # Browse by level
     search.tsx          # Search
-  subject/              # (planned)
+  subject/
     [id].tsx            # Subject details
 
 components/
@@ -376,9 +390,14 @@ components/
     radical-image.tsx   # Radical image display (SVG/PNG)
   stats/                # (planned)
   settings/
-    ThemeItem.tsx       # Theme selection
-    NotificationItem.tsx # Notification settings
-    AudioSettingItem.tsx # Audio settings
+    ThemeItem.tsx           # Theme selection
+    NotificationItem.tsx    # Notification settings with time picker
+    AudioSettingItem.tsx    # Audio auto-play settings
+    VoiceActorSettingItem.tsx # Voice actor selection
+    LessonSettingsItem.tsx  # Lesson batch size & ordering
+    ReviewSettingsItem.tsx  # Review ordering & wrap-up batch size
+    CacheSettingsItem.tsx   # Clear audio cache
+    LogoutItem.tsx          # Sign out and clear data
   ui/                   # Shared UI components
   primitives/           # Low-level primitives
 
@@ -396,9 +415,10 @@ lib/
   audio/
     player.ts           # Audio playback (expo-av)
     cache.ts            # Audio caching (stream-and-cache)
-  notifications/        # (planned)
-    scheduler.ts        # Notification scheduling
+  notifications/
     permissions.ts      # Permission handling
+    scheduler.ts        # Notification scheduling
+    index.ts            # Exports
   auth.ts               # Auth helpers
   storage.ts            # MMKV storage helpers
   utils.ts              # Utility functions
@@ -407,8 +427,8 @@ stores/
   auth.ts               # Auth state
   sync.ts               # Sync state
   settings.ts           # Settings state (MMKV persistence)
-  lessons.ts            # Lesson session state
-  reviews.ts            # Review session state
+  lessons.ts            # Lesson session state (supports ordering)
+  reviews.ts            # Review session state (supports ordering)
 
 db/
   schema.ts             # Database schema
@@ -420,17 +440,18 @@ db/
   migrations/           # Migration files
 
 hooks/
-  useDashboardData.ts   # Dashboard data fetching
-  useAvailableLessons.ts # Fetch available lessons
-  useAvailableReviews.ts # Fetch available reviews
-  useNetworkStatus.ts   # Network connectivity
-  useSubject.ts         # Subject data with related subjects
-  useSubjectsByLevel.ts # Subjects grouped by type for a level
-  useSearchSubjects.ts  # Debounced search
-  useLevelProgress.ts   # Level progress for grid
-  useAudio.ts           # Audio playback hook
-  useColorScheme.ts     # Theme hook
-  useFrameworkReady.ts  # Framework initialization
+  useDashboardData.ts       # Dashboard data fetching
+  useAvailableLessons.ts    # Fetch available lessons (with ordering)
+  useAvailableReviews.ts    # Fetch available reviews
+  useNetworkStatus.ts       # Network connectivity
+  useSubject.ts             # Subject data with related subjects
+  useSubjectsByLevel.ts     # Subjects grouped by type for a level
+  useSearchSubjects.ts      # Debounced search
+  useLevelProgress.ts       # Level progress for grid
+  useAudio.ts               # Audio playback hook
+  useReviewNotifications.ts # Badge and notification management
+  useColorScheme.ts         # Theme hook
+  useFrameworkReady.ts      # Framework initialization
 ```
 
 ---
@@ -448,6 +469,8 @@ hooks/
 - `zustand` - State management
 - `drizzle-orm` - Database ORM
 - `react-native-mmkv` - Fast key-value storage
+- `expo-device` - Device detection (added in Phase 5)
+- `@react-native-community/datetimepicker` - Time picker (added in Phase 5)
 
 ### May Need to Add
 - `victory-native` - Charts (if we want richer visualizations)
@@ -457,13 +480,25 @@ hooks/
 
 ## Progress Tracking
 
-### Current Phase: 5 - Settings & Notifications
-### Current Task: 5.1 - Settings Screen (partial)
+### Current Phase: 6 - Statistics & Polish
+### Completed Phases: 1, 2, 3, 4, 5
 
 ---
 
 ## Changelog
 
+- **2026-01-26**: Completed Phase 5 - Settings & Notifications
+  - 5.1: Comprehensive settings screen with sections for appearance, study, audio, notifications, storage, and account
+  - 5.2: Push notification system with permissions, scheduling, daily reminders, and badge count
+  - Added VoiceActorSettingItem for preferred voice actor selection
+  - Added LessonSettingsItem for batch size and ordering preferences
+  - Added ReviewSettingsItem for review ordering and wrap-up batch size
+  - Added CacheSettingsItem for clearing audio cache
+  - Added LogoutItem for signing out and clearing all data
+  - Updated NotificationItem with time picker for configurable daily reminders
+  - Integrated settings into lesson and review screens
+  - Added useReviewNotifications hook for automatic badge updates
+  - Installed expo-device and @react-native-community/datetimepicker
 - **2026-01-26**: Completed Phase 4 - Audio & Media
   - 4.1: Audio playback with expo-av, stream-and-cache caching, auto-play settings
   - 4.2: Radical image support for image-only radicals using react-native-svg
