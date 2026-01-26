@@ -3,12 +3,12 @@ import type { ConfigContext, ExpoConfig } from "@expo/config";
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: "Expo Starter",
-  slug: "expostarter",
+  slug: "expo-starter",
   newArchEnabled: true,
   version: "1.0.0",
   orientation: "portrait",
   icon: "./assets/images/icon.png",
-  scheme: "ltstarter",
+  scheme: "expo-starter",
   userInterfaceStyle: "dark",
   runtimeVersion: {
     policy: "appVersion",
@@ -22,7 +22,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ios: {
     newArchEnabled: true,
     supportsTablet: true,
-    bundleIdentifier: "com.expostarter.base",
+    bundleIdentifier: "com.expostarter.app",
   },
   android: {
     newArchEnabled: true,
@@ -30,7 +30,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       foregroundImage: "./assets/images/adaptive-icon.png",
       backgroundColor: "#ffffff",
     },
-    package: "com.expostarter.base",
+    package: "com.expostarter.app",
   },
   web: {
     bundler: "metro",
@@ -40,7 +40,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   plugins: ["expo-router", "expo-sqlite", "expo-font", "expo-web-browser"],
   experiments: {
     typedRoutes: true,
-    baseUrl: "/expo-local-first-template",
+    baseUrl: "/expo-starter",
   },
   extra: {
     eas: {

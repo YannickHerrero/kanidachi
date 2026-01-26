@@ -1,14 +1,14 @@
 import * as React from 'react';
-import {Linking, Platform} from 'react-native';
-import List, {ListHeader} from "@/components/ui/list";
+import { Linking, Platform } from 'react-native';
+import List, { ListHeader } from "@/components/ui/list";
 import ListItem from "@/components/ui/list-item";
-import {Muted} from "@/components/ui/typography";
-import {ScrollView} from 'react-native-gesture-handler';
-import {Archive, Bell, BookOpen, Send, Shield, Star} from '@/lib/icons';
+import { Muted } from "@/components/ui/typography";
+import { ScrollView } from 'react-native-gesture-handler';
+import { BookOpen, Send, Shield, Star } from '@/lib/icons';
 import * as WebBrowser from "expo-web-browser";
 
-import {ThemeSettingItem} from '@/components/settings/ThemeItem';
-import {NotificationItem} from '@/components/settings/NotificationItem';
+import { ThemeSettingItem } from '@/components/settings/ThemeItem';
+import { NotificationItem } from '@/components/settings/NotificationItem';
 
 export default function Settings() {
   const openExternalURL = (url: string) => {
@@ -33,25 +33,22 @@ export default function Settings() {
           <Muted>GENERAL</Muted>
         </ListHeader>
         <ListItem
-          itemLeft={(props) => <Star {...props} />} // props adds size and color attributes
-          label="Give us a start"
+          itemLeft={(props) => <Star {...props} />}
+          label="Give us a star"
           onPress={() => openExternalURL("https://github.com/expo-starter/expo-template")}
         />
         <ListItem
-          itemLeft={(props) => <Send {...props} />} // props adds size and color attributes
+          itemLeft={(props) => <Send {...props} />}
           label="Send Feedback"
           onPress={() => openExternalURL("https://expostarter.com")}
-
-
         />
         <ListItem
-          itemLeft={(props) => <Shield {...props} />} // props adds size and color attributes
+          itemLeft={(props) => <Shield {...props} />}
           label="Privacy Policy"
-
           onPress={() => openExternalURL("https://expostarter.com")}
         />
         <ListItem
-          itemLeft={(props) => <BookOpen {...props} />} // props adds size and color attributes
+          itemLeft={(props) => <BookOpen {...props} />}
           label="Terms of service"
           onPress={() => openExternalURL("https://expostarter.com")}
         />

@@ -22,7 +22,7 @@ export {
 } from "expo-router";
 
 export const unstable_settings = {
-  initialRouteName: "(tabs)",
+  initialRouteName: "index",
 };
 
 // Prevent the splash screen from auto-hiding before getting the color scheme.
@@ -66,13 +66,8 @@ export default function RootLayout() {
         <GestureHandlerRootView style={{ flex: 1 }}>
           <BottomSheetModalProvider>
             <Stack>
-              <Stack.Screen name="(tabs)" options={{ title: "Habits", headerShown: false }} />
-              <Stack.Screen options={{
-                headerShadowVisible: false,
-              }} name="habits/archive" />
-              <Stack.Screen options={{
-                headerShadowVisible: false,
-              }} name="habits/[id]" />
+              <Stack.Screen name="index" options={{ title: "Home", headerShown: false }} />
+              <Stack.Screen name="settings" options={{ title: "Settings", headerShadowVisible: false }} />
             </Stack>
           </BottomSheetModalProvider>
         </GestureHandlerRootView>
