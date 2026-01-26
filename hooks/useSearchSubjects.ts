@@ -2,6 +2,7 @@ import * as React from "react"
 import { useDatabase } from "@/db/provider"
 import { searchSubjectsEnhanced } from "@/db/queries"
 import type { subjects, assignments } from "@/db/schema"
+import { useSettingsStore } from "@/stores/settings"
 
 export type Subject = typeof subjects.$inferSelect
 export type Assignment = typeof assignments.$inferSelect
@@ -23,6 +24,7 @@ const DEBOUNCE_MS = 300
 
 export function useSearchSubjects(): UseSearchSubjectsResult {
   const { db } = useDatabase()
+  const hideKanaVocabulary = useSettingsStore((s) => s.hideKanaVocabulary)
   const [results, setResults] = React.useState<SubjectWithAssignment[]>([])
   const [isSearching, setIsSearching] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
@@ -53,9 +55,13 @@ export function useSearchSubjects(): UseSearchSubjectsResult {
 
         try {
           const searchResults = await searchSubjectsEnhanced(db, query, 50)
-          
+
+          const filteredResults = hideKanaVocabulary
+            ? searchResults.filter((row) => row.subject.type !== "kana_vocabulary")
+            : searchResults
+
           // Map to expected format
-          const mapped: SubjectWithAssignment[] = searchResults.map((row) => ({
+          const mapped: SubjectWithAssignment[] = filteredResults.map((row) => ({
             subject: row.subject,
             assignment: row.assignment,
           }))
@@ -71,7 +77,7 @@ export function useSearchSubjects(): UseSearchSubjectsResult {
         }
       }, DEBOUNCE_MS)
     },
-    [db]
+    [db, hideKanaVocabulary]
   )
 
   const clearResults = React.useCallback(() => {

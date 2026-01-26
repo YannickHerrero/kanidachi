@@ -13,6 +13,7 @@ import {
 import { performFullRefreshSync } from "@/lib/sync/incremental-sync"
 import { checkIsOnline } from "@/hooks/useNetworkStatus"
 import { useAuthStore } from "@/stores/auth"
+import { useSettingsStore } from "@/stores/settings"
 
 export interface DashboardData {
   /** Number of reviews available now */
@@ -80,6 +81,7 @@ const initialData: DashboardData = {
 
 export function useDashboardData() {
   const { db } = useDatabase()
+  const hideKanaVocabulary = useSettingsStore((s) => s.hideKanaVocabulary)
   const [data, setData] = React.useState<DashboardData>(initialData)
   const [isLoading, setIsLoading] = React.useState(true)
   const [isRefreshing, setIsRefreshing] = React.useState(false)
@@ -105,7 +107,7 @@ export function useDashboardData() {
         forecast,
       ] = await Promise.all([
         getAvailableReviewCount(db),
-        getAvailableLessonCount(db),
+        getAvailableLessonCount(db, hideKanaVocabulary),
         getSrsBreakdown(db),
         getCurrentUser(db),
         getReviewForecast(db, 24),
@@ -115,7 +117,7 @@ export function useDashboardData() {
       const level = user?.level ?? 1
       const [levelProgress, levelDetail, weeklyForecast] = await Promise.all([
         getLevelProgress(db, level),
-        getDetailedLevelProgress(db, level),
+        getDetailedLevelProgress(db, level, hideKanaVocabulary),
         getWeeklyForecast(db),
       ])
 
@@ -143,7 +145,7 @@ export function useDashboardData() {
       setIsLoading(false)
       setIsRefreshing(false)
     }
-  }, [db])
+  }, [db, hideKanaVocabulary])
 
   // Initial fetch
   React.useEffect(() => {

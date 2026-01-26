@@ -2,6 +2,7 @@ import * as React from "react"
 import { useDatabase } from "@/db/provider"
 import { getSubjectsWithAssignmentsByLevel } from "@/db/queries"
 import type { subjects, assignments } from "@/db/schema"
+import { useSettingsStore } from "@/stores/settings"
 
 export type Subject = typeof subjects.$inferSelect
 export type Assignment = typeof assignments.$inferSelect
@@ -51,6 +52,7 @@ function sortBySrsStage(a: SubjectWithAssignment, b: SubjectWithAssignment): num
 
 export function useSubjectsByLevel(level: number): UseSubjectsByLevelResult {
   const { db } = useDatabase()
+  const hideKanaVocabulary = useSettingsStore((s) => s.hideKanaVocabulary)
   const [subjects, setSubjects] = React.useState<SubjectWithAssignment[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
@@ -62,7 +64,11 @@ export function useSubjectsByLevel(level: number): UseSubjectsByLevelResult {
     setError(null)
 
     try {
-      const result = await getSubjectsWithAssignmentsByLevel(db, level)
+      const result = await getSubjectsWithAssignmentsByLevel(
+        db,
+        level,
+        hideKanaVocabulary
+      )
       
       // Map to expected format
       const mapped: SubjectWithAssignment[] = result.map((row) => ({
@@ -77,7 +83,7 @@ export function useSubjectsByLevel(level: number): UseSubjectsByLevelResult {
     } finally {
       setIsLoading(false)
     }
-  }, [db, level])
+  }, [db, level, hideKanaVocabulary])
 
   React.useEffect(() => {
     fetchSubjects()

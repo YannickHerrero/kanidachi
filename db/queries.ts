@@ -153,17 +153,25 @@ export async function getAvailableLessons(db: Database) {
 /**
  * Get count of available lessons
  */
-export async function getAvailableLessonCount(db: Database): Promise<number> {
+export async function getAvailableLessonCount(
+  db: Database,
+  excludeKanaVocabulary = false
+): Promise<number> {
   if (!db) return 0
+  const conditions = [
+    isNotNull(assignments.unlockedAt),
+    isNull(assignments.startedAt),
+  ]
+
+  if (excludeKanaVocabulary) {
+    conditions.push(sql`${subjects.type} != 'kana_vocabulary'`)
+  }
+
   const result = await (db as ExpoSQLiteDatabase)
     .select({ cnt: sql<number>`count(*)` })
     .from(assignments)
-    .where(
-      and(
-        isNotNull(assignments.unlockedAt),
-        isNull(assignments.startedAt)
-      )
-    )
+    .innerJoin(subjects, eq(assignments.subjectId, subjects.id))
+    .where(and(...conditions))
   return (result[0] as { cnt: number })?.cnt ?? 0
 }
 
@@ -498,7 +506,11 @@ export async function getLevelProgress(db: Database, level: number) {
 /**
  * Get detailed level progress with breakdown by subject type
  */
-export async function getDetailedLevelProgress(db: Database, level: number) {
+export async function getDetailedLevelProgress(
+  db: Database,
+  level: number,
+  excludeKanaVocabulary = false
+) {
   if (!db) return {
     radicals: { total: 0, passed: 0, lessons: 0, inProgress: 0 },
     kanji: { total: 0, passed: 0, lessons: 0, inProgress: 0 },
@@ -514,9 +526,10 @@ export async function getDetailedLevelProgress(db: Database, level: number) {
   }
 
   for (const type of types) {
-    // Include kana_vocabulary with vocabulary
     const typeCondition = type === "vocabulary"
-      ? or(eq(subjects.type, "vocabulary"), eq(subjects.type, "kana_vocabulary"))
+      ? excludeKanaVocabulary
+        ? eq(subjects.type, "vocabulary")
+        : or(eq(subjects.type, "vocabulary"), eq(subjects.type, "kana_vocabulary"))
       : eq(subjects.type, type)
 
     // Get all subjects of this type at this level
@@ -649,9 +662,17 @@ export function parseStringArray(json: string | null): string[] {
 /**
  * Get all subjects for a level with their assignments
  */
-export async function getSubjectsWithAssignmentsByLevel(db: Database, level: number) {
+export async function getSubjectsWithAssignmentsByLevel(
+  db: Database,
+  level: number,
+  excludeKanaVocabulary = false
+) {
   if (!db) return []
-  
+  const conditions = [eq(subjects.level, level)]
+  if (excludeKanaVocabulary) {
+    conditions.push(sql`${subjects.type} != 'kana_vocabulary'`)
+  }
+
   const result = await (db as ExpoSQLiteDatabase)
     .select({
       subject: subjects,
@@ -659,7 +680,7 @@ export async function getSubjectsWithAssignmentsByLevel(db: Database, level: num
     })
     .from(subjects)
     .leftJoin(assignments, eq(subjects.id, assignments.subjectId))
-    .where(eq(subjects.level, level))
+    .where(and(...conditions))
     .orderBy(subjects.type, subjects.id)
   
   return result
@@ -668,15 +689,22 @@ export async function getSubjectsWithAssignmentsByLevel(db: Database, level: num
 /**
  * Get subject counts per level (for level grid)
  */
-export async function getSubjectCountsByLevel(db: Database) {
+export async function getSubjectCountsByLevel(
+  db: Database,
+  excludeKanaVocabulary = false
+) {
   if (!db) return []
-  
+  const whereClause = excludeKanaVocabulary
+    ? sql`${subjects.type} != 'kana_vocabulary'`
+    : sql`1 = 1`
+
   const result = await (db as ExpoSQLiteDatabase)
     .select({
       level: subjects.level,
       cnt: sql<number>`count(*)`,
     })
     .from(subjects)
+    .where(whereClause)
     .groupBy(subjects.level)
     .orderBy(subjects.level)
   
@@ -686,16 +714,24 @@ export async function getSubjectCountsByLevel(db: Database) {
 /**
  * Get passed subject counts per level (for level grid progress)
  */
-export async function getPassedCountsByLevel(db: Database) {
+export async function getPassedCountsByLevel(
+  db: Database,
+  excludeKanaVocabulary = false
+) {
   if (!db) return []
-  
+  const conditions = [isNotNull(assignments.passedAt)]
+  if (excludeKanaVocabulary) {
+    conditions.push(sql`${subjects.type} != 'kana_vocabulary'`)
+  }
+
   const result = await (db as ExpoSQLiteDatabase)
     .select({
       level: assignments.level,
       cnt: sql<number>`count(*)`,
     })
     .from(assignments)
-    .where(isNotNull(assignments.passedAt))
+    .innerJoin(subjects, eq(assignments.subjectId, subjects.id))
+    .where(and(...conditions))
     .groupBy(assignments.level)
     .orderBy(assignments.level)
   

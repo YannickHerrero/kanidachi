@@ -19,6 +19,7 @@ import {
   type LessonOrdering,
 } from "@/stores/settings"
 import { Separator } from "@/components/ui/separator"
+import { Switch } from "@/components/ui/switch"
 
 // Batch size options
 const BATCH_SIZE_OPTIONS = [3, 5, 10, 15, 20] as const
@@ -73,8 +74,10 @@ export const LessonSettingsItem = () => {
   const {
     lessonBatchSize,
     lessonOrdering,
+    hideKanaVocabulary,
     setLessonBatchSize,
     setLessonOrdering,
+    setHideKanaVocabulary,
   } = useSettingsStore()
 
   const { dismiss } = useBottomSheetModal()
@@ -146,6 +149,24 @@ export const LessonSettingsItem = () => {
               onPress={() => setLessonOrdering(option.value)}
             />
           ))}
+
+          <Separator className="my-2" />
+
+          <Pressable
+            className="flex-row items-center justify-between py-2"
+            onPress={() => setHideKanaVocabulary(!hideKanaVocabulary)}
+          >
+            <View className="flex-1 pr-4">
+              <H4>Hide kana-only vocabulary</H4>
+              <Text className="text-sm text-muted-foreground">
+                Exclude kana-only vocabulary from lessons and progress views
+              </Text>
+            </View>
+            <Switch
+              checked={hideKanaVocabulary}
+              onCheckedChange={setHideKanaVocabulary}
+            />
+          </Pressable>
         </BottomSheetView>
       </BottomSheetContent>
     </BottomSheet>

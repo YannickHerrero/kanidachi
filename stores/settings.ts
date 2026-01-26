@@ -22,6 +22,7 @@ interface Settings {
   // Lesson settings
   lessonBatchSize: number
   lessonOrdering: LessonOrdering
+  hideKanaVocabulary: boolean
 
   // Review settings
   reviewOrdering: ReviewOrdering
@@ -44,6 +45,7 @@ interface SettingsState extends Settings {
   setAutoPlayAudioReviews: (enabled: boolean) => void
   setLessonBatchSize: (size: number) => void
   setLessonOrdering: (ordering: LessonOrdering) => void
+  setHideKanaVocabulary: (enabled: boolean) => void
   setReviewOrdering: (ordering: ReviewOrdering) => void
   setWrapUpBatchSize: (size: number) => void
   setMinimizeReviewPenalty: (enabled: boolean) => void
@@ -64,6 +66,7 @@ const DEFAULT_SETTINGS: Settings = {
   autoPlayAudioReviews: false,
   lessonBatchSize: 5,
   lessonOrdering: "ascending_level",
+  hideKanaVocabulary: false,
   reviewOrdering: "random",
   wrapUpBatchSize: 10,
   minimizeReviewPenalty: true, // Default to minimizing penalty
@@ -109,6 +112,11 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   setLessonOrdering: (ordering) => {
     set({ lessonOrdering: ordering })
     persistSettings({ lessonOrdering: ordering })
+  },
+
+  setHideKanaVocabulary: (enabled) => {
+    set({ hideKanaVocabulary: enabled })
+    persistSettings({ hideKanaVocabulary: enabled })
   },
 
   // Review settings

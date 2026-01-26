@@ -1,6 +1,7 @@
 import * as React from "react"
 import { useDatabase } from "@/db/provider"
 import { getSubjectCountsByLevel, getPassedCountsByLevel, getCurrentUser } from "@/db/queries"
+import { useSettingsStore } from "@/stores/settings"
 
 export interface LevelData {
   level: number
@@ -22,6 +23,7 @@ const MAX_WANIKANI_LEVEL = 60
 
 export function useLevelProgress(): UseLevelProgressResult {
   const { db } = useDatabase()
+  const hideKanaVocabulary = useSettingsStore((s) => s.hideKanaVocabulary)
   const [levels, setLevels] = React.useState<LevelData[]>([])
   const [userLevel, setUserLevel] = React.useState(1)
   const [maxLevel, setMaxLevel] = React.useState(MAX_WANIKANI_LEVEL)
@@ -37,8 +39,8 @@ export function useLevelProgress(): UseLevelProgressResult {
     try {
       // Fetch data in parallel
       const [subjectCounts, passedCounts, user] = await Promise.all([
-        getSubjectCountsByLevel(db),
-        getPassedCountsByLevel(db),
+        getSubjectCountsByLevel(db, hideKanaVocabulary),
+        getPassedCountsByLevel(db, hideKanaVocabulary),
         getCurrentUser(db),
       ])
 
@@ -74,7 +76,7 @@ export function useLevelProgress(): UseLevelProgressResult {
     } finally {
       setIsLoading(false)
     }
-  }, [db])
+  }, [db, hideKanaVocabulary])
 
   React.useEffect(() => {
     fetchLevelProgress()

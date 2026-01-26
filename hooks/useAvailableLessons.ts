@@ -80,6 +80,7 @@ export function useAvailableLessons(): UseAvailableLessonsResult {
   const [userLevel, setUserLevel] = React.useState<number | null>(null)
 
   const lessonOrdering = useSettingsStore((s) => s.lessonOrdering)
+  const hideKanaVocabulary = useSettingsStore((s) => s.hideKanaVocabulary)
 
   const fetchLessons = React.useCallback(async () => {
     if (!db) return
@@ -120,8 +121,16 @@ export function useAvailableLessons(): UseAvailableLessonsResult {
         }
       }
 
+      const filteredLessonItems = hideKanaVocabulary
+        ? lessonItems.filter((item) => item.subject.type !== "kana_vocabulary")
+        : lessonItems
+
       // Sort based on user's preference
-      const sortedItems = sortLessonItems(lessonItems, lessonOrdering, currentLevel)
+      const sortedItems = sortLessonItems(
+        filteredLessonItems,
+        lessonOrdering,
+        currentLevel
+      )
 
       setItems(sortedItems)
     } catch (err) {
@@ -130,7 +139,7 @@ export function useAvailableLessons(): UseAvailableLessonsResult {
     } finally {
       setIsLoading(false)
     }
-  }, [db, lessonOrdering])
+  }, [db, lessonOrdering, hideKanaVocabulary])
 
   // Initial fetch
   React.useEffect(() => {
