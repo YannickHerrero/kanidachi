@@ -5,7 +5,9 @@ import {
   getAvailableLessonCount,
   getSrsBreakdown,
   getLevelProgress,
+  getDetailedLevelProgress,
   getReviewForecast,
+  getWeeklyForecast,
   getCurrentUser,
 } from "@/db/queries"
 import { performFullRefreshSync } from "@/lib/sync/incremental-sync"
@@ -32,12 +34,21 @@ export interface DashboardData {
     passed: number
     percentage: number
   }
+  /** Detailed level breakdown */
+  levelDetail: {
+    radicals: { total: number; passed: number; lessons: number; inProgress: number }
+    kanji: { total: number; passed: number; lessons: number; inProgress: number }
+    vocabulary: { total: number; passed: number; lessons: number; inProgress: number }
+  }
   /** Review forecast for next 24 hours */
   forecast: Array<{ hour: number; count: number }>
+  /** Weekly forecast for next 7 days */
+  weeklyForecast: Array<{ day: string; date: string; count: number }>
   /** User info */
   user: {
     username: string
     level: number
+    vacationStartedAt: number | null
   } | null
 }
 
@@ -57,7 +68,13 @@ const initialData: DashboardData = {
     passed: 0,
     percentage: 0,
   },
+  levelDetail: {
+    radicals: { total: 0, passed: 0, lessons: 0, inProgress: 0 },
+    kanji: { total: 0, passed: 0, lessons: 0, inProgress: 0 },
+    vocabulary: { total: 0, passed: 0, lessons: 0, inProgress: 0 },
+  },
   forecast: [],
+  weeklyForecast: [],
   user: null,
 }
 
@@ -96,7 +113,11 @@ export function useDashboardData() {
 
       // Get level progress based on user's current level
       const level = user?.level ?? 1
-      const levelProgress = await getLevelProgress(db, level)
+      const [levelProgress, levelDetail, weeklyForecast] = await Promise.all([
+        getLevelProgress(db, level),
+        getDetailedLevelProgress(db, level),
+        getWeeklyForecast(db),
+      ])
 
       setData({
         reviewCount,
@@ -106,8 +127,14 @@ export function useDashboardData() {
           level,
           ...levelProgress,
         },
+        levelDetail,
         forecast,
-        user: user ? { username: user.username, level: user.level } : null,
+        weeklyForecast,
+        user: user ? { 
+          username: user.username, 
+          level: user.level,
+          vacationStartedAt: user.vacationStartedAt,
+        } : null,
       })
     } catch (err) {
       console.error("[useDashboardData] Error fetching data:", err)
