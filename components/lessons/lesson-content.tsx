@@ -8,8 +8,10 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { AudioPlayer } from "@/components/subject/audio-player"
 import { RadicalImage, parseCharacterImages } from "@/components/subject/radical-image"
-import { parseMeanings, parseReadings, parseContextSentences } from "@/db/queries"
+import { SubjectChip } from "@/components/subject/subject-chip"
+import { parseMeanings, parseReadings, parseContextSentences, parseNumberArray, getSubjectsByIds } from "@/db/queries"
 import { useSettingsStore } from "@/stores/settings"
+import { useDatabase } from "@/db/provider"
 import type { Subject } from "@/stores/lessons"
 
 // Subject type colors
@@ -32,6 +34,7 @@ interface LessonContentProps {
 }
 
 export function LessonContent({ subject }: LessonContentProps) {
+  const { db } = useDatabase()
   const autoPlayAudio = useSettingsStore((s) => s.autoPlayAudioLessons)
   const meanings = parseMeanings(subject.meanings)
   const readings = parseReadings(subject.readings)
@@ -51,6 +54,37 @@ export function LessonContent({ subject }: LessonContentProps) {
   // Parse character images for radicals without Unicode characters
   const characterImages = parseCharacterImages(subject.characterImages)
   const isImageOnlyRadical = subject.type === "radical" && !subject.characters && characterImages.length > 0
+
+  // Fetch component subjects (radicals for kanji, kanji for vocab)
+  const componentSubjectIds = parseNumberArray(subject.componentSubjectIds)
+  const [componentSubjects, setComponentSubjects] = React.useState<Subject[]>([])
+
+  // Fetch visually similar kanji (for kanji lessons only)
+  const visuallySimilarIds = parseNumberArray(subject.visuallySimilarSubjectIds)
+  const [visuallySimilarSubjects, setVisuallySimilarSubjects] = React.useState<Subject[]>([])
+
+  React.useEffect(() => {
+    if (db && componentSubjectIds.length > 0) {
+      getSubjectsByIds(db, componentSubjectIds).then(setComponentSubjects)
+    } else {
+      setComponentSubjects([])
+    }
+  }, [db, subject.id])
+
+  React.useEffect(() => {
+    if (db && visuallySimilarIds.length > 0 && subject.type === "kanji") {
+      getSubjectsByIds(db, visuallySimilarIds).then(setVisuallySimilarSubjects)
+    } else {
+      setVisuallySimilarSubjects([])
+    }
+  }, [db, subject.id, subject.type])
+
+  // Determine component section title
+  const componentTitle = subject.type === "kanji" 
+    ? "Radicals Used" 
+    : subject.type === "vocabulary" || subject.type === "kana_vocabulary"
+      ? "Kanji Used"
+      : "Components"
 
   return (
     <ScrollView
@@ -132,6 +166,27 @@ export function LessonContent({ subject }: LessonContentProps) {
         </Card>
       )}
 
+      {/* Component Subjects (Radicals for Kanji, Kanji for Vocab) */}
+      {componentSubjects.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">{componentTitle}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <View className="flex-row flex-wrap gap-2">
+              {componentSubjects.map((component) => (
+                <SubjectChip
+                  key={component.id}
+                  subject={component}
+                  size="md"
+                  showMeaning
+                />
+              ))}
+            </View>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Audio Player - Only for vocabulary */}
       <AudioPlayer subject={subject} autoPlay={autoPlayAudio} />
 
@@ -189,6 +244,27 @@ export function LessonContent({ subject }: LessonContentProps) {
                 <Muted>{sentence.en}</Muted>
               </View>
             ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Visually Similar Kanji - Only for kanji */}
+      {subject.type === "kanji" && visuallySimilarSubjects.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Visually Similar Kanji</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <View className="flex-row flex-wrap gap-2">
+              {visuallySimilarSubjects.map((similar) => (
+                <SubjectChip
+                  key={similar.id}
+                  subject={similar}
+                  size="md"
+                  showMeaning
+                />
+              ))}
+            </View>
           </CardContent>
         </Card>
       )}
