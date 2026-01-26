@@ -2,13 +2,13 @@ import type { ConfigContext, ExpoConfig } from "@expo/config";
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
-  name: "Expo Starter",
-  slug: "expo-starter",
+  name: "Kanidachi",
+  slug: "kanidachi",
   newArchEnabled: true,
   version: "1.0.0",
   orientation: "portrait",
   icon: "./assets/images/icon.png",
-  scheme: "expo-starter",
+  scheme: "kanidachi",
   userInterfaceStyle: "dark",
   runtimeVersion: {
     policy: "appVersion",
@@ -22,7 +22,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ios: {
     newArchEnabled: true,
     supportsTablet: true,
-    bundleIdentifier: "com.expostarter.app",
+    bundleIdentifier: "com.kanidachi.app",
   },
   android: {
     newArchEnabled: true,
@@ -30,7 +30,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       foregroundImage: "./assets/images/adaptive-icon.png",
       backgroundColor: "#ffffff",
     },
-    package: "com.expostarter.app",
+    package: "com.kanidachi.app",
   },
   web: {
     bundler: "metro",
@@ -40,7 +40,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   plugins: ["expo-router", "expo-sqlite", "expo-font", "expo-web-browser"],
   experiments: {
     typedRoutes: true,
-    baseUrl: "/expo-starter",
+    baseUrl: "/kanidachi",
   },
   extra: {
     eas: {

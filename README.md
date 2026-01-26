@@ -1,8 +1,8 @@
-# Expo Starter
+# Kanidachi
 
-A minimal Expo starter template for building cross-platform React Native apps.
+A WaniKani client for Android and iOS built with React Native and Expo.
 
-## What's inside
+## Tech Stack
 
 - [Expo v54](https://expo.dev) - Cross-platform support
 - [React Native v0.81.4](https://reactnative.dev) - Native apps using React
@@ -10,9 +10,7 @@ A minimal Expo starter template for building cross-platform React Native apps.
 - [DrizzleORM](https://drizzle.dev) - Type-safe ORM with live queries
 - [NativeWind v4](https://www.nativewind.dev) - Tailwind CSS for React Native
 - [zustand](https://docs.pmnd.rs/zustand) - State management
-- [rn-reusables](https://github.com/mrzachnugent/react-native-reusables) - UI components
 - Dark/light mode with persistent theme
-- [Biome](https://biomejs.dev/) - Linter and formatter
 
 ## Requirements
 
@@ -27,6 +25,6 @@ bun install
 bun run dev
 ```
 
-## Credits
+## License
 
-Based on [expo-local-first-template](https://github.com/expo-starter/expo-local-first-template) by [Expo Starter](https://expostarter.com).
+MIT License - see [LICENSE](LICENSE) for details.

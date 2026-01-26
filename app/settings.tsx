@@ -35,22 +35,22 @@ export default function Settings() {
         <ListItem
           itemLeft={(props) => <Star {...props} />}
           label="Give us a star"
-          onPress={() => openExternalURL("https://github.com/expo-starter/expo-template")}
+          onPress={() => openExternalURL("https://github.com/YannickHerrero/kanidachi")}
         />
         <ListItem
           itemLeft={(props) => <Send {...props} />}
           label="Send Feedback"
-          onPress={() => openExternalURL("https://expostarter.com")}
+          onPress={() => openExternalURL("https://github.com/YannickHerrero/kanidachi/issues")}
         />
         <ListItem
           itemLeft={(props) => <Shield {...props} />}
           label="Privacy Policy"
-          onPress={() => openExternalURL("https://expostarter.com")}
+          onPress={() => openExternalURL("https://github.com/YannickHerrero/kanidachi")}
         />
         <ListItem
           itemLeft={(props) => <BookOpen {...props} />}
           label="Terms of service"
-          onPress={() => openExternalURL("https://expostarter.com")}
+          onPress={() => openExternalURL("https://github.com/YannickHerrero/kanidachi")}
         />
       </List>
     </ScrollView>
