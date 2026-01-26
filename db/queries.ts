@@ -12,6 +12,7 @@ import {
   audioCache,
   reviewStatistics,
   levelProgressions,
+  errorLog,
   type Meaning,
   type Reading,
   type ContextSentence,
@@ -862,4 +863,80 @@ export async function getItemsByStageAndType(db: Database) {
     subjectType: string
     cnt: number
   }>
+}
+
+// ============================================================================
+// ERROR LOGGING
+// ============================================================================
+
+export type ErrorType = "sync" | "network" | "api" | "unknown"
+
+/**
+ * Log an error to the database for debugging
+ * Keeps only the last 100 errors
+ */
+export async function logError(
+  db: Database,
+  type: ErrorType,
+  message: string,
+  options?: {
+    code?: number
+    details?: Record<string, unknown>
+    requestUrl?: string
+    responseData?: string
+  }
+): Promise<void> {
+  if (!db) return
+
+  try {
+    // Insert the new error
+    await db.insert(errorLog).values({
+      type,
+      code: options?.code ?? null,
+      message,
+      details: options?.details ? JSON.stringify(options.details) : null,
+      requestUrl: options?.requestUrl ?? null,
+      responseData: options?.responseData ?? null,
+      createdAt: Math.floor(Date.now() / 1000),
+    })
+
+    // Keep only last 100 errors - delete old ones
+    // This mimics Tsurukame's pattern
+    await (db as ExpoSQLiteDatabase).run(sql`
+      DELETE FROM error_log 
+      WHERE id NOT IN (
+        SELECT id FROM error_log ORDER BY created_at DESC LIMIT 100
+      )
+    `)
+  } catch (err) {
+    // Don't throw - error logging should never cause issues
+    console.error("[logError] Failed to log error:", err)
+  }
+}
+
+/**
+ * Get recent errors from the log
+ */
+export async function getRecentErrors(db: Database, limit = 20) {
+  if (!db) return []
+
+  const result = await db
+    .select()
+    .from(errorLog)
+    .orderBy(desc(errorLog.createdAt))
+    .limit(limit)
+
+  return result.map((row) => ({
+    ...row,
+    details: row.details ? JSON.parse(row.details) : null,
+    createdAtDate: new Date(row.createdAt * 1000),
+  }))
+}
+
+/**
+ * Clear all error logs
+ */
+export async function clearErrorLog(db: Database): Promise<void> {
+  if (!db) return
+  await db.delete(errorLog)
 }

@@ -262,3 +262,18 @@ export const SRS_CATEGORIES = {
   enlightened: [8],
   burned: [9],
 } as const
+
+// ============================================================================
+// ERROR LOG - For debugging sync issues
+// ============================================================================
+
+export const errorLog = sqliteTable("error_log", {
+  id: text("id").primaryKey().$defaultFn(() => createId()),
+  type: text("type").notNull(), // 'sync' | 'network' | 'api' | 'unknown'
+  code: integer("code"), // HTTP status code if applicable
+  message: text("message").notNull(),
+  details: text("details"), // JSON-encoded additional info
+  requestUrl: text("request_url"),
+  responseData: text("response_data"),
+  createdAt: integer("created_at").notNull(), // Unix timestamp
+})

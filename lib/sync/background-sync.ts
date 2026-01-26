@@ -8,6 +8,7 @@ import { getToken } from "@/lib/auth"
 import { wanikaniClient } from "@/lib/wanikani/client"
 import { WaniKaniError } from "@/lib/wanikani/errors"
 import { useAuthStore } from "@/stores/auth"
+import { logError } from "@/db/queries"
 
 type Database = SQLJsDatabase | ExpoSQLiteDatabase | null
 
@@ -125,6 +126,18 @@ class BackgroundSyncManager {
       }
     } catch (error) {
       console.error("[BackgroundSync] Error during sync:", error)
+      
+      // Log error to database for debugging
+      if (this.db) {
+        await logError(
+          this.db,
+          "sync",
+          error instanceof Error ? error.message : "Unknown sync error",
+          {
+            details: { stack: error instanceof Error ? error.stack : undefined },
+          }
+        ).catch(() => {}) // Ignore logging failures
+      }
     } finally {
       this.isRunning = false
     }
@@ -174,6 +187,19 @@ class BackgroundSyncManager {
         this.stopPeriodicSync()
       } else {
         console.error("[BackgroundSync] Quick sync error:", error)
+        
+        // Log error to database for debugging
+        if (this.db) {
+          await logError(
+            this.db,
+            "sync",
+            error instanceof Error ? error.message : "Quick sync failed",
+            {
+              code: error instanceof WaniKaniError ? error.code : undefined,
+              details: { stack: error instanceof Error ? error.stack : undefined },
+            }
+          ).catch(() => {})
+        }
       }
     } finally {
       this.isRunning = false
