@@ -24,7 +24,7 @@ export function WeeklyForecast({ dailyForecast }: WeeklyForecastProps) {
       <CardHeader className="pb-2">
         <CardTitle className="text-lg">7-Day Forecast</CardTitle>
       </CardHeader>
-      <CardContent className="gap-3">
+      <CardContent className="gap-3 pt-4">
         {dailyForecast.length === 0 ? (
           <Muted>No upcoming reviews</Muted>
         ) : (
