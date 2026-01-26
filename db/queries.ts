@@ -361,6 +361,51 @@ export async function updatePendingProgressAttempt(
     .where(eq(pendingProgress.id, id))
 }
 
+/**
+ * Mark a lesson as completed locally (optimistic update).
+ * This updates the local assignment immediately so it no longer appears
+ * in the lessons queue. The actual availableAt time will be set by the
+ * server during sync.
+ * 
+ * Following Tsurukame's approach:
+ * - Set startedAt to current timestamp (marks lesson as done)
+ * - Set srsStage from 0 to 1 (Apprentice I)
+ * - Don't set availableAt (let server determine exact review time)
+ */
+export async function markLessonCompleted(
+  db: Database,
+  assignmentId: number
+) {
+  if (!db) return
+  const now = Math.floor(Date.now() / 1000)
+  return db
+    .update(assignments)
+    .set({
+      startedAt: now,
+      srsStage: 1, // Apprentice I
+    })
+    .where(eq(assignments.id, assignmentId))
+}
+
+/**
+ * Mark multiple lessons as completed locally (batch optimistic update).
+ * Same as markLessonCompleted but for multiple assignments.
+ */
+export async function markLessonsCompleted(
+  db: Database,
+  assignmentIds: number[]
+) {
+  if (!db || assignmentIds.length === 0) return
+  const now = Math.floor(Date.now() / 1000)
+  return db
+    .update(assignments)
+    .set({
+      startedAt: now,
+      srsStage: 1, // Apprentice I
+    })
+    .where(inArray(assignments.id, assignmentIds))
+}
+
 // ============================================================================
 // SYNC METADATA QUERIES
 // ============================================================================

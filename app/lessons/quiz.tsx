@@ -16,7 +16,7 @@ import {
 } from "@/stores/lessons"
 import { useColorScheme } from "@/lib/useColorScheme"
 import { useDatabase } from "@/db/provider"
-import { addPendingProgress } from "@/db/queries"
+import { addPendingProgress, markLessonsCompleted } from "@/db/queries"
 
 export default function LessonQuizScreen() {
   const router = useRouter()
@@ -30,9 +30,11 @@ export default function LessonQuizScreen() {
   const [isFlipped, setIsFlipped] = React.useState(false)
   const [isSubmitting, setIsSubmitting] = React.useState(false)
 
-  // Redirect if not in quiz or complete phase
+  // Redirect if in select phase (user navigated here without going through the flow)
+  // We allow "content" phase briefly during the transition from content -> quiz
+  // as Zustand state update may not have propagated yet when this screen mounts
   React.useEffect(() => {
-    if (phase !== "quiz" && phase !== "complete") {
+    if (phase === "select") {
       router.replace("/lessons")
     }
   }, [phase, router])
@@ -50,7 +52,12 @@ export default function LessonQuizScreen() {
     setIsSubmitting(true)
 
     try {
-      // Queue all lesson completions
+      // 1. Update local assignments immediately (optimistic update)
+      // This removes the items from the lessons queue right away
+      const assignmentIds = lessonItems.map((item) => item.assignment.id)
+      await markLessonsCompleted(db, assignmentIds)
+
+      // 2. Queue all lesson completions for sync with WaniKani API
       for (const item of lessonItems) {
         await addPendingProgress(db, {
           assignmentId: item.assignment.id,

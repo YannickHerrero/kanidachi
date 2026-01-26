@@ -38,9 +38,11 @@ export default function LessonContentScreen() {
     }
   }, [currentItem, markViewed])
 
-  // Redirect if not in content phase
+  // Redirect if in select phase (user navigated here without going through the flow)
+  // We allow "quiz" and "complete" phases as the user may have triggered navigation
+  // to those screens and this effect runs during the transition
   React.useEffect(() => {
-    if (phase !== "content") {
+    if (phase === "select") {
       router.replace("/lessons")
     }
   }, [phase, router])
