@@ -26,6 +26,8 @@ interface Settings {
   // Review settings
   reviewOrdering: ReviewOrdering
   wrapUpBatchSize: number
+  minimizeReviewPenalty: boolean // Reduce wrong count to 1 if multiple mistakes
+  reviewItemLimit: number | null // Max items per session (null = unlimited)
 
   // Theme
   theme: ThemePreference
@@ -44,6 +46,8 @@ interface SettingsState extends Settings {
   setLessonOrdering: (ordering: LessonOrdering) => void
   setReviewOrdering: (ordering: ReviewOrdering) => void
   setWrapUpBatchSize: (size: number) => void
+  setMinimizeReviewPenalty: (enabled: boolean) => void
+  setReviewItemLimit: (limit: number | null) => void
   setTheme: (theme: ThemePreference) => void
   setNotificationsEnabled: (enabled: boolean) => void
   setNotificationTime: (time: string) => void
@@ -62,6 +66,8 @@ const DEFAULT_SETTINGS: Settings = {
   lessonOrdering: "ascending_level",
   reviewOrdering: "random",
   wrapUpBatchSize: 10,
+  minimizeReviewPenalty: true, // Default to minimizing penalty
+  reviewItemLimit: null, // Unlimited by default
   theme: "system",
   notificationsEnabled: false,
   notificationTime: "09:00",
@@ -114,6 +120,16 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   setWrapUpBatchSize: (size) => {
     set({ wrapUpBatchSize: size })
     persistSettings({ wrapUpBatchSize: size })
+  },
+
+  setMinimizeReviewPenalty: (enabled) => {
+    set({ minimizeReviewPenalty: enabled })
+    persistSettings({ minimizeReviewPenalty: enabled })
+  },
+
+  setReviewItemLimit: (limit) => {
+    set({ reviewItemLimit: limit })
+    persistSettings({ reviewItemLimit: limit })
   },
 
   // Theme

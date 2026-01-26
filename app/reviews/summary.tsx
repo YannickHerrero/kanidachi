@@ -14,6 +14,7 @@ import { useDatabase } from "@/db/provider"
 import { addPendingProgress } from "@/db/queries"
 import { parseMeanings } from "@/db/queries"
 import { useColorScheme } from "@/lib/useColorScheme"
+import { useSettingsStore } from "@/stores/settings"
 
 export default function ReviewSummaryScreen() {
   const router = useRouter()
@@ -21,6 +22,7 @@ export default function ReviewSummaryScreen() {
   const { db } = useDatabase()
 
   const { results, items, reset } = useReviewStore()
+  const minimizeReviewPenalty = useSettingsStore((s) => s.minimizeReviewPenalty)
 
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [hasSubmitted, setHasSubmitted] = React.useState(false)
@@ -59,12 +61,22 @@ export default function ReviewSummaryScreen() {
       try {
         // Queue all review results
         for (const result of summary.results) {
+          // Apply minimize penalty setting
+          // If enabled, cap wrong counts at 1 (reduces SRS penalty)
+          let meaningWrongCount = result.meaningWrongCount
+          let readingWrongCount = result.readingWrongCount
+
+          if (minimizeReviewPenalty) {
+            meaningWrongCount = Math.min(meaningWrongCount, 1)
+            readingWrongCount = Math.min(readingWrongCount, 1)
+          }
+
           await addPendingProgress(db, {
             assignmentId: result.assignmentId,
             subjectId: result.subjectId,
             isLesson: false,
-            meaningWrongCount: result.meaningWrongCount,
-            readingWrongCount: result.readingWrongCount,
+            meaningWrongCount,
+            readingWrongCount,
           })
         }
 

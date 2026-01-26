@@ -1,10 +1,12 @@
 import * as React from "react"
 import { useDatabase } from "@/db/provider"
 import { getAvailableReviews, getSubjectsByIds } from "@/db/queries"
+import { useSettingsStore } from "@/stores/settings"
 import type { ReviewItem } from "@/stores/reviews"
 
 interface UseAvailableReviewsResult {
   items: ReviewItem[]
+  totalAvailable: number // Total available reviews (before limit)
   isLoading: boolean
   error: string | null
   refetch: () => Promise<void>
@@ -12,7 +14,9 @@ interface UseAvailableReviewsResult {
 
 export function useAvailableReviews(): UseAvailableReviewsResult {
   const { db } = useDatabase()
+  const reviewItemLimit = useSettingsStore((s) => s.reviewItemLimit)
   const [items, setItems] = React.useState<ReviewItem[]>([])
+  const [totalAvailable, setTotalAvailable] = React.useState(0)
   const [isLoading, setIsLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
 
@@ -24,13 +28,21 @@ export function useAvailableReviews(): UseAvailableReviewsResult {
 
     try {
       // Get assignments available for review
-      const assignments = await getAvailableReviews(db)
+      const allAssignments = await getAvailableReviews(db)
 
-      if (assignments.length === 0) {
+      // Store total available before applying limit
+      setTotalAvailable(allAssignments.length)
+
+      if (allAssignments.length === 0) {
         setItems([])
         setIsLoading(false)
         return
       }
+
+      // Apply item limit if set
+      const assignments = reviewItemLimit && reviewItemLimit > 0
+        ? allAssignments.slice(0, reviewItemLimit)
+        : allAssignments
 
       // Get subject IDs from assignments
       const subjectIds = assignments.map((a) => a.subjectId)
@@ -66,6 +78,7 @@ export function useAvailableReviews(): UseAvailableReviewsResult {
 
   return {
     items,
+    totalAvailable,
     isLoading,
     error,
     refetch: fetchReviews,
