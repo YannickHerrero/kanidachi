@@ -118,6 +118,10 @@ export default function RootLayout() {
               <Stack.Screen name="lessons/quiz" options={{ headerShown: false }} />
               <Stack.Screen name="reviews/index" options={{ headerShown: false }} />
               <Stack.Screen name="reviews/summary" options={{ headerShown: false }} />
+              <Stack.Screen name="browse/index" options={{ headerShown: false }} />
+              <Stack.Screen name="browse/level/[level]" options={{ headerShown: false }} />
+              <Stack.Screen name="browse/search" options={{ headerShown: false }} />
+              <Stack.Screen name="subject/[id]" options={{ headerShown: false }} />
             </Stack>
           </BottomSheetModalProvider>
         </GestureHandlerRootView>

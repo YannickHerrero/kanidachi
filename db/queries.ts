@@ -504,3 +504,152 @@ export function parseStringArray(json: string | null): string[] {
     return []
   }
 }
+
+// ============================================================================
+// BROWSE QUERIES
+// ============================================================================
+
+/**
+ * Get all subjects for a level with their assignments
+ */
+export async function getSubjectsWithAssignmentsByLevel(db: Database, level: number) {
+  if (!db) return []
+  
+  const result = await (db as ExpoSQLiteDatabase)
+    .select({
+      subject: subjects,
+      assignment: assignments,
+    })
+    .from(subjects)
+    .leftJoin(assignments, eq(subjects.id, assignments.subjectId))
+    .where(eq(subjects.level, level))
+    .orderBy(subjects.type, subjects.id)
+  
+  return result
+}
+
+/**
+ * Get subject counts per level (for level grid)
+ */
+export async function getSubjectCountsByLevel(db: Database) {
+  if (!db) return []
+  
+  const result = await (db as ExpoSQLiteDatabase)
+    .select({
+      level: subjects.level,
+      cnt: sql<number>`count(*)`,
+    })
+    .from(subjects)
+    .groupBy(subjects.level)
+    .orderBy(subjects.level)
+  
+  return result as Array<{ level: number; cnt: number }>
+}
+
+/**
+ * Get passed subject counts per level (for level grid progress)
+ */
+export async function getPassedCountsByLevel(db: Database) {
+  if (!db) return []
+  
+  const result = await (db as ExpoSQLiteDatabase)
+    .select({
+      level: assignments.level,
+      cnt: sql<number>`count(*)`,
+    })
+    .from(assignments)
+    .where(isNotNull(assignments.passedAt))
+    .groupBy(assignments.level)
+    .orderBy(assignments.level)
+  
+  return result as Array<{ level: number; cnt: number }>
+}
+
+/**
+ * Enhanced search with better matching
+ * Searches by characters (exact prefix), meanings, and readings
+ */
+export async function searchSubjectsEnhanced(
+  db: Database,
+  query: string,
+  limit = 50
+) {
+  if (!db || !query.trim()) return []
+  
+  const searchTerm = query.toLowerCase().trim()
+  const likeTerm = `%${searchTerm}%`
+  
+  // Search subjects
+  const result = await (db as ExpoSQLiteDatabase)
+    .select({
+      subject: subjects,
+      assignment: assignments,
+    })
+    .from(subjects)
+    .leftJoin(assignments, eq(subjects.id, assignments.subjectId))
+    .where(
+      or(
+        // Exact character match (highest priority)
+        eq(sql`lower(${subjects.characters})`, searchTerm),
+        // Character prefix match
+        sql`lower(${subjects.characters}) LIKE ${searchTerm + '%'}`,
+        // Slug match
+        sql`lower(${subjects.slug}) LIKE ${likeTerm}`,
+        // Meaning match
+        sql`lower(${subjects.meanings}) LIKE ${likeTerm}`,
+        // Reading match
+        sql`lower(${subjects.readings}) LIKE ${likeTerm}`
+      )
+    )
+  
+  // Sort results: exact character matches first, then by level
+  const sorted = result.sort((a, b) => {
+    const aChar = a.subject.characters?.toLowerCase() ?? ""
+    const bChar = b.subject.characters?.toLowerCase() ?? ""
+    
+    // Exact character match gets highest priority
+    const aExact = aChar === searchTerm ? 0 : 1
+    const bExact = bChar === searchTerm ? 0 : 1
+    if (aExact !== bExact) return aExact - bExact
+    
+    // Then character prefix match
+    const aPrefix = aChar.startsWith(searchTerm) ? 0 : 1
+    const bPrefix = bChar.startsWith(searchTerm) ? 0 : 1
+    if (aPrefix !== bPrefix) return aPrefix - bPrefix
+    
+    // Then by level
+    return a.subject.level - b.subject.level
+  })
+  
+  return sorted.slice(0, limit)
+}
+
+/**
+ * Get a single subject with its assignment
+ */
+export async function getSubjectWithAssignment(db: Database, id: number) {
+  if (!db) return null
+  
+  const result = await (db as ExpoSQLiteDatabase)
+    .select({
+      subject: subjects,
+      assignment: assignments,
+    })
+    .from(subjects)
+    .leftJoin(assignments, eq(subjects.id, assignments.subjectId))
+    .where(eq(subjects.id, id))
+  
+  return result[0] ?? null
+}
+
+/**
+ * Get study material for a subject
+ */
+export async function getStudyMaterialForSubject(db: Database, subjectId: number) {
+  if (!db) return null
+  const result = await db
+    .select()
+    .from(studyMaterials)
+    .where(eq(studyMaterials.subjectId, subjectId))
+  return result[0] ?? null
+}
