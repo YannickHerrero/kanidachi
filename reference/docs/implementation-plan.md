@@ -162,37 +162,43 @@ Kanidachi is a WaniKani client for Android and iOS with these key characteristic
 ## Phase 4: Audio & Media (Week 4)
 
 ### 4.1 Audio Playback
-- [ ] `lib/audio/player.ts` - Audio playback service
-- [ ] `lib/audio/cache.ts` - Audio caching logic
-- [ ] `hooks/useAudio.ts` - Audio hook for components
-- [ ] Add audio playback to lesson content screen
-- [ ] Add audio playback to review card back
-- [ ] Add audio playback to subject details
-- [ ] Auto-play audio option in settings
+- [x] `lib/audio/player.ts` - Audio playback service (expo-av based)
+- [x] `lib/audio/cache.ts` - Audio caching logic (stream-and-cache approach)
+- [x] `hooks/useAudio.ts` - Audio hook for components
+- [x] Add audio playback to lesson content screen
+- [x] Add audio playback to review card back
+- [x] Add audio playback to subject details
+- [x] Auto-play audio option in settings
+- [x] `stores/settings.ts` - Settings store with MMKV persistence
+- [x] `components/settings/AudioSettingItem.tsx` - Audio settings UI
 
 ### 4.2 Radical Images
-- [ ] `components/subject/radical-image.tsx` - SVG radical display
-- [ ] `lib/images/radical-cache.ts` - Image caching
-- [ ] Handle radicals without characters (image-only radicals)
+- [x] `components/subject/radical-image.tsx` - SVG radical display (uses react-native-svg)
+- [x] Handle radicals without characters (image-only radicals)
+- [x] Updated all components to display radical images where needed:
+  - SubjectHeader, SubjectChip, SubjectCell (browse/lessons)
+  - LessonContent, QuizCard, CardFront, CardBack
+
+**Note:** Image caching uses the native platform's HTTP caching for SVG/PNG. A custom `lib/images/radical-cache.ts` was not needed.
 
 ---
 
 ## Phase 5: Settings & Notifications (Week 4-5)
 
 ### 5.1 Settings Screen
-- [ ] `app/settings.tsx` - Update existing
-- [ ] `components/settings/` - Setting components
-- [ ] `stores/settings.ts` - Settings store with MMKV persistence
+- [x] `app/settings.tsx` - Updated with audio settings
+- [x] `components/settings/` - Setting components (Theme, Notification, Audio)
+- [x] `stores/settings.ts` - Settings store with MMKV persistence (created in Phase 4)
 
 **Settings to implement:**
-- [ ] Preferred voice actor selection
-- [ ] Auto-play audio toggle
+- [ ] Preferred voice actor selection (infrastructure ready, UI pending)
+- [x] Auto-play audio toggle (lesson and review separate toggles)
 - [ ] Lesson batch size
 - [ ] Lesson ordering preference
 - [ ] Review ordering preference
 - [ ] Wrap-up batch size
-- [ ] Theme selection (light/dark/system)
-- [ ] Notification preferences
+- [x] Theme selection (light/dark/system) - already existed
+- [x] Notification preferences - already existed
 - [ ] Clear cache option
 - [ ] Logout / clear data
 
@@ -233,7 +239,7 @@ This section tracks features that were intentionally deferred during initial imp
 ### From Phase 2 (Lessons & Reviews)
 
 **Lesson Enhancements:**
-- [ ] Audio playback in lesson content (deferred to Phase 4)
+- [x] Audio playback in lesson content (implemented in Phase 4)
 - [ ] Lesson ordering options (ascending level, shuffled, by type, current level first)
 - [ ] Batch size configuration for lessons
 - [ ] "Skip to Quiz" option to bypass content viewing
@@ -241,7 +247,7 @@ This section tracks features that were intentionally deferred during initial imp
 - [ ] Visually similar kanji display for kanji lessons
 
 **Review Enhancements:**
-- [ ] Audio playback on card back (deferred to Phase 4)
+- [x] Audio playback on card back (implemented in Phase 4)
 - [ ] Review ordering options (random, SRS stage, level)
 - [ ] "Ask Again Later" - return item without penalty
 - [ ] "Mark Correct Override" - override wrong answer
@@ -266,7 +272,7 @@ This section tracks features that were intentionally deferred during initial imp
 - [x] Filter search results by type (radical/kanji/vocab)
 
 **Deferred to Future Phases (require additional infrastructure):**
-- [ ] Audio playback (deferred to Phase 4 - needs audio player)
+- [x] Audio playback (implemented in Phase 4)
 - [ ] Editable user notes (requires Study Materials API sync)
 - [ ] Editable user synonyms (requires Study Materials API sync)
 - [ ] SRS stage history display (requires review_statistics sync)
@@ -349,10 +355,30 @@ components/
     card-back.tsx       # Card back (answer)
     grade-buttons.tsx   # Correct/Incorrect buttons
     progress-bar.tsx    # Session progress
-  browse/               # (planned)
-  subject/              # (planned)
+  browse/
+    subject-list.tsx    # Virtualized subject list
+    subject-cell.tsx    # List item cell
+    level-grid.tsx      # Level selection grid
+    search-bar.tsx      # Search input component
+  subject/
+    header.tsx          # Character + primary info
+    meanings.tsx        # Meanings list
+    readings.tsx        # Readings list
+    mnemonic.tsx        # Mnemonic with rich text
+    components.tsx      # Component radicals/kanji
+    amalgamations.tsx   # Used in...
+    sentences.tsx       # Context sentences
+    user-notes.tsx      # User notes (read-only)
+    subject-chip.tsx    # Tappable subject pill
+    visually-similar.tsx # Similar kanji display
+    parts-of-speech.tsx # Part of speech badges
+    audio-player.tsx    # Audio playback component
+    radical-image.tsx   # Radical image display (SVG/PNG)
   stats/                # (planned)
-  settings/             # Setting components
+  settings/
+    ThemeItem.tsx       # Theme selection
+    NotificationItem.tsx # Notification settings
+    AudioSettingItem.tsx # Audio settings
   ui/                   # Shared UI components
   primitives/           # Low-level primitives
 
@@ -367,9 +393,9 @@ lib/
     incremental-sync.ts # Update sync
     pending-queue.ts    # Offline queue
     background-sync.ts  # Background sync
-  audio/                # (planned)
-    player.ts           # Audio playback
-    cache.ts            # Audio caching
+  audio/
+    player.ts           # Audio playback (expo-av)
+    cache.ts            # Audio caching (stream-and-cache)
   notifications/        # (planned)
     scheduler.ts        # Notification scheduling
     permissions.ts      # Permission handling
@@ -380,7 +406,7 @@ lib/
 stores/
   auth.ts               # Auth state
   sync.ts               # Sync state
-  settings.ts           # Settings state (planned)
+  settings.ts           # Settings state (MMKV persistence)
   lessons.ts            # Lesson session state
   reviews.ts            # Review session state
 
@@ -402,7 +428,7 @@ hooks/
   useSubjectsByLevel.ts # Subjects grouped by type for a level
   useSearchSubjects.ts  # Debounced search
   useLevelProgress.ts   # Level progress for grid
-  useAudio.ts           # Audio hook (planned)
+  useAudio.ts           # Audio playback hook
   useColorScheme.ts     # Theme hook
   useFrameworkReady.ts  # Framework initialization
 ```
@@ -431,13 +457,19 @@ hooks/
 
 ## Progress Tracking
 
-### Current Phase: 4 - Audio & Media
-### Current Task: 4.1 - Audio Playback
+### Current Phase: 5 - Settings & Notifications
+### Current Task: 5.1 - Settings Screen (partial)
 
 ---
 
 ## Changelog
 
+- **2026-01-26**: Completed Phase 4 - Audio & Media
+  - 4.1: Audio playback with expo-av, stream-and-cache caching, auto-play settings
+  - 4.2: Radical image support for image-only radicals using react-native-svg
+  - Created settings store with MMKV persistence
+  - Added audio settings UI to app settings
+  - Updated all subject display components to support radical images
 - **2026-01-26**: Completed Phase 3 - Subject Browsing
   - 3.1: Subject Catalog with level grid, browse by level, search screen
   - 3.2: Subject Details with meanings, readings, mnemonics, components, amalgamations, sentences
