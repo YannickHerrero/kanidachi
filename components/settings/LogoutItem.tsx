@@ -1,7 +1,6 @@
 import * as React from "react"
-import { Alert, Platform } from "react-native"
+import { Alert } from "react-native"
 import { useRouter } from "expo-router"
-import { deleteDatabaseAsync } from "expo-sqlite"
 
 import { LogOut } from "@/lib/icons"
 import ListItem from "@/components/ui/list-item"
@@ -9,11 +8,14 @@ import { useAuthStore } from "@/stores/auth"
 import { useSettingsStore } from "@/stores/settings"
 import { clearAudioCache } from "@/lib/audio/cache"
 import { storage } from "@/lib/storage"
+import { useDatabase } from "@/db/provider"
+import { stopBackgroundSync } from "@/lib/sync/background-sync"
 
 export const LogoutItem = () => {
   const router = useRouter()
   const logout = useAuthStore((s) => s.logout)
   const resetSettings = useSettingsStore((s) => s.resetSettings)
+  const resetDatabase = useDatabase().resetDatabase
 
   const handleLogout = () => {
     Alert.alert(
@@ -29,6 +31,9 @@ export const LogoutItem = () => {
           style: "destructive",
           onPress: async () => {
             try {
+              // Stop background sync to release database handles
+              stopBackgroundSync()
+
               // Clear audio cache
               await clearAudioCache()
 
@@ -38,14 +43,11 @@ export const LogoutItem = () => {
               // Reset settings to defaults
               resetSettings()
 
-              // Delete the database
-              if (Platform.OS !== "web") {
-                try {
-                  await deleteDatabaseAsync("database.db")
-                } catch (error) {
-                  // Database might not exist or already deleted
-                  console.warn("Failed to delete database:", error)
-                }
+              // Clear all local database data (keep the database file)
+              try {
+                await resetDatabase()
+              } catch (error) {
+                console.warn("Failed to reset database:", error)
               }
 
               // Logout (clears token from secure storage)

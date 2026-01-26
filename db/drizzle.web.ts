@@ -1,7 +1,24 @@
-import { type SQLJsDatabase, drizzle } from "drizzle-orm/sql-js";
-import initSqlJs from "sql.js";
-import { useDatabase } from "./provider";
-import { useEffect, useReducer } from "react";
+import { type SQLJsDatabase, drizzle } from "drizzle-orm/sql-js"
+import initSqlJs from "sql.js"
+import type { Database } from "sql.js"
+import { useDatabase } from "./provider"
+import { useEffect, useReducer } from "react"
+
+let sqlDb: Database | null = null
+
+const CLEAR_ALL_DATA_SQL = `
+DELETE FROM "subjects";
+DELETE FROM "assignments";
+DELETE FROM "study_materials";
+DELETE FROM "voice_actors";
+DELETE FROM "review_statistics";
+DELETE FROM "level_progressions";
+DELETE FROM "user";
+DELETE FROM "pending_progress";
+DELETE FROM "sync_metadata";
+DELETE FROM "audio_cache";
+DELETE FROM "error_log";
+`
 
 
 export const initialize = async (): Promise<SQLJsDatabase> => {
@@ -12,10 +29,16 @@ export const initialize = async (): Promise<SQLJsDatabase> => {
     res.arrayBuffer(),
   );
   const [SQL, buf] = await Promise.all([sqlPromise, dataPromise]);
-  const sqldb = new SQL.Database(new Uint8Array(buf));
-  const db = drizzle(sqldb);
-  return db;
+  const sqldb = new SQL.Database(new Uint8Array(buf))
+  sqlDb = sqldb
+  const db = drizzle(sqldb)
+  return db
 };
+
+export const resetDatabase = async (): Promise<void> => {
+  if (!sqlDb) return
+  sqlDb.exec(CLEAR_ALL_DATA_SQL)
+}
 
 interface State {
   success: boolean;
