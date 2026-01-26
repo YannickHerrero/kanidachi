@@ -9,6 +9,7 @@ import { Text } from "@/components/ui/text"
 import { H1, Muted } from "@/components/ui/typography"
 import { Skeleton } from "@/components/ui/skeleton"
 import { AccuracyChart } from "@/components/stats/accuracy-chart"
+import { LevelTimeChart } from "@/components/stats/level-time-chart"
 import { LevelTimeline } from "@/components/stats/level-timeline"
 import { LeechList } from "@/components/stats/leech-list"
 import { useStatistics } from "@/hooks/useStatistics"
@@ -144,6 +145,9 @@ export default function StatsScreen() {
           accuracyByType={accuracyByType}
           totalReviews={totalStats.totalReviews}
         />
+
+        {/* Time per Level */}
+        <LevelTimeChart levelTimeline={levelTimeline} />
 
         {/* Level Timeline */}
         <LevelTimeline levelTimeline={levelTimeline} currentLevel={currentLevel} />
