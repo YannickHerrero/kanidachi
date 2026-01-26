@@ -19,6 +19,7 @@ import {
   Sentences,
   PartsOfSpeech,
   UserNotes,
+  AudioPlayer,
 } from "@/components/subject"
 import { useSubject } from "@/hooks/useSubject"
 import { useColorScheme } from "@/lib/useColorScheme"
@@ -112,6 +113,9 @@ export default function SubjectDetailScreen() {
 
           {/* Readings (kanji/vocab only) */}
           <Readings subject={subject} />
+
+          {/* Audio Player (vocab/kana_vocab only) */}
+          <AudioPlayer subject={subject} />
 
           {/* Parts of Speech (vocab only) */}
           <PartsOfSpeech subject={subject} />

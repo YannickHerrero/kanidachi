@@ -13,3 +13,4 @@ export { Bell } from "./Bell";
 export { Check } from "./Check";
 export { Moon } from "./Moon";
 export { Smartphone } from "./SmartPhone";
+export { Volume2 } from "./Volume2";

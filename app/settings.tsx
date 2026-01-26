@@ -9,6 +9,7 @@ import * as WebBrowser from "expo-web-browser";
 
 import { ThemeSettingItem } from '@/components/settings/ThemeItem';
 import { NotificationItem } from '@/components/settings/NotificationItem';
+import { AudioSettingItem } from '@/components/settings/AudioSettingItem';
 
 export default function Settings() {
   const openExternalURL = (url: string) => {
@@ -26,9 +27,8 @@ export default function Settings() {
           <Muted>App</Muted>
         </ListHeader>
         <ThemeSettingItem />
-        {
-          Platform.OS !== "web" && <NotificationItem />
-        }
+        {Platform.OS !== "web" && <AudioSettingItem />}
+        {Platform.OS !== "web" && <NotificationItem />}
         <ListHeader className='pt-8'>
           <Muted>GENERAL</Muted>
         </ListHeader>

@@ -4,7 +4,9 @@ import { ScrollView, View } from "react-native"
 import { Text } from "@/components/ui/text"
 import { Muted } from "@/components/ui/typography"
 import { Separator } from "@/components/ui/separator"
+import { AudioButton } from "@/components/subject/audio-player"
 import { parseMeanings, parseReadings } from "@/db/queries"
+import { useSettingsStore } from "@/stores/settings"
 import type { Subject } from "@/stores/reviews"
 
 // Subject type colors
@@ -20,8 +22,12 @@ interface CardBackProps {
 }
 
 export function CardBack({ subject }: CardBackProps) {
+  const autoPlayAudio = useSettingsStore((s) => s.autoPlayAudioReviews)
   const meanings = parseMeanings(subject.meanings)
   const readings = parseReadings(subject.readings)
+
+  // Check if this subject has audio (vocabulary or kana_vocabulary)
+  const hasAudio = subject.type === "vocabulary" || subject.type === "kana_vocabulary"
 
   const primaryMeanings = meanings.filter((m) => m.primary).map((m) => m.meaning)
   const secondaryMeanings = meanings.filter((m) => !m.primary && m.acceptedAnswer).map((m) => m.meaning)
@@ -39,11 +45,24 @@ export function CardBack({ subject }: CardBackProps) {
       contentContainerClassName="items-center px-4 pb-4"
       showsVerticalScrollIndicator={false}
     >
-      {/* Character */}
-      <View className={`px-8 py-6 rounded-2xl ${typeColor} mb-6`}>
-        <Text className="text-5xl text-white font-semibold">
-          {subject.characters ?? "?"}
-        </Text>
+      {/* Character with audio button */}
+      <View className="relative mb-6">
+        <View className={`px-8 py-6 rounded-2xl ${typeColor}`}>
+          <Text className="text-5xl text-white font-semibold">
+            {subject.characters ?? "?"}
+          </Text>
+        </View>
+        {/* Audio button positioned at bottom-right of character */}
+        {hasAudio && (
+          <View className="absolute -bottom-2 -right-2">
+            <AudioButton
+              subject={subject}
+              size="md"
+              autoPlay={autoPlayAudio}
+              className="bg-white shadow-md"
+            />
+          </View>
+        )}
       </View>
 
       {/* Meanings */}

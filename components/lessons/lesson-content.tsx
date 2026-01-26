@@ -6,7 +6,9 @@ import { Text } from "@/components/ui/text"
 import { Muted } from "@/components/ui/typography"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { AudioPlayer } from "@/components/subject/audio-player"
 import { parseMeanings, parseReadings, parseContextSentences } from "@/db/queries"
+import { useSettingsStore } from "@/stores/settings"
 import type { Subject } from "@/stores/lessons"
 
 // Subject type colors
@@ -29,6 +31,7 @@ interface LessonContentProps {
 }
 
 export function LessonContent({ subject }: LessonContentProps) {
+  const autoPlayAudio = useSettingsStore((s) => s.autoPlayAudioLessons)
   const meanings = parseMeanings(subject.meanings)
   const readings = parseReadings(subject.readings)
   const contextSentences = parseContextSentences(subject.contextSentences)
@@ -112,6 +115,9 @@ export function LessonContent({ subject }: LessonContentProps) {
           </CardContent>
         </Card>
       )}
+
+      {/* Audio Player - Only for vocabulary */}
+      <AudioPlayer subject={subject} autoPlay={autoPlayAudio} />
 
       {/* Meaning Mnemonic */}
       {subject.meaningMnemonic && (
