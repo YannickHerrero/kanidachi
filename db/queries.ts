@@ -196,6 +196,48 @@ export async function getReviewForecast(db: Database, hours = 24) {
 }
 
 /**
+ * Get 7-day forecast - count of reviews per day
+ */
+export async function getWeeklyForecast(db: Database) {
+  if (!db) return []
+  
+  const now = new Date()
+  const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+  const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+  
+  const result: Array<{ day: string; date: string; count: number }> = []
+  
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(now)
+    date.setDate(date.getDate() + i)
+    date.setHours(0, 0, 0, 0)
+    
+    const dayStart = Math.floor(date.getTime() / 1000)
+    const dayEnd = dayStart + 86400 // 24 hours
+    
+    const count = await (db as ExpoSQLiteDatabase)
+      .select({ cnt: sql<number>`count(*)` })
+      .from(assignments)
+      .where(
+        and(
+          isNotNull(assignments.startedAt),
+          isNull(assignments.burnedAt),
+          gte(assignments.availableAt, dayStart),
+          lte(assignments.availableAt, dayEnd)
+        )
+      )
+    
+    result.push({
+      day: DAYS[date.getDay()],
+      date: `${MONTHS[date.getMonth()]} ${date.getDate()}`,
+      count: (count[0] as { cnt: number })?.cnt ?? 0,
+    })
+  }
+  
+  return result
+}
+
+/**
  * Get SRS stage breakdown
  */
 export async function getSrsBreakdown(db: Database) {
@@ -406,6 +448,53 @@ export async function getLevelProgress(db: Database, level: number) {
   const percentage = total > 0 ? Math.round((passed / total) * 100) : 0
 
   return { total, passed, percentage }
+}
+
+/**
+ * Get detailed level progress with breakdown by subject type
+ */
+export async function getDetailedLevelProgress(db: Database, level: number) {
+  if (!db) return {
+    radicals: { total: 0, passed: 0, lessons: 0, inProgress: 0 },
+    kanji: { total: 0, passed: 0, lessons: 0, inProgress: 0 },
+    vocabulary: { total: 0, passed: 0, lessons: 0, inProgress: 0 },
+  }
+
+  const types = ["radical", "kanji", "vocabulary"] as const
+
+  const result = {
+    radicals: { total: 0, passed: 0, lessons: 0, inProgress: 0 },
+    kanji: { total: 0, passed: 0, lessons: 0, inProgress: 0 },
+    vocabulary: { total: 0, passed: 0, lessons: 0, inProgress: 0 },
+  }
+
+  for (const type of types) {
+    // Include kana_vocabulary with vocabulary
+    const typeCondition = type === "vocabulary"
+      ? or(eq(subjects.type, "vocabulary"), eq(subjects.type, "kana_vocabulary"))
+      : eq(subjects.type, type)
+
+    // Get all subjects of this type at this level
+    const subjectsAtLevel = await (db as ExpoSQLiteDatabase)
+      .select({
+        subjectId: subjects.id,
+        unlockedAt: assignments.unlockedAt,
+        startedAt: assignments.startedAt,
+        passedAt: assignments.passedAt,
+      })
+      .from(subjects)
+      .leftJoin(assignments, eq(subjects.id, assignments.subjectId))
+      .where(and(eq(subjects.level, level), typeCondition!))
+
+    const key = type === "radical" ? "radicals" : type === "kanji" ? "kanji" : "vocabulary"
+    
+    result[key].total = subjectsAtLevel.length
+    result[key].passed = subjectsAtLevel.filter(s => s.passedAt !== null).length
+    result[key].lessons = subjectsAtLevel.filter(s => s.unlockedAt !== null && s.startedAt === null).length
+    result[key].inProgress = subjectsAtLevel.filter(s => s.startedAt !== null && s.passedAt === null).length
+  }
+
+  return result
 }
 
 // ============================================================================
