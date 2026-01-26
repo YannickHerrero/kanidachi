@@ -276,27 +276,28 @@ This section tracks features that were intentionally deferred during initial imp
 - [x] Audio playback in lesson content (implemented in Phase 4)
 - [x] Lesson ordering options (ascending level, shuffled, current level first) - implemented in Phase 5
 - [x] Batch size configuration for lessons - implemented in Phase 5
-- [ ] "Skip to Quiz" option to bypass content viewing
-- [ ] Component radicals/kanji display in lesson content
-- [ ] Visually similar kanji display for kanji lessons
+- [x] "Skip to Quiz" option to bypass content viewing
+- [x] Component radicals/kanji display in lesson content
+- [x] Visually similar kanji display for kanji lessons
 
 **Review Enhancements:**
 - [x] Audio playback on card back (implemented in Phase 4)
 - [x] Review ordering options (random, SRS stage, level) - implemented in Phase 5
 - [x] Configurable wrap-up batch size - implemented in Phase 5
-- [ ] "Ask Again Later" - return item without penalty
-- [ ] "Mark Correct Override" - override wrong answer
-- [ ] Undo last answer
-- [ ] Minimize penalty option (reduce SRS penalty)
-- [ ] Session item limit setting
+- [x] "Ask Again Later" - return item without penalty
+- [x] "Mark Correct Override" - override wrong answer
+- [x] Undo last answer
+- [x] Minimize penalty option (reduce SRS penalty)
+- [x] Session item limit setting
+- [x] Haptic feedback on grade buttons
 
 **Card Display Enhancements:**
-- [ ] Abbreviated mnemonic with "Show more" expand option
-- [ ] Context sentences on review card back
-- [ ] User synonyms display
-- [ ] User notes display
-- [ ] Part of speech display for vocabulary
-- [ ] Reading type labels (on'yomi/kun'yomi) on card back
+- [x] Abbreviated mnemonic with "Show more" expand option
+- [x] Context sentences on review card back
+- [x] User synonyms display (with edit functionality)
+- [x] User notes display (with edit functionality)
+- [x] Part of speech display for vocabulary
+- [x] Reading type labels (on'yomi/kun'yomi) on card back
 
 ### From Phase 3 (Subject Browsing)
 
@@ -307,33 +308,33 @@ This section tracks features that were intentionally deferred during initial imp
 
 **Deferred to Future Phases (require additional infrastructure):**
 - [x] Audio playback (implemented in Phase 4)
-- [ ] Editable user notes (requires Study Materials API sync)
-- [ ] Editable user synonyms (requires Study Materials API sync)
+- [x] Editable user notes (Study Materials API sync)
+- [x] Editable user synonyms (Study Materials API sync)
 - [ ] SRS stage history display (requires review_statistics sync)
 - [ ] Review accuracy statistics per subject (requires review_statistics sync)
 
 **UX Enhancements (nice-to-have):**
-- [ ] SRS category browsing (browse all Apprentice items, all Guru items, etc.)
-- [ ] "Show remaining" view for current level (items not yet passed)
+- [x] SRS category browsing (browse all Apprentice items, all Guru items, etc.)
+- [x] "Show remaining" view for current level (expandable breakdown in level progress)
 - [ ] "Show Answers" toggle to hide meanings/readings while browsing
 - [ ] Horizontal swipe between levels (PageView-style navigation)
-- [ ] "Practice" button to start a practice review for this subject
+- [x] "Practice" button to start a practice review for this subject
 - [ ] Romaji-to-hiragana conversion for reading searches (needs wanakana library)
 - [ ] Search history / recent searches
 - [ ] Filter search results by SRS stage
 
 ### From Dashboard
 
-- [ ] Weekly forecast (7-day overview) - originally planned but not implemented
-- [ ] Vacation mode banner display
-- [ ] Pending sync indicator (show when items waiting to sync)
+- [x] Weekly forecast (7-day overview)
+- [x] Vacation mode banner display
+- [x] Pending sync indicator (show when items waiting to sync)
 
 ### Future Considerations
 
 **Study Materials Sync:**
-- [ ] Create/update user notes from app
-- [ ] Create/update user synonyms from app
-- [ ] Sync study materials to WaniKani API
+- [x] Create/update user notes from app
+- [x] Create/update user synonyms from app
+- [x] Sync study materials to WaniKani API
 
 **Advanced Features:**
 - [x] Leech detection and highlighting (implemented in Phase 6.1 - Statistics screen)
@@ -341,7 +342,7 @@ This section tracks features that were intentionally deferred during initial imp
 - [ ] SRS stage history per item
 - [ ] Review accuracy history per item
 - [ ] Export/import session data
-- [ ] Haptic feedback on grade buttons
+- [x] Haptic feedback on grade buttons
 - [ ] Keyboard shortcuts for web
 
 ---
@@ -363,22 +364,28 @@ app/
   reviews/
     index.tsx           # Review session
     summary.tsx         # Session summary
+  practice/
+    index.tsx           # Practice session (self-study mode)
   browse/
     index.tsx           # Browse home
     level/[level].tsx   # Browse by level
+    srs/[category].tsx  # Browse by SRS category
     search.tsx          # Search
   subject/
     [id].tsx            # Subject details
 
 components/
   dashboard/
-    review-card.tsx     # Available reviews card
-    lesson-card.tsx     # Available lessons card
-    level-progress.tsx  # Current level progress
-    srs-breakdown.tsx   # SRS stage breakdown
-    forecast-chart.tsx  # 24-hour forecast
-    browse-card.tsx     # Browse navigation card
-    stats-card.tsx      # Statistics navigation card
+    review-card.tsx         # Available reviews card
+    lesson-card.tsx         # Available lessons card
+    level-progress.tsx      # Current level progress (with expandable breakdown)
+    srs-breakdown.tsx       # SRS stage breakdown (clickable for browsing)
+    forecast-chart.tsx      # 24-hour forecast
+    weekly-forecast.tsx     # 7-day forecast chart
+    browse-card.tsx         # Browse navigation card
+    stats-card.tsx          # Statistics navigation card
+    pending-sync-indicator.tsx  # Pending sync status indicator
+    vacation-banner.tsx     # Vacation mode active banner
   lessons/
     subject-cell.tsx    # Selectable subject cell
     subject-grid.tsx    # Grid of subjects by level
@@ -397,19 +404,20 @@ components/
     level-grid.tsx      # Level selection grid
     search-bar.tsx      # Search input component
   subject/
-    header.tsx          # Character + primary info
-    meanings.tsx        # Meanings list
-    readings.tsx        # Readings list
-    mnemonic.tsx        # Mnemonic with rich text
-    components.tsx      # Component radicals/kanji
-    amalgamations.tsx   # Used in...
-    sentences.tsx       # Context sentences
-    user-notes.tsx      # User notes (read-only)
-    subject-chip.tsx    # Tappable subject pill
-    visually-similar.tsx # Similar kanji display
-    parts-of-speech.tsx # Part of speech badges
-    audio-player.tsx    # Audio playback component
-    radical-image.tsx   # Radical image display (SVG/PNG)
+    header.tsx              # Character + primary info
+    meanings.tsx            # Meanings list
+    readings.tsx            # Readings list
+    mnemonic.tsx            # Mnemonic with rich text
+    components.tsx          # Component radicals/kanji
+    amalgamations.tsx       # Used in...
+    sentences.tsx           # Context sentences
+    user-notes.tsx          # User notes display
+    subject-chip.tsx        # Tappable subject pill
+    visually-similar.tsx    # Similar kanji display
+    parts-of-speech.tsx     # Part of speech badges
+    audio-player.tsx        # Audio playback component
+    radical-image.tsx       # Radical image display (SVG/PNG)
+    study-material-editor.tsx # Edit synonyms/notes bottom sheet
   stats/
     accuracy-chart.tsx    # Overall accuracy visualization
     level-timeline.tsx    # Level progression timeline
@@ -456,7 +464,8 @@ stores/
   sync.ts               # Sync state
   settings.ts           # Settings state (MMKV persistence)
   lessons.ts            # Lesson session state (supports ordering)
-  reviews.ts            # Review session state (supports ordering)
+  reviews.ts            # Review session state (supports ordering, undo, actions)
+  practice.ts           # Practice session state (self-study mode)
 
 db/
   schema.ts             # Database schema (includes error_log table)
@@ -482,6 +491,7 @@ hooks/
   useAppStateSync.ts        # App foreground sync trigger
   useColorScheme.ts         # Theme hook
   useFrameworkReady.ts      # Framework initialization
+  useStudyMaterial.ts       # Fetch/refetch study materials for a subject
 ```
 
 ---
@@ -517,6 +527,15 @@ hooks/
 
 ## Changelog
 
+- **2026-01-26**: Completed All Deferred Features
+  - **Lesson Enhancements:** Skip to Quiz button, component subjects in lesson content, visually similar kanji for kanji lessons
+  - **Review Enhancements:** Ask Again Later, Mark Correct Override, Undo last answer, Minimize penalty option, Session item limit, Haptic feedback on grade buttons
+  - **Card Display:** Expandable mnemonics (show more/less), context sentences, user synonyms/notes display with edit functionality, parts of speech, reading type labels
+  - **Study Materials:** Full edit support for user notes and synonyms via WaniKani API with bottom sheet editor
+  - **Dashboard:** Weekly forecast (7-day overview), Vacation mode banner, Pending sync indicator with retry
+  - **Browsing:** SRS category browsing (tap SRS breakdown to browse by stage), Detailed level progress breakdown (expandable)
+  - **Practice Mode:** Self-study practice for any subject without affecting SRS
+  - New files: `useStudyMaterial.ts`, `study-material-editor.tsx`, `pending-sync-indicator.tsx`, `vacation-banner.tsx`, `weekly-forecast.tsx`, `app/browse/srs/[category].tsx`, `app/practice/index.tsx`, `stores/practice.ts`
 - **2026-01-26**: Completed Sync Enhancements
   - Implemented complete sync conflict resolution system (following Tsurukame patterns)
   - Rate-limit aware queue processing with API quota reservation
