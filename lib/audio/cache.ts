@@ -188,3 +188,42 @@ export function formatBytes(bytes: number): string {
   const i = Math.floor(Math.log(bytes) / Math.log(k))
   return `${Number.parseFloat((bytes / k ** i).toFixed(1))} ${sizes[i]}`
 }
+
+/**
+ * Preload audio for a list of items
+ * Downloads audio files in the background without blocking
+ * @param items Array of items with subjectId and audios
+ * @param preferredVoiceActorId Optional voice actor preference
+ * @param limit Maximum number of items to preload
+ */
+export async function preloadAudio(
+  items: Array<{
+    subjectId: number
+    audios: PronunciationAudio[]
+  }>,
+  preferredVoiceActorId?: number,
+  limit = 5
+): Promise<void> {
+  if (Platform.OS === "web" || !cacheDirectory) return
+
+  await ensureCacheDir()
+
+  // Process items up to the limit, in background (don't await all)
+  const itemsToPreload = items.slice(0, limit)
+
+  for (const item of itemsToPreload) {
+    const audio = selectAudio(item.audios, preferredVoiceActorId)
+    if (!audio) continue
+
+    const voiceActorId = audio.metadata.voiceActorId
+
+    // Check if already cached
+    const isCached = await isAudioCached(item.subjectId, voiceActorId)
+    if (isCached) continue
+
+    // Start caching in background (don't await)
+    cacheAudio(item.subjectId, voiceActorId, audio.url).catch((err) => {
+      console.log("[Audio Preload] Failed to cache:", item.subjectId, err)
+    })
+  }
+}

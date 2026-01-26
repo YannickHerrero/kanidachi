@@ -19,6 +19,8 @@ import {
 } from "@/stores/reviews"
 import { useColorScheme } from "@/lib/useColorScheme"
 import { useSettingsStore } from "@/stores/settings"
+import { preloadAudio } from "@/lib/audio/cache"
+import { parsePronunciationAudios } from "@/db/queries"
 
 export default function ReviewSessionScreen() {
   const router = useRouter()
@@ -44,6 +46,7 @@ export default function ReviewSessionScreen() {
 
   const reviewOrdering = useSettingsStore((s) => s.reviewOrdering)
   const wrapUpBatchSize = useSettingsStore((s) => s.wrapUpBatchSize)
+  const preferredVoiceActorId = useSettingsStore((s) => s.preferredVoiceActorId)
 
   // Start session when items are loaded
   React.useEffect(() => {
@@ -51,6 +54,28 @@ export default function ReviewSessionScreen() {
       startSession(items, reviewOrdering)
     }
   }, [items, isActive, startSession, reviewOrdering])
+
+  // Preload audio for upcoming items
+  const queue = useReviewStore((s) => s.queue)
+  const currentIndex = useReviewStore((s) => s.currentIndex)
+
+  React.useEffect(() => {
+    if (!isActive || queue.length === 0) return
+
+    // Get next few items from queue
+    const upcomingItems = queue.slice(currentIndex, currentIndex + 5)
+    const itemsToPreload = upcomingItems
+      .filter((item) => item.subject.type === "vocabulary" || item.subject.type === "kana_vocabulary")
+      .map((item) => ({
+        subjectId: item.subject.id,
+        audios: parsePronunciationAudios(item.subject.pronunciationAudios),
+      }))
+      .filter((item) => item.audios.length > 0)
+
+    if (itemsToPreload.length > 0) {
+      preloadAudio(itemsToPreload, preferredVoiceActorId ?? undefined, 3)
+    }
+  }, [isActive, queue, currentIndex, preferredVoiceActorId])
 
   // Handle session end (no more items)
   React.useEffect(() => {
