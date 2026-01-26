@@ -1,7 +1,7 @@
 import "./global.css";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { ThemeProvider } from "@react-navigation/native";
-import { SplashScreen, Stack, useRouter, useSegments } from "expo-router";
+import { SplashScreen, Slot, Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as React from "react";
 import { Platform } from "react-native";
@@ -75,11 +75,33 @@ if (Platform.OS !== "web") {
   configureAndroidNotificationChannel();
 }
 
-export default function RootLayout() {
-  const { colorScheme, setColorScheme } = useColorScheme();
-  const { status, initialize } = useAuthStore();
+// Component to handle auth-based routing (must be inside navigation context)
+function AuthNavigator({ fontsLoaded }: { fontsLoaded: boolean }) {
   const router = useRouter();
   const segments = useSegments();
+  const { status } = useAuthStore();
+
+  useEffect(() => {
+    if (status === "loading") return;
+    if (!fontsLoaded) return; // Don't navigate until fonts are loaded
+
+    const inAuthGroup = segments[0] === "login";
+
+    if (status === "unauthenticated" && !inAuthGroup) {
+      // Redirect to login if not authenticated
+      router.replace("/login");
+    } else if (status === "authenticated" && inAuthGroup) {
+      // Redirect to home if already authenticated and on login screen
+      router.replace("/");
+    }
+  }, [status, segments, fontsLoaded]);
+
+  return null;
+}
+
+export default function RootLayout() {
+  const { colorScheme, setColorScheme } = useColorScheme();
+  const { initialize } = useAuthStore();
 
   const [loaded, error] = useFonts({
     Inter_400Regular,
@@ -113,21 +135,10 @@ export default function RootLayout() {
     }
   }, [loaded]);
 
-  // Auth-based routing
-  useEffect(() => {
-    if (status === "loading") return;
-
-    const inAuthGroup = segments[0] === "login";
-
-    if (status === "unauthenticated" && !inAuthGroup) {
-      // Redirect to login if not authenticated
-      router.replace("/login");
-    } else if (status === "authenticated" && inAuthGroup) {
-      // Redirect to home if already authenticated and on login screen
-      router.replace("/");
-    }
-  }, [status, segments]);
-
+  // Don't render navigation until fonts are loaded - use Slot to let expo-router handle initial state
+  if (!loaded && !error) {
+    return <Slot />;
+  }
 
   return (
     <DatabaseProvider>
@@ -151,6 +162,7 @@ export default function RootLayout() {
               <Stack.Screen name="subject/[id]" options={{ headerShown: false }} />
               <Stack.Screen name="stats" options={{ headerShown: false }} />
             </Stack>
+            <AuthNavigator fontsLoaded={loaded} />
           </BottomSheetModalProvider>
         </GestureHandlerRootView>
       </ThemeProvider>

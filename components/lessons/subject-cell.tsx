@@ -1,30 +1,32 @@
 import * as React from "react"
-import { Pressable, View } from "react-native"
+import { Pressable, View, StyleSheet } from "react-native"
 import { Check } from "lucide-react-native"
 
 import { Text } from "@/components/ui/text"
 import { InlineRadicalImage, parseCharacterImages } from "@/components/subject/radical-image"
-import { cn } from "@/lib/utils"
 import { parseMeanings } from "@/db/queries"
 import type { Subject } from "@/stores/lessons"
 
-// Subject type colors (matching WaniKani)
-const TYPE_COLORS = {
+// Subject type colors as React Native styles
+// Note: Using inline styles instead of NativeWind className to avoid
+// NativeWind v4 CSS interop race condition that breaks React Navigation context
+// https://github.com/nativewind/nativewind/discussions/1537
+const TYPE_STYLES = {
   radical: {
-    bg: "bg-blue-500 dark:bg-blue-600",
-    border: "border-blue-600 dark:border-blue-700",
+    backgroundColor: "#3b82f6", // blue-500
+    borderColor: "#2563eb", // blue-600
   },
   kanji: {
-    bg: "bg-pink-500 dark:bg-pink-600",
-    border: "border-pink-600 dark:border-pink-700",
+    backgroundColor: "#ec4899", // pink-500
+    borderColor: "#db2777", // pink-600
   },
   vocabulary: {
-    bg: "bg-purple-500 dark:bg-purple-600",
-    border: "border-purple-600 dark:border-purple-700",
+    backgroundColor: "#a855f7", // purple-500
+    borderColor: "#9333ea", // purple-600
   },
   kana_vocabulary: {
-    bg: "bg-purple-500 dark:bg-purple-600",
-    border: "border-purple-600 dark:border-purple-700",
+    backgroundColor: "#a855f7", // purple-500
+    borderColor: "#9333ea", // purple-600
   },
 } as const
 
@@ -35,7 +37,7 @@ interface SubjectCellProps {
 }
 
 export function SubjectCell({ subject, isSelected, onToggle }: SubjectCellProps) {
-  const colors = TYPE_COLORS[subject.type as keyof typeof TYPE_COLORS] ?? TYPE_COLORS.vocabulary
+  const typeStyle = TYPE_STYLES[subject.type as keyof typeof TYPE_STYLES] ?? TYPE_STYLES.vocabulary
 
   // Parse character images for radicals without Unicode characters
   const characterImages = parseCharacterImages(subject.characterImages)
@@ -51,47 +53,97 @@ export function SubjectCell({ subject, isSelected, onToggle }: SubjectCellProps)
     : primaryMeaning
 
   return (
-    <Pressable onPress={onToggle} className="w-[23%] aspect-square m-[1%]">
-      <View
-        className={cn(
-          "flex-1 rounded-lg border-2 items-center justify-center p-1",
-          colors.bg,
-          colors.border,
-          isSelected && "ring-2 ring-primary ring-offset-2"
-        )}
-      >
-        {/* Selection indicator */}
-        {isSelected && (
-          <View className="absolute top-1 right-1 w-5 h-5 bg-white rounded-full items-center justify-center">
-            <Check size={14} color="#000" strokeWidth={3} />
-          </View>
-        )}
+    <View style={styles.cellContainer}>
+      <Pressable onPress={onToggle} style={styles.pressable}>
+        <View
+          style={[
+            styles.innerContainer,
+            typeStyle,
+            isSelected && styles.selected,
+          ]}
+        >
+          {/* Selection indicator */}
+          {isSelected && (
+            <View style={styles.checkIndicator}>
+              <Check size={14} color="#000" strokeWidth={3} />
+            </View>
+          )}
 
-        {/* Character or Radical Image */}
-        {isImageOnlyRadical ? (
-          <InlineRadicalImage
-            characterImages={characterImages}
-            characters={subject.characters}
-            size={28}
-            className="text-white"
-          />
-        ) : (
+          {/* Character or Radical Image */}
+          {isImageOnlyRadical ? (
+            <View style={styles.characterContainer}>
+              <InlineRadicalImage
+                characterImages={characterImages}
+                characters={subject.characters}
+                size={28}
+              />
+            </View>
+          ) : (
+            <Text
+              style={styles.characterText}
+              numberOfLines={1}
+            >
+              {subject.characters ?? "?"}
+            </Text>
+          )}
+
+          {/* Meaning */}
           <Text
-            className="text-white text-2xl font-semibold"
+            style={styles.meaningText}
             numberOfLines={1}
           >
-            {subject.characters ?? "?"}
+            {displayMeaning}
           </Text>
-        )}
-
-        {/* Meaning */}
-        <Text
-          className="text-white/80 text-xs text-center"
-          numberOfLines={1}
-        >
-          {displayMeaning}
-        </Text>
-      </View>
-    </Pressable>
+        </View>
+      </Pressable>
+    </View>
   )
 }
+
+const styles = StyleSheet.create({
+  cellContainer: {
+    width: "23%",
+    aspectRatio: 1,
+    margin: "1%",
+  },
+  pressable: {
+    flex: 1,
+  },
+  innerContainer: {
+    flex: 1,
+    borderRadius: 8,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 4,
+  },
+  selected: {
+    // Selection indicator via border instead of ring (ring doesn't work on RN)
+    borderWidth: 3,
+    borderColor: "#fff",
+  },
+  checkIndicator: {
+    position: "absolute",
+    top: 4,
+    right: 4,
+    width: 20,
+    height: 20,
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  characterContainer: {
+    // Container for radical image - provides white tint context
+  },
+  characterText: {
+    color: "#fff",
+    fontSize: 24,
+    fontWeight: "600",
+  },
+  meaningText: {
+    color: "rgba(255, 255, 255, 0.8)", // text-white/80 equivalent
+    fontSize: 12,
+    textAlign: "center",
+  },
+})
