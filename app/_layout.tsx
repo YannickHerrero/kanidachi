@@ -4,6 +4,7 @@ import { ThemeProvider } from "@react-navigation/native";
 import { SplashScreen, Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as React from "react";
+import { Platform } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { PortalHost } from "@/components/primitives/portal";
 import { DatabaseProvider, useDatabase } from "@/db/provider";
@@ -16,6 +17,11 @@ import { Inter_400Regular, Inter_600SemiBold, useFonts } from '@expo-google-font
 import { useEffect } from "react";
 import { useAuthStore } from "@/stores/auth";
 import { initializeBackgroundSync, stopBackgroundSync } from "@/lib/sync/background-sync";
+import {
+  configureNotificationHandler,
+  configureAndroidNotificationChannel,
+} from "@/lib/notifications";
+import { useReviewNotifications } from "@/hooks/useReviewNotifications";
 
 
 export {
@@ -46,6 +52,19 @@ function BackgroundSyncInitializer() {
   }, [db, status]);
 
   return null;
+}
+
+// Component to manage notification badge and scheduling
+function NotificationManager() {
+  // This hook handles badge updates and notification scheduling
+  useReviewNotifications();
+  return null;
+}
+
+// Initialize notification handler on app start (before rendering)
+if (Platform.OS !== "web") {
+  configureNotificationHandler();
+  configureAndroidNotificationChannel();
 }
 
 export default function RootLayout() {
@@ -128,6 +147,7 @@ export default function RootLayout() {
       </ThemeProvider>
       <PortalHost />
       <BackgroundSyncInitializer />
+      {Platform.OS !== "web" && <NotificationManager />}
     </DatabaseProvider>
   );
 }
