@@ -3,6 +3,7 @@ import { Pressable, View } from "react-native"
 import { Check } from "lucide-react-native"
 
 import { Text } from "@/components/ui/text"
+import { InlineRadicalImage, parseCharacterImages } from "@/components/subject/radical-image"
 import { cn } from "@/lib/utils"
 import { parseMeanings } from "@/db/queries"
 import type { Subject } from "@/stores/lessons"
@@ -36,6 +37,10 @@ interface SubjectCellProps {
 export function SubjectCell({ subject, isSelected, onToggle }: SubjectCellProps) {
   const colors = TYPE_COLORS[subject.type as keyof typeof TYPE_COLORS] ?? TYPE_COLORS.vocabulary
 
+  // Parse character images for radicals without Unicode characters
+  const characterImages = parseCharacterImages(subject.characterImages)
+  const isImageOnlyRadical = subject.type === "radical" && !subject.characters && characterImages.length > 0
+
   // Get primary meaning
   const meanings = parseMeanings(subject.meanings)
   const primaryMeaning = meanings.find((m) => m.primary)?.meaning ?? meanings[0]?.meaning ?? ""
@@ -62,13 +67,22 @@ export function SubjectCell({ subject, isSelected, onToggle }: SubjectCellProps)
           </View>
         )}
 
-        {/* Character */}
-        <Text
-          className="text-white text-2xl font-semibold"
-          numberOfLines={1}
-        >
-          {subject.characters ?? "?"}
-        </Text>
+        {/* Character or Radical Image */}
+        {isImageOnlyRadical ? (
+          <InlineRadicalImage
+            characterImages={characterImages}
+            characters={subject.characters}
+            size={28}
+            className="text-white"
+          />
+        ) : (
+          <Text
+            className="text-white text-2xl font-semibold"
+            numberOfLines={1}
+          >
+            {subject.characters ?? "?"}
+          </Text>
+        )}
 
         {/* Meaning */}
         <Text

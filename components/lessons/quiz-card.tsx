@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Text } from "@/components/ui/text"
 import { Muted } from "@/components/ui/typography"
 import { Button } from "@/components/ui/button"
+import { RadicalImage, parseCharacterImages } from "@/components/subject/radical-image"
 import { parseMeanings, parseReadings } from "@/db/queries"
 import type { Subject } from "@/stores/lessons"
 
@@ -32,6 +33,10 @@ export function QuizCard({ subject, isFlipped, onFlip, onGrade }: QuizCardProps)
 
   const typeColor = TYPE_COLORS[subject.type as keyof typeof TYPE_COLORS] ?? TYPE_COLORS.vocabulary
 
+  // Parse character images for radicals without Unicode characters
+  const characterImages = parseCharacterImages(subject.characterImages)
+  const isImageOnlyRadical = subject.type === "radical" && !subject.characters && characterImages.length > 0
+
   return (
     <View className="flex-1 px-4">
       <Pressable
@@ -43,9 +48,18 @@ export function QuizCard({ subject, isFlipped, onFlip, onGrade }: QuizCardProps)
           <CardContent className="flex-1 items-center justify-center p-6">
             {/* Character with type-colored background */}
             <View className={`px-8 py-6 rounded-2xl ${typeColor} mb-6`}>
-              <Text className="text-6xl text-white font-semibold">
-                {subject.characters ?? "?"}
-              </Text>
+              {isImageOnlyRadical ? (
+                <RadicalImage
+                  characterImages={characterImages}
+                  characters={subject.characters}
+                  size="xl"
+                  textClassName="text-white"
+                />
+              ) : (
+                <Text className="text-6xl text-white font-semibold">
+                  {subject.characters ?? "?"}
+                </Text>
+              )}
             </View>
 
             {!isFlipped ? (

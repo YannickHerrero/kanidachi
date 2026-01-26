@@ -7,6 +7,7 @@ import { Muted } from "@/components/ui/typography"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { AudioPlayer } from "@/components/subject/audio-player"
+import { RadicalImage, parseCharacterImages } from "@/components/subject/radical-image"
 import { parseMeanings, parseReadings, parseContextSentences } from "@/db/queries"
 import { useSettingsStore } from "@/stores/settings"
 import type { Subject } from "@/stores/lessons"
@@ -47,6 +48,10 @@ export function LessonContent({ subject }: LessonContentProps) {
   const kunyomiReadings = readings.filter((r) => r.type === "kunyomi")
   const vocabReadings = readings.filter((r) => !r.type) // Vocabulary readings have no type
 
+  // Parse character images for radicals without Unicode characters
+  const characterImages = parseCharacterImages(subject.characterImages)
+  const isImageOnlyRadical = subject.type === "radical" && !subject.characters && characterImages.length > 0
+
   return (
     <ScrollView
       className="flex-1 bg-background"
@@ -55,9 +60,20 @@ export function LessonContent({ subject }: LessonContentProps) {
     >
       {/* Character Header */}
       <View className={`items-center py-8 rounded-xl ${typeColor}`}>
-        <Text className="text-6xl text-white font-semibold mb-2">
-          {subject.characters ?? "?"}
-        </Text>
+        {isImageOnlyRadical ? (
+          <View className="mb-2">
+            <RadicalImage
+              characterImages={characterImages}
+              characters={subject.characters}
+              size="xl"
+              textClassName="text-white"
+            />
+          </View>
+        ) : (
+          <Text className="text-6xl text-white font-semibold mb-2">
+            {subject.characters ?? "?"}
+          </Text>
+        )}
         <Badge variant="secondary" className="bg-white/20">
           <Text className="text-white text-xs">
             {typeLabel} - Level {subject.level}
