@@ -139,7 +139,9 @@ const styles = StyleSheet.create({
   characterText: {
     color: "#fff",
     fontSize: 24,
+    lineHeight: 28,
     fontWeight: "600",
+    textAlignVertical: "center",
   },
   meaningText: {
     color: "rgba(255, 255, 255, 0.8)", // text-white/80 equivalent
