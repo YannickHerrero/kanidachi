@@ -245,8 +245,13 @@ Kanidachi is a WaniKani client for Android and iOS with these key characteristic
 - [x] Token expiration handling with automatic logout via `forceLogout` action
 - [x] Auth error detection in background sync queue processing
 
-**Deferred:**
-- [ ] Sync conflict resolution (requires more API infrastructure for proper handling)
+**Sync Conflict Resolution - IMPLEMENTED:**
+- [x] Rate-limit aware queue processing (reserves quota for sync operations)
+- [x] Quick sync (user + assignments) on app foreground via `useAppStateSync` hook
+- [x] Full refresh sync (user + assignments + review stats + level progressions) on pull-to-refresh
+- [x] Automatic quick sync after pending queue processing
+- [x] 422 error handling: server wins, item removed from queue (following Tsurukame pattern)
+- [x] Error logging table for debugging (`error_log` table, keeps last 100 errors)
 
 ### 6.3 Performance Optimization
 - [x] Audio preloading for upcoming review items (`preloadAudio` in `lib/audio/cache.ts`)
@@ -428,13 +433,13 @@ lib/
   wanikani/
     client.ts           # API client
     types.ts            # API types
-    rate-limiter.ts     # Rate limiting
+    rate-limiter.ts     # Rate limiting with clock skew estimation
     errors.ts           # Error types
   sync/
     initial-sync.ts     # First-time sync
-    incremental-sync.ts # Update sync
-    pending-queue.ts    # Offline queue
-    background-sync.ts  # Background sync
+    incremental-sync.ts # Update sync (includes quick sync + full refresh)
+    pending-queue.ts    # Offline queue (rate-limit aware)
+    background-sync.ts  # Background sync manager
   audio/
     player.ts           # Audio playback (expo-av)
     cache.ts            # Audio caching (stream-and-cache)
@@ -454,16 +459,16 @@ stores/
   reviews.ts            # Review session state (supports ordering)
 
 db/
-  schema.ts             # Database schema
+  schema.ts             # Database schema (includes error_log table)
   provider.tsx          # Database context provider
-  queries.ts            # Query helpers
+  queries.ts            # Query helpers (includes error logging functions)
   drizzle.ts            # Native SQLite setup
   drizzle.web.ts        # Web sql.js setup
   migrate.ts            # Migration runner
-  migrations/           # Migration files
+  migrations/           # Migration files (0000, 0001_indexes, 0002_error_log)
 
 hooks/
-  useDashboardData.ts       # Dashboard data fetching
+  useDashboardData.ts       # Dashboard data fetching (triggers full sync on refresh)
   useAvailableLessons.ts    # Fetch available lessons (with ordering)
   useAvailableReviews.ts    # Fetch available reviews
   useNetworkStatus.ts       # Network connectivity
@@ -474,6 +479,7 @@ hooks/
   useAudio.ts               # Audio playback hook
   useReviewNotifications.ts # Badge and notification management
   useStatistics.ts          # Statistics data fetching
+  useAppStateSync.ts        # App foreground sync trigger
   useColorScheme.ts         # Theme hook
   useFrameworkReady.ts      # Framework initialization
 ```
@@ -511,6 +517,14 @@ hooks/
 
 ## Changelog
 
+- **2026-01-26**: Completed Sync Enhancements
+  - Implemented complete sync conflict resolution system (following Tsurukame patterns)
+  - Rate-limit aware queue processing with API quota reservation
+  - Quick sync (user + assignments) on app foreground via useAppStateSync hook
+  - Full refresh sync on pull-to-refresh (includes review stats + level progressions)
+  - Automatic quick sync after pending queue success
+  - Error logging table for debugging (keeps last 100 errors)
+  - 422 conflict handling: server wins, item silently removed from queue
 - **2026-01-26**: Completed Phase 6 - Statistics & Polish
   - 6.1: Statistics screen with accuracy chart, level timeline, and leech list
   - 6.2: Error handling with reusable ErrorView and EmptyState components
@@ -518,7 +532,6 @@ hooks/
   - Added token expiration handling with automatic logout
   - Added network status bar component for offline/sync indication
   - Created database migration for query performance indexes
-  - Deferred: Sync conflict resolution (requires more API infrastructure)
 - **2026-01-26**: Completed Phase 5 - Settings & Notifications
   - 5.1: Comprehensive settings screen with sections for appearance, study, audio, notifications, storage, and account
   - 5.2: Push notification system with permissions, scheduling, daily reminders, and badge count
