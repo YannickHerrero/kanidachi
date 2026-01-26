@@ -5,6 +5,7 @@ import { processQueue, getPendingCount } from "./pending-queue"
 import { checkIsOnline } from "@/hooks/useNetworkStatus"
 import { getToken } from "@/lib/auth"
 import { wanikaniClient } from "@/lib/wanikani/client"
+import { useAuthStore } from "@/stores/auth"
 
 type Database = SQLJsDatabase | ExpoSQLiteDatabase | null
 
@@ -92,6 +93,13 @@ class BackgroundSyncManager {
       console.log(
         `[BackgroundSync] Processed: ${result.processed}, Failed: ${result.failed}, Remaining: ${result.remaining}`
       )
+
+      // Handle auth errors by forcing logout
+      if (result.authError) {
+        console.log("[BackgroundSync] Auth error detected, forcing logout")
+        useAuthStore.getState().forceLogout("Your session has expired. Please log in again.")
+        this.stopPeriodicSync()
+      }
     } catch (error) {
       console.error("[BackgroundSync] Error during sync:", error)
     } finally {

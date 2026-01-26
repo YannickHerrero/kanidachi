@@ -7,6 +7,8 @@ import { X, Flag } from "lucide-react-native"
 import { Button } from "@/components/ui/button"
 import { Text } from "@/components/ui/text"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ErrorView } from "@/components/ui/error-view"
+import { EmptyState } from "@/components/ui/empty-state"
 import { AnkiCard, GradeButtons, ReviewProgressBar } from "@/components/reviews"
 import { useAvailableReviews } from "@/hooks/useAvailableReviews"
 import {
@@ -96,15 +98,16 @@ export default function ReviewSessionScreen() {
   }
 
   if (error) {
+    // Determine error type based on message
+    const errorType = error.toLowerCase().includes("network") ? "network" : "generic"
     return (
       <SafeAreaView className="flex-1 bg-background">
         <Stack.Screen options={{ headerShown: false }} />
-        <View className="flex-1 items-center justify-center p-4">
-          <Text className="text-destructive text-center mb-4">{error}</Text>
-          <Button onPress={handleBack}>
-            <Text>Go Back</Text>
-          </Button>
-        </View>
+        <ErrorView
+          type={errorType}
+          message={error}
+          onRetry={handleBack}
+        />
       </SafeAreaView>
     )
   }
@@ -113,15 +116,11 @@ export default function ReviewSessionScreen() {
     return (
       <SafeAreaView className="flex-1 bg-background">
         <Stack.Screen options={{ headerShown: false }} />
-        <View className="flex-1 items-center justify-center p-4">
-          <Text className="text-2xl font-semibold mb-2">No Reviews</Text>
-          <Text className="text-muted-foreground text-center mb-6">
-            You don't have any reviews available right now.
-          </Text>
-          <Button onPress={handleBack}>
-            <Text className="text-primary-foreground">Back to Dashboard</Text>
-          </Button>
-        </View>
+        <EmptyState
+          type="reviews"
+          actionText="Back to Dashboard"
+          onAction={handleBack}
+        />
       </SafeAreaView>
     )
   }

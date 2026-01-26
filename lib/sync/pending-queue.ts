@@ -15,6 +15,7 @@ export interface QueueProcessResult {
   processed: number
   failed: number
   remaining: number
+  authError: boolean
 }
 
 /**
@@ -125,7 +126,7 @@ async function processPendingItem(
  */
 export async function processQueue(db: Database): Promise<QueueProcessResult> {
   if (!db) {
-    return { processed: 0, failed: 0, remaining: 0 }
+    return { processed: 0, failed: 0, remaining: 0, authError: false }
   }
 
   // Get all pending items, oldest first
@@ -135,11 +136,12 @@ export async function processQueue(db: Database): Promise<QueueProcessResult> {
     .orderBy(pendingProgress.createdAt)
 
   if (items.length === 0) {
-    return { processed: 0, failed: 0, remaining: 0 }
+    return { processed: 0, failed: 0, remaining: 0, authError: false }
   }
 
   let processed = 0
   let failed = 0
+  let authError = false
 
   for (const item of items) {
     // Check if we should skip this item (too many recent attempts)
@@ -181,6 +183,9 @@ export async function processQueue(db: Database): Promise<QueueProcessResult> {
     } catch (error) {
       // Fatal error (e.g., auth failure) - stop processing
       console.error("[PendingQueue] Fatal error, stopping:", error)
+      if (error instanceof WaniKaniError && error.isAuthError) {
+        authError = true
+      }
       break
     }
   }
@@ -194,6 +199,7 @@ export async function processQueue(db: Database): Promise<QueueProcessResult> {
     processed,
     failed,
     remaining: remaining.length,
+    authError,
   }
 }
 

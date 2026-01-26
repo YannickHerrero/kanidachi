@@ -18,6 +18,8 @@ interface AuthState {
   error: string | null
   /** Whether a login attempt is in progress */
   isLoggingIn: boolean
+  /** Whether the session expired (for showing appropriate message) */
+  sessionExpired: boolean
 
   /** Initialize auth state from secure storage */
   initialize: () => Promise<void>
@@ -25,10 +27,14 @@ interface AuthState {
   login: (token: string) => Promise<boolean>
   /** Logout and clear token */
   logout: () => Promise<void>
+  /** Force logout due to token expiration */
+  forceLogout: (reason?: string) => Promise<void>
   /** Update user data (e.g., after sync) */
   setUser: (user: WKUser) => void
   /** Clear any error */
   clearError: () => void
+  /** Clear session expired flag */
+  clearSessionExpired: () => void
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -36,6 +42,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   error: null,
   isLoggingIn: false,
+  sessionExpired: false,
 
   initialize: async () => {
     try {
@@ -99,6 +106,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       status: "unauthenticated",
       user: null,
       error: null,
+      sessionExpired: false,
+    })
+  },
+
+  forceLogout: async (reason?: string) => {
+    console.log("[auth] Force logout:", reason ?? "Token expired")
+    try {
+      await clearToken()
+    } catch (error) {
+      console.error("[auth] Error during force logout:", error)
+    }
+
+    set({
+      status: "unauthenticated",
+      user: null,
+      error: reason ?? "Your session has expired. Please log in again.",
+      sessionExpired: true,
     })
   },
 
@@ -108,5 +132,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   clearError: () => {
     set({ error: null })
+  },
+
+  clearSessionExpired: () => {
+    set({ sessionExpired: false })
   },
 }))

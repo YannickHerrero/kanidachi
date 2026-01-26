@@ -7,6 +7,8 @@ import { ChevronLeft } from "lucide-react-native"
 import { Button } from "@/components/ui/button"
 import { Text } from "@/components/ui/text"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ErrorView } from "@/components/ui/error-view"
+import { EmptyState } from "@/components/ui/empty-state"
 import { SubjectGrid, FilterBar } from "@/components/lessons"
 import { useAvailableLessons } from "@/hooks/useAvailableLessons"
 import { useLessonStore, selectSelectedCount } from "@/stores/lessons"
@@ -87,19 +89,28 @@ export default function LessonPickerScreen() {
   }
 
   if (error) {
+    const errorType = error.toLowerCase().includes("network") ? "network" : "generic"
     return (
       <SafeAreaView className="flex-1 bg-background">
-        <Stack.Screen
-          options={{
-            headerShown: false,
-          }}
+        <Stack.Screen options={{ headerShown: false }} />
+        <ErrorView
+          type={errorType}
+          message={error}
+          onRetry={handleBack}
         />
-        <View className="flex-1 items-center justify-center p-4">
-          <Text className="text-destructive text-center">{error}</Text>
-          <Button onPress={handleBack} className="mt-4">
-            <Text>Go Back</Text>
-          </Button>
-        </View>
+      </SafeAreaView>
+    )
+  }
+
+  if (items.length === 0) {
+    return (
+      <SafeAreaView className="flex-1 bg-background">
+        <Stack.Screen options={{ headerShown: false }} />
+        <EmptyState
+          type="lessons"
+          actionText="Back to Dashboard"
+          onAction={handleBack}
+        />
       </SafeAreaView>
     )
   }

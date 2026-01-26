@@ -7,6 +7,8 @@ import { ChevronLeft } from "lucide-react-native"
 
 import { Button } from "@/components/ui/button"
 import { Text } from "@/components/ui/text"
+import { ErrorView } from "@/components/ui/error-view"
+import { EmptyState } from "@/components/ui/empty-state"
 import { SearchBar, SubjectCell, TypeFilter, type SubjectTypeFilter } from "@/components/browse"
 import { useSearchSubjects } from "@/hooks/useSearchSubjects"
 import { useColorScheme } from "@/lib/useColorScheme"
@@ -100,30 +102,30 @@ export default function SearchScreen() {
 
         {/* Error state */}
         {error && (
-          <View className="p-4">
-            <Text className="text-destructive text-center">{error}</Text>
-          </View>
+          <ErrorView
+            type="generic"
+            message={error}
+            compact
+            className="m-4"
+          />
         )}
 
         {/* Empty state - no query */}
         {!query.trim() && !isSearching && results.length === 0 && (
-          <View className="flex-1 items-center justify-center p-8">
-            <Text className="text-muted-foreground text-center text-lg mb-2">
-              Search for Subjects
-            </Text>
-            <Text className="text-muted-foreground text-center text-sm">
-              Search by Japanese characters, meanings, or readings
-            </Text>
-          </View>
+          <EmptyState
+            type="search"
+            title="Search for Subjects"
+            message="Search by Japanese characters, meanings, or readings"
+          />
         )}
 
         {/* Empty state - no results */}
         {query.trim() && !isSearching && results.length === 0 && !error && (
-          <View className="flex-1 items-center justify-center p-8">
-            <Text className="text-muted-foreground text-center">
-              No subjects found for "{query}"
-            </Text>
-          </View>
+          <EmptyState
+            type="search"
+            title="No Results Found"
+            message={`No subjects found for "${query}"`}
+          />
         )}
 
         {/* Results list */}
