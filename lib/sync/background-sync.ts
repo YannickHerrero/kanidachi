@@ -8,6 +8,7 @@ import { getToken } from "@/lib/auth"
 import { wanikaniClient } from "@/lib/wanikani/client"
 import { WaniKaniError } from "@/lib/wanikani/errors"
 import { useAuthStore } from "@/stores/auth"
+import { useBackgroundSyncStore } from "@/stores/background-sync"
 import { logError } from "@/db/queries"
 
 type Database = SQLJsDatabase | ExpoSQLiteDatabase | null
@@ -63,13 +64,23 @@ class BackgroundSyncManager {
   }
 
   /**
+   * Update the store with current pending count
+   */
+  private async updatePendingCount(): Promise<number> {
+    if (!this.db) return 0
+    const count = await getPendingCount(this.db)
+    useBackgroundSyncStore.getState().setPendingCount(count)
+    return count
+  }
+
+  /**
    * Trigger an immediate sync attempt
    */
   async syncNow(): Promise<void> {
     if (this.isRunning || !this.db) return
 
     // Check if we have pending items
-    const pendingCount = await getPendingCount(this.db)
+    const pendingCount = await this.updatePendingCount()
     if (pendingCount === 0) return
 
     // Check if we're online
@@ -90,6 +101,7 @@ class BackgroundSyncManager {
     }
 
     this.isRunning = true
+    useBackgroundSyncStore.getState().setIsSyncing(true)
 
     try {
       console.log(`[BackgroundSync] Processing ${pendingCount} pending items...`)
@@ -98,6 +110,9 @@ class BackgroundSyncManager {
       console.log(
         `[BackgroundSync] Processed: ${result.processed}, Failed: ${result.failed}, Remaining: ${result.remaining}`
       )
+
+      // Update pending count after processing
+      await this.updatePendingCount()
 
       // Handle auth errors by forcing logout
       if (result.authError) {
@@ -140,6 +155,9 @@ class BackgroundSyncManager {
       }
     } finally {
       this.isRunning = false
+      useBackgroundSyncStore.getState().setIsSyncing(false)
+      // Update pending count one more time after sync completes
+      await this.updatePendingCount()
     }
   }
 
@@ -175,6 +193,7 @@ class BackgroundSyncManager {
     }
 
     this.isRunning = true
+    useBackgroundSyncStore.getState().setIsSyncing(true)
 
     try {
       console.log("[BackgroundSync] Starting quick sync...")
@@ -203,6 +222,7 @@ class BackgroundSyncManager {
       }
     } finally {
       this.isRunning = false
+      useBackgroundSyncStore.getState().setIsSyncing(false)
     }
   }
 

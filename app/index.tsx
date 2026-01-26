@@ -15,7 +15,7 @@ import { SrsBreakdown } from "@/components/dashboard/srs-breakdown"
 import { ForecastChart } from "@/components/dashboard/forecast-chart"
 import { BrowseCard } from "@/components/dashboard/browse-card"
 import { StatsCard } from "@/components/dashboard/stats-card"
-import { PendingSyncIndicator } from "@/components/dashboard/pending-sync-indicator"
+import { HeaderSyncIndicator } from "@/components/dashboard/header-sync-indicator"
 import { VacationBanner } from "@/components/dashboard/vacation-banner"
 import { WeeklyForecast } from "@/components/dashboard/weekly-forecast"
 import { useDashboardData } from "@/hooks/useDashboardData"
@@ -104,24 +104,25 @@ export default function Dashboard() {
               <Muted>Level {user.level}</Muted>
             )}
           </View>
-          <Button
-            variant="ghost"
-            size="icon"
-            onPress={handleSettingsPress}
-            className="rounded-full"
-          >
-            <Settings
-              size={24}
-              color={colorScheme === "dark" ? "#a1a1aa" : "#71717a"}
-            />
-          </Button>
+          <View className="flex-row items-center">
+            {/* Sync indicator in header */}
+            <HeaderSyncIndicator />
+            <Button
+              variant="ghost"
+              size="icon"
+              onPress={handleSettingsPress}
+              className="rounded-full"
+            >
+              <Settings
+                size={24}
+                color={colorScheme === "dark" ? "#a1a1aa" : "#71717a"}
+              />
+            </Button>
+          </View>
         </View>
 
         {/* Vacation Mode Banner */}
         <VacationBanner vacationStartedAt={user?.vacationStartedAt ?? null} />
-
-        {/* Pending Sync Indicator */}
-        <PendingSyncIndicator />
 
         {/* Review & Lesson Cards */}
         <View className="flex-row gap-4">
