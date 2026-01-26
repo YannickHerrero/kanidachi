@@ -1,5 +1,5 @@
 import * as React from "react"
-import { View } from "react-native"
+import { Alert, View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useRouter, Stack } from "expo-router"
 import { X, Flag } from "lucide-react-native"
@@ -16,6 +16,7 @@ import {
   selectCurrentItem,
   selectProgress,
   selectRemainingCount,
+  selectIsSessionComplete,
 } from "@/stores/reviews"
 import { useColorScheme } from "@/lib/useColorScheme"
 import { useSettingsStore } from "@/stores/settings"
@@ -47,6 +48,7 @@ export default function ReviewSessionScreen() {
   const currentItem = useReviewStore(selectCurrentItem)
   const progress = useReviewStore(selectProgress)
   const remainingCount = useReviewStore(selectRemainingCount)
+  const isSessionComplete = useReviewStore(selectIsSessionComplete)
 
   const reviewOrdering = useSettingsStore((s) => s.reviewOrdering)
   const wrapUpBatchSize = useSettingsStore((s) => s.wrapUpBatchSize)
@@ -54,10 +56,10 @@ export default function ReviewSessionScreen() {
 
   // Start session when items are loaded
   React.useEffect(() => {
-    if (items.length > 0 && !isActive) {
+    if (items.length > 0 && !isActive && !isSessionComplete) {
       startSession(items, reviewOrdering)
     }
-  }, [items, isActive, startSession, reviewOrdering])
+  }, [items, isActive, isSessionComplete, startSession, reviewOrdering])
 
   // Preload audio for upcoming items
   const queue = useReviewStore((s) => s.queue)
@@ -90,8 +92,25 @@ export default function ReviewSessionScreen() {
   }, [isActive, progress.completed, router])
 
   const handleEndSession = () => {
-    endSession()
-    router.replace("/reviews/summary")
+    Alert.alert(
+      "End review session?",
+      "Completed reviews will be saved.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "End session",
+          style: "destructive",
+          onPress: () => {
+            endSession()
+            if (progress.completed > 0) {
+              router.replace("/reviews/summary")
+            } else {
+              router.replace("/")
+            }
+          },
+        },
+      ]
+    )
   }
 
   const handleGrade = (correct: boolean) => {

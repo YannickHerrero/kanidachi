@@ -15,6 +15,7 @@ import { addPendingProgress } from "@/db/queries"
 import { parseMeanings } from "@/db/queries"
 import { useColorScheme } from "@/lib/useColorScheme"
 import { useSettingsStore } from "@/stores/settings"
+import { backgroundSyncManager } from "@/lib/sync/background-sync"
 
 export default function ReviewSummaryScreen() {
   const router = useRouter()
@@ -81,6 +82,7 @@ export default function ReviewSummaryScreen() {
         }
 
         setHasSubmitted(true)
+        backgroundSyncManager.syncNow().catch(() => {})
       } catch (error) {
         console.error("[ReviewSummary] Error saving progress:", error)
         // Still mark as submitted - we tried
@@ -94,6 +96,9 @@ export default function ReviewSummaryScreen() {
   }, [db, hasSubmitted, isSubmitting, summary.results])
 
   const handleDone = () => {
+    if (summary.results.length > 0 && (!hasSubmitted || isSubmitting)) {
+      return
+    }
     reset()
     router.replace("/")
   }
@@ -104,6 +109,8 @@ export default function ReviewSummaryScreen() {
     if (summary.accuracy >= 70) return "text-amber-500"
     return "text-red-500"
   }
+
+  const isSaving = isSubmitting || (!hasSubmitted && summary.results.length > 0)
 
   return (
     <SafeAreaView className="flex-1 bg-background">
@@ -118,7 +125,7 @@ export default function ReviewSummaryScreen() {
         <View className="items-center py-8">
           <Text className="text-3xl font-bold mb-2">Session Complete</Text>
           <Text className="text-muted-foreground">
-            {isSubmitting ? "Saving progress..." : "Great work!"}
+            {isSaving ? "Saving progress..." : "Great work!"}
           </Text>
         </View>
 
@@ -205,10 +212,10 @@ export default function ReviewSummaryScreen() {
         <Button
           onPress={handleDone}
           className="h-14"
-          disabled={isSubmitting}
+          disabled={isSaving}
         >
           <Text className="text-primary-foreground text-lg font-semibold">
-            {isSubmitting ? "Saving..." : "Back to Dashboard"}
+            {isSaving ? "Saving..." : "Back to Dashboard"}
           </Text>
         </Button>
 
