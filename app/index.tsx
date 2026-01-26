@@ -15,6 +15,9 @@ import { SrsBreakdown } from "@/components/dashboard/srs-breakdown"
 import { ForecastChart } from "@/components/dashboard/forecast-chart"
 import { BrowseCard } from "@/components/dashboard/browse-card"
 import { StatsCard } from "@/components/dashboard/stats-card"
+import { PendingSyncIndicator } from "@/components/dashboard/pending-sync-indicator"
+import { VacationBanner } from "@/components/dashboard/vacation-banner"
+import { WeeklyForecast } from "@/components/dashboard/weekly-forecast"
 import { useDashboardData } from "@/hooks/useDashboardData"
 import { useColorScheme } from "@/lib/useColorScheme"
 
@@ -26,7 +29,9 @@ export default function Dashboard() {
     lessonCount,
     srsBreakdown,
     levelProgress,
+    levelDetail,
     forecast,
+    weeklyForecast,
     user,
     isLoading,
     isRefreshing,
@@ -112,6 +117,12 @@ export default function Dashboard() {
           </Button>
         </View>
 
+        {/* Vacation Mode Banner */}
+        <VacationBanner vacationStartedAt={user?.vacationStartedAt ?? null} />
+
+        {/* Pending Sync Indicator */}
+        <PendingSyncIndicator />
+
         {/* Review & Lesson Cards */}
         <View className="flex-row gap-4">
           <ReviewCard count={reviewCount} />
@@ -130,6 +141,7 @@ export default function Dashboard() {
           total={levelProgress.total}
           passed={levelProgress.passed}
           percentage={levelProgress.percentage}
+          detail={levelDetail}
         />
 
         {/* SRS Breakdown */}
@@ -143,6 +155,9 @@ export default function Dashboard() {
 
         {/* Review Forecast */}
         <ForecastChart forecast={forecast} currentReviews={reviewCount} />
+
+        {/* Weekly Forecast */}
+        <WeeklyForecast dailyForecast={weeklyForecast} />
 
         {/* Bottom padding for safe area */}
         <View className="h-4" />
