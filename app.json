@@ -1,4 +1,13 @@
 {
   "name": "kanidachi",
-  "slug": "kanidachi"
+  "slug": "kanidachi",
+  "owner": "yherrero",
+  "ios": {
+    "newArchEnabled": true,
+    "supportsTablet": true,
+    "bundleIdentifier": "com.kanidachi.app",
+    "infoPlist": {
+      "ITSAppUsesNonExemptEncryption": false
+    }
+  }
 }

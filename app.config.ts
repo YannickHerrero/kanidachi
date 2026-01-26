@@ -23,6 +23,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     newArchEnabled: true,
     supportsTablet: true,
     bundleIdentifier: "com.kanidachi.app",
+    infoPlist: {
+      ITSAppUsesNonExemptEncryption: false,
+    },
   },
   android: {
     newArchEnabled: true,
@@ -44,8 +47,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   extra: {
     eas: {
-      projectId: "",
+      projectId: "2a9e426b-3e72-4179-9a53-2f5a21ec347c",
     },
   },
-  owner: "*",
+  owner: "yherrero",
 });
