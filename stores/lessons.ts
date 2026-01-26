@@ -1,5 +1,6 @@
 import { create } from "zustand"
 import type { subjects, assignments } from "@/db/schema"
+import type { LessonOrdering } from "@/stores/settings"
 
 // Types for lesson items
 export type Subject = typeof subjects.$inferSelect
@@ -8,6 +9,62 @@ export type Assignment = typeof assignments.$inferSelect
 export interface LessonItem {
   assignment: Assignment
   subject: Subject
+}
+
+/**
+ * Sort lesson items based on the specified ordering
+ */
+function sortLessonItems(
+  items: LessonItem[],
+  ordering: LessonOrdering,
+  currentUserLevel?: number
+): LessonItem[] {
+  const sorted = [...items]
+
+  switch (ordering) {
+    case "ascending_level":
+      // Lower levels first, then by type (radicals -> kanji -> vocab)
+      return sorted.sort((a, b) => {
+        if (a.subject.level !== b.subject.level) {
+          return a.subject.level - b.subject.level
+        }
+        // Within same level, sort by type
+        const typeOrder = { radical: 0, kanji: 1, vocabulary: 2, kana_vocabulary: 3 }
+        return (typeOrder[a.subject.type as keyof typeof typeOrder] ?? 4) -
+               (typeOrder[b.subject.type as keyof typeof typeOrder] ?? 4)
+      })
+
+    case "current_level_first":
+      // Current level items first, then lower levels
+      return sorted.sort((a, b) => {
+        const aIsCurrent = currentUserLevel && a.subject.level === currentUserLevel
+        const bIsCurrent = currentUserLevel && b.subject.level === currentUserLevel
+
+        if (aIsCurrent && !bIsCurrent) return -1
+        if (!aIsCurrent && bIsCurrent) return 1
+
+        // Within same priority, sort by level ascending
+        if (a.subject.level !== b.subject.level) {
+          return a.subject.level - b.subject.level
+        }
+
+        // Within same level, sort by type
+        const typeOrder = { radical: 0, kanji: 1, vocabulary: 2, kana_vocabulary: 3 }
+        return (typeOrder[a.subject.type as keyof typeof typeOrder] ?? 4) -
+               (typeOrder[b.subject.type as keyof typeof typeOrder] ?? 4)
+      })
+
+    case "shuffled":
+      // Fisher-Yates shuffle
+      for (let i = sorted.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        ;[sorted[i], sorted[j]] = [sorted[j], sorted[i]]
+      }
+      return sorted
+
+    default:
+      return sorted
+  }
 }
 
 export interface QuizResult {
@@ -40,13 +97,13 @@ interface LessonState {
   error: string | null
 
   // Actions - Selection
-  setAvailableItems: (items: LessonItem[]) => void
+  setAvailableItems: (items: LessonItem[], ordering?: LessonOrdering, currentUserLevel?: number) => void
   toggleSelection: (subjectId: number) => void
   selectAll: () => void
   deselectAll: () => void
 
   // Actions - Content
-  startContent: () => void
+  startContent: (ordering?: LessonOrdering, currentUserLevel?: number) => void
   nextContent: () => void
   previousContent: () => void
   markViewed: (subjectId: number) => void
@@ -75,8 +132,10 @@ export const useLessonStore = create<LessonState>((set, get) => ({
   error: null,
 
   // Selection actions
-  setAvailableItems: (items) => {
-    set({ availableItems: items })
+  setAvailableItems: (items, ordering = "ascending_level", currentUserLevel) => {
+    // Sort available items when setting them
+    const sorted = sortLessonItems(items, ordering, currentUserLevel)
+    set({ availableItems: sorted })
   },
 
   toggleSelection: (subjectId) => {
@@ -101,13 +160,16 @@ export const useLessonStore = create<LessonState>((set, get) => ({
   },
 
   // Content actions
-  startContent: () => {
+  startContent: (ordering = "ascending_level", currentUserLevel) => {
     const { availableItems, selectedSubjectIds } = get()
-    const lessonItems = availableItems.filter((item) =>
+    const selected = availableItems.filter((item) =>
       selectedSubjectIds.has(item.subject.id)
     )
 
-    if (lessonItems.length === 0) return
+    if (selected.length === 0) return
+
+    // Sort selected items
+    const lessonItems = sortLessonItems(selected, ordering, currentUserLevel)
 
     set({
       phase: "content",

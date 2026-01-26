@@ -1,5 +1,6 @@
 import { create } from "zustand"
 import type { subjects, assignments } from "@/db/schema"
+import type { ReviewOrdering } from "@/stores/settings"
 
 // Types
 export type Subject = typeof subjects.$inferSelect
@@ -8,6 +9,34 @@ export type Assignment = typeof assignments.$inferSelect
 export interface ReviewItem {
   assignment: Assignment
   subject: Subject
+}
+
+/**
+ * Sort review items based on the specified ordering
+ */
+function sortReviewItems(items: ReviewItem[], ordering: ReviewOrdering): ReviewItem[] {
+  const sorted = [...items]
+
+  switch (ordering) {
+    case "random":
+      // Fisher-Yates shuffle
+      for (let i = sorted.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        ;[sorted[i], sorted[j]] = [sorted[j], sorted[i]]
+      }
+      return sorted
+
+    case "srs_stage":
+      // Lower SRS stages first (Apprentice before Guru, etc.)
+      return sorted.sort((a, b) => a.assignment.srsStage - b.assignment.srsStage)
+
+    case "level":
+      // Lower levels first
+      return sorted.sort((a, b) => a.subject.level - b.subject.level)
+
+    default:
+      return sorted
+  }
 }
 
 export interface ItemResult {
@@ -58,7 +87,7 @@ interface ReviewState {
   error: string | null
 
   // Actions
-  startSession: (items: ReviewItem[]) => void
+  startSession: (items: ReviewItem[], ordering?: ReviewOrdering) => void
   flipCard: () => void
   gradeItem: (correct: boolean) => void
   enableWrapUp: (batchSize?: number) => void
@@ -84,14 +113,14 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
   isSubmitting: false,
   error: null,
 
-  startSession: (items) => {
-    // Shuffle items for the session
-    const shuffled = [...items].sort(() => Math.random() - 0.5)
+  startSession: (items, ordering = "random") => {
+    // Sort items based on ordering preference
+    const sorted = sortReviewItems(items, ordering)
 
     set({
       isActive: true,
       items: items,
-      queue: shuffled,
+      queue: sorted,
       currentIndex: 0,
       results: new Map(),
       wrongItemsToReturn: [],
