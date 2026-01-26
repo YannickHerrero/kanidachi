@@ -14,6 +14,7 @@ import { LevelProgress } from "@/components/dashboard/level-progress"
 import { SrsBreakdown } from "@/components/dashboard/srs-breakdown"
 import { ForecastChart } from "@/components/dashboard/forecast-chart"
 import { BrowseCard } from "@/components/dashboard/browse-card"
+import { StatsCard } from "@/components/dashboard/stats-card"
 import { useDashboardData } from "@/hooks/useDashboardData"
 import { useColorScheme } from "@/lib/useColorScheme"
 
@@ -119,6 +120,9 @@ export default function Dashboard() {
 
         {/* Browse Card */}
         <BrowseCard />
+
+        {/* Stats Card */}
+        <StatsCard />
 
         {/* Level Progress */}
         <LevelProgress

@@ -1,4 +1,4 @@
-import { and, eq, gte, inArray, isNotNull, isNull, lte, or, sql } from "drizzle-orm"
+import { and, desc, eq, gte, inArray, isNotNull, isNull, lte, or, sql } from "drizzle-orm"
 import type { ExpoSQLiteDatabase } from "drizzle-orm/expo-sqlite"
 import type { SQLJsDatabase } from "drizzle-orm/sql-js"
 import {
@@ -10,6 +10,8 @@ import {
   user,
   voiceActors,
   audioCache,
+  reviewStatistics,
+  levelProgressions,
   type Meaning,
   type Reading,
   type ContextSentence,
@@ -652,4 +654,212 @@ export async function getStudyMaterialForSubject(db: Database, subjectId: number
     .from(studyMaterials)
     .where(eq(studyMaterials.subjectId, subjectId))
   return result[0] ?? null
+}
+
+// ============================================================================
+// STATISTICS QUERIES
+// ============================================================================
+
+/**
+ * Get overall accuracy statistics
+ */
+export async function getOverallAccuracy(db: Database) {
+  if (!db) return { totalCorrect: 0, totalIncorrect: 0, percentage: 0 }
+
+  const result = await (db as ExpoSQLiteDatabase)
+    .select({
+      meaningCorrect: sql<number>`sum(${reviewStatistics.meaningCorrect})`,
+      meaningIncorrect: sql<number>`sum(${reviewStatistics.meaningIncorrect})`,
+      readingCorrect: sql<number>`sum(${reviewStatistics.readingCorrect})`,
+      readingIncorrect: sql<number>`sum(${reviewStatistics.readingIncorrect})`,
+    })
+    .from(reviewStatistics)
+
+  const row = result[0] as {
+    meaningCorrect: number | null
+    meaningIncorrect: number | null
+    readingCorrect: number | null
+    readingIncorrect: number | null
+  }
+
+  const totalCorrect = (row?.meaningCorrect ?? 0) + (row?.readingCorrect ?? 0)
+  const totalIncorrect = (row?.meaningIncorrect ?? 0) + (row?.readingIncorrect ?? 0)
+  const total = totalCorrect + totalIncorrect
+  const percentage = total > 0 ? Math.round((totalCorrect / total) * 100) : 0
+
+  return { totalCorrect, totalIncorrect, percentage }
+}
+
+/**
+ * Get accuracy breakdown by subject type
+ */
+export async function getAccuracyByType(db: Database) {
+  if (!db) return []
+
+  const result = await (db as ExpoSQLiteDatabase)
+    .select({
+      subjectType: reviewStatistics.subjectType,
+      meaningCorrect: sql<number>`sum(${reviewStatistics.meaningCorrect})`,
+      meaningIncorrect: sql<number>`sum(${reviewStatistics.meaningIncorrect})`,
+      readingCorrect: sql<number>`sum(${reviewStatistics.readingCorrect})`,
+      readingIncorrect: sql<number>`sum(${reviewStatistics.readingIncorrect})`,
+      cnt: sql<number>`count(*)`,
+    })
+    .from(reviewStatistics)
+    .groupBy(reviewStatistics.subjectType)
+
+  return (result as Array<{
+    subjectType: string
+    meaningCorrect: number | null
+    meaningIncorrect: number | null
+    readingCorrect: number | null
+    readingIncorrect: number | null
+    cnt: number
+  }>).map(row => {
+    const totalCorrect = (row.meaningCorrect ?? 0) + (row.readingCorrect ?? 0)
+    const totalIncorrect = (row.meaningIncorrect ?? 0) + (row.readingIncorrect ?? 0)
+    const total = totalCorrect + totalIncorrect
+    const percentage = total > 0 ? Math.round((totalCorrect / total) * 100) : 0
+
+    return {
+      subjectType: row.subjectType,
+      totalCorrect,
+      totalIncorrect,
+      percentage,
+      subjectCount: row.cnt,
+    }
+  })
+}
+
+/**
+ * Get leeches (subjects with low accuracy - percentage < threshold)
+ * Leeches are items that the user struggles with
+ */
+export async function getLeeches(db: Database, threshold = 75, limit = 50) {
+  if (!db) return []
+
+  // Get review statistics with low percentage correct
+  // We also check that there are at least some reviews (to avoid items just started)
+  const result = await (db as ExpoSQLiteDatabase)
+    .select({
+      reviewStat: reviewStatistics,
+      subject: subjects,
+    })
+    .from(reviewStatistics)
+    .innerJoin(subjects, eq(reviewStatistics.subjectId, subjects.id))
+    .where(
+      and(
+        lte(reviewStatistics.percentageCorrect, threshold),
+        // Ensure at least 4 total reviews to be considered a leech
+        gte(
+          sql`${reviewStatistics.meaningCorrect} + ${reviewStatistics.meaningIncorrect} + ${reviewStatistics.readingCorrect} + ${reviewStatistics.readingIncorrect}`,
+          4
+        )
+      )
+    )
+    .orderBy(reviewStatistics.percentageCorrect)
+
+  return (result as Array<{
+    reviewStat: typeof reviewStatistics.$inferSelect
+    subject: typeof subjects.$inferSelect
+  }>).slice(0, limit).map(row => ({
+    subjectId: row.reviewStat.subjectId,
+    subjectType: row.reviewStat.subjectType,
+    percentageCorrect: row.reviewStat.percentageCorrect,
+    meaningCorrect: row.reviewStat.meaningCorrect,
+    meaningIncorrect: row.reviewStat.meaningIncorrect,
+    readingCorrect: row.reviewStat.readingCorrect,
+    readingIncorrect: row.reviewStat.readingIncorrect,
+    subject: row.subject,
+  }))
+}
+
+/**
+ * Get level progressions (timeline of level completions)
+ */
+export async function getLevelTimeline(db: Database) {
+  if (!db) return []
+
+  const result = await (db as ExpoSQLiteDatabase)
+    .select()
+    .from(levelProgressions)
+    .orderBy(levelProgressions.level)
+
+  return result.map(row => {
+    // Calculate time spent on level (from startedAt to passedAt or completedAt)
+    let timeSpentDays: number | null = null
+    const startedAt = row.startedAt
+    const endedAt = row.passedAt ?? row.completedAt
+
+    if (startedAt && endedAt) {
+      const durationSeconds = endedAt - startedAt
+      timeSpentDays = Math.round(durationSeconds / (60 * 60 * 24))
+    }
+
+    return {
+      level: row.level,
+      unlockedAt: row.unlockedAt,
+      startedAt: row.startedAt,
+      passedAt: row.passedAt,
+      completedAt: row.completedAt,
+      abandonedAt: row.abandonedAt,
+      timeSpentDays,
+    }
+  })
+}
+
+/**
+ * Get total review counts over time (from pending progress and review statistics)
+ */
+export async function getTotalReviewStats(db: Database) {
+  if (!db) return { totalReviews: 0, totalLessons: 0 }
+
+  // Get total from review statistics (correct + incorrect for both meaning and reading)
+  const result = await (db as ExpoSQLiteDatabase)
+    .select({
+      totalMeaning: sql<number>`sum(${reviewStatistics.meaningCorrect} + ${reviewStatistics.meaningIncorrect})`,
+      totalReading: sql<number>`sum(${reviewStatistics.readingCorrect} + ${reviewStatistics.readingIncorrect})`,
+    })
+    .from(reviewStatistics)
+
+  const row = result[0] as {
+    totalMeaning: number | null
+    totalReading: number | null
+  }
+
+  // Total reviews is the sum of all answers (meaning + reading reviews)
+  const totalReviews = (row?.totalMeaning ?? 0) + (row?.totalReading ?? 0)
+
+  // Get total lessons started
+  const lessonsResult = await (db as ExpoSQLiteDatabase)
+    .select({ cnt: sql<number>`count(*)` })
+    .from(assignments)
+    .where(isNotNull(assignments.startedAt))
+
+  const totalLessons = (lessonsResult[0] as { cnt: number })?.cnt ?? 0
+
+  return { totalReviews, totalLessons }
+}
+
+/**
+ * Get items count by SRS stage and type
+ */
+export async function getItemsByStageAndType(db: Database) {
+  if (!db) return []
+
+  const result = await (db as ExpoSQLiteDatabase)
+    .select({
+      srsStage: assignments.srsStage,
+      subjectType: assignments.subjectType,
+      cnt: sql<number>`count(*)`,
+    })
+    .from(assignments)
+    .where(isNotNull(assignments.startedAt))
+    .groupBy(assignments.srsStage, assignments.subjectType)
+
+  return result as Array<{
+    srsStage: number
+    subjectType: string
+    cnt: number
+  }>
 }

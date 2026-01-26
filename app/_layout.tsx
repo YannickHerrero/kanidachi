@@ -141,6 +141,7 @@ export default function RootLayout() {
               <Stack.Screen name="browse/level/[level]" options={{ headerShown: false }} />
               <Stack.Screen name="browse/search" options={{ headerShown: false }} />
               <Stack.Screen name="subject/[id]" options={{ headerShown: false }} />
+              <Stack.Screen name="stats" options={{ headerShown: false }} />
             </Stack>
           </BottomSheetModalProvider>
         </GestureHandlerRootView>
