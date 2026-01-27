@@ -14,13 +14,41 @@ export function LevelTimeline({ levelTimeline, currentLevel }: LevelTimelineProp
   const nowSeconds = Math.floor(Date.now() / 1000)
 
   const timelineEntries = React.useMemo(() => {
+    const getEntryTimestamp = (entry: LevelProgressionData) => {
+      return (
+        entry.startedAt ??
+        entry.unlockedAt ??
+        entry.passedAt ??
+        entry.completedAt ??
+        entry.abandonedAt ??
+        0
+      )
+    }
+
+    const latestByLevel = new Map<number, LevelProgressionData>()
+    for (const entry of levelTimeline) {
+      const existing = latestByLevel.get(entry.level)
+      const isCurrentInProgress = entry.level === currentLevel && entry.passedAt === null
+      const existingIsCurrentInProgress =
+        existing?.level === currentLevel && existing.passedAt === null
+
+      if (
+        !existing ||
+        isCurrentInProgress ||
+        (!existingIsCurrentInProgress &&
+          getEntryTimestamp(entry) > getEntryTimestamp(existing))
+      ) {
+        latestByLevel.set(entry.level, entry)
+      }
+    }
+
     const hasCurrent = levelTimeline.some(
       (entry) => entry.level === currentLevel && entry.passedAt === null
     )
     const baseEntries = hasCurrent
-      ? [...levelTimeline]
+      ? Array.from(latestByLevel.values())
       : [
-          ...levelTimeline,
+          ...latestByLevel.values(),
           {
             id: -currentLevel,
             level: currentLevel,
@@ -52,15 +80,13 @@ export function LevelTimeline({ levelTimeline, currentLevel }: LevelTimelineProp
       })
       .sort((a, b) => {
         const aSort =
-          (a.level === currentLevel && a.passedAt === null
+          a.level === currentLevel && a.passedAt === null
             ? a.startedAt ?? a.unlockedAt ?? nowSeconds
-            : a.startedAt ?? a.unlockedAt ?? a.passedAt ?? a.completedAt ?? a.abandonedAt) ??
-          0
+            : getEntryTimestamp(a)
         const bSort =
-          (b.level === currentLevel && b.passedAt === null
+          b.level === currentLevel && b.passedAt === null
             ? b.startedAt ?? b.unlockedAt ?? nowSeconds
-            : b.startedAt ?? b.unlockedAt ?? b.passedAt ?? b.completedAt ?? b.abandonedAt) ??
-          0
+            : getEntryTimestamp(b)
         return aSort - bSort
       })
   }, [currentLevel, levelTimeline, nowSeconds])

@@ -8,25 +8,97 @@ import type { LevelProgressionData } from "@/hooks/useStatistics"
 
 interface LevelTimeChartProps {
   levelTimeline: LevelProgressionData[]
+  currentLevel: number
 }
 
-export function LevelTimeChart({ levelTimeline }: LevelTimeChartProps) {
+export function LevelTimeChart({ levelTimeline, currentLevel }: LevelTimeChartProps) {
   const { colorScheme } = useColorScheme()
   const scrollRef = React.useRef<ScrollView | null>(null)
-  const completedLevels = React.useMemo(() => {
-    return levelTimeline.filter(
-      (level, index, list) =>
-        level.timeSpentDays !== null &&
-        level.passedAt !== null &&
-        list.findIndex((entry) => entry.level === level.level) === index
-    )
-  }, [levelTimeline])
-  const hasData = completedLevels.length > 0
+  const nowSeconds = Math.floor(Date.now() / 1000)
+  const timelineEntries = React.useMemo(() => {
+    const getEntryTimestamp = (entry: LevelProgressionData) => {
+      return (
+        entry.startedAt ??
+        entry.unlockedAt ??
+        entry.passedAt ??
+        entry.completedAt ??
+        entry.abandonedAt ??
+        0
+      )
+    }
 
-  const maxDays = hasData
-    ? Math.max(...completedLevels.map((level) => level.timeSpentDays ?? 0), 1)
+    const latestByLevel = new Map<number, LevelProgressionData>()
+    for (const entry of levelTimeline) {
+      const existing = latestByLevel.get(entry.level)
+      const isCurrentInProgress = entry.level === currentLevel && entry.passedAt === null
+      const existingIsCurrentInProgress =
+        existing?.level === currentLevel && existing.passedAt === null
+
+      if (
+        !existing ||
+        isCurrentInProgress ||
+        (!existingIsCurrentInProgress &&
+          getEntryTimestamp(entry) > getEntryTimestamp(existing))
+      ) {
+        latestByLevel.set(entry.level, entry)
+      }
+    }
+
+    const hasCurrent = levelTimeline.some(
+      (entry) => entry.level === currentLevel && entry.passedAt === null
+    )
+
+    const baseEntries = hasCurrent
+      ? Array.from(latestByLevel.values())
+      : [
+          ...latestByLevel.values(),
+          {
+            id: -currentLevel,
+            level: currentLevel,
+            unlockedAt: null,
+            startedAt: null,
+            passedAt: null,
+            completedAt: null,
+            abandonedAt: null,
+            timeSpentDays: null,
+          },
+        ]
+
+    return baseEntries
+      .map((entry) => {
+        if (entry.level !== currentLevel || entry.passedAt !== null) return entry
+
+        const startedAt = entry.startedAt ?? entry.unlockedAt
+        if (!startedAt) return entry
+
+        const timeSpentDays = Math.max(
+          0,
+          Math.round((nowSeconds - startedAt) / (60 * 60 * 24))
+        )
+
+        return {
+          ...entry,
+          timeSpentDays,
+        }
+      })
+      .sort((a, b) => getEntryTimestamp(a) - getEntryTimestamp(b))
+  }, [currentLevel, levelTimeline, nowSeconds])
+
+  const completedLevels = React.useMemo(() => {
+    return timelineEntries.filter(
+      (level) => level.timeSpentDays !== null && level.passedAt !== null
+    )
+  }, [timelineEntries])
+  const chartLevels = React.useMemo(() => {
+    return timelineEntries.filter((level) => level.timeSpentDays !== null)
+  }, [timelineEntries])
+  const hasChartData = chartLevels.length > 0
+  const hasSummaryData = completedLevels.length > 0
+
+  const maxDays = hasChartData
+    ? Math.max(...chartLevels.map((level) => level.timeSpentDays ?? 0), 1)
     : 1
-  const averageDays = hasData
+  const averageDays = hasSummaryData
     ? Math.round(
         completedLevels.reduce((sum, level) => sum + (level.timeSpentDays ?? 0), 0) /
           completedLevels.length
@@ -42,7 +114,7 @@ export function LevelTimeChart({ levelTimeline }: LevelTimeChartProps) {
         <CardTitle className="text-lg">Time per Level</CardTitle>
       </CardHeader>
       <CardContent className="gap-4">
-        {hasData && (
+        {hasSummaryData && (
           <View className="flex-row flex-wrap gap-4 pb-2">
             <View className="flex-1 min-w-[100px]">
               <Text className="text-2xl font-bold text-foreground">
@@ -63,7 +135,7 @@ export function LevelTimeChart({ levelTimeline }: LevelTimeChartProps) {
           </View>
         )}
 
-        {hasData && (
+        {hasChartData && (
           <View className="pt-2 border-t border-border">
             <Text className="text-sm font-medium text-muted-foreground pb-2">
               Days to level up
@@ -77,12 +149,12 @@ export function LevelTimeChart({ levelTimeline }: LevelTimeChartProps) {
                 scrollRef.current?.scrollToEnd({ animated: false })
               }}
             >
-              {completedLevels.map((level) => {
+              {chartLevels.map((level) => {
                 const timeSpent = level.timeSpentDays ?? 0
                 const barHeight = Math.max(6, Math.round((timeSpent / maxDays) * chartHeight))
 
                 return (
-                  <View key={level.level} className="items-center">
+                  <View key={level.id} className="items-center">
                     <View style={[styles.barContainer, { height: chartHeight }]}
                       className="justify-end"
                     >
@@ -107,7 +179,7 @@ export function LevelTimeChart({ levelTimeline }: LevelTimeChartProps) {
           </View>
         )}
 
-        {!hasData && (
+        {!hasChartData && (
           <View className="items-center py-4">
             <Text className="text-sm text-muted-foreground text-center">
               Complete a level to see time spent per level

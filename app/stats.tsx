@@ -147,7 +147,7 @@ export default function StatsScreen() {
         />
 
         {/* Time per Level */}
-        <LevelTimeChart levelTimeline={levelTimeline} />
+        <LevelTimeChart levelTimeline={levelTimeline} currentLevel={currentLevel} />
 
         {/* Level Timeline */}
         <LevelTimeline levelTimeline={levelTimeline} currentLevel={currentLevel} />
