@@ -9,6 +9,7 @@ import { triggerQuickSync, triggerSync } from "@/lib/sync/background-sync"
  * 
  * Following Tsurukame's pattern:
  * - On app foreground: process pending queue + quick sync
+ * - Assumes the hour may have changed while in background (reviews become available on the hour)
  * - This catches reviews done on other devices while app was in background
  */
 export function useAppStateSync() {
@@ -31,8 +32,18 @@ export function useAppStateSync() {
         // Prevents rapid syncs from app switching
         if (timeSinceLastForeground > 30000) {
           console.log("[AppStateSync] App foregrounded, triggering sync...")
-          // First process pending queue, then quick sync runs after
+          
+          // Following Tsurukame's applicationWillEnterForeground pattern:
+          // Assume the hour changed while the app was in the background.
+          // This ensures we get fresh review availability data.
+          
+          // First process pending queue (reviews/lessons waiting to sync)
           triggerSync()
+          
+          // Then do a quick sync to get latest assignments
+          // (triggerSync will do this after processing the queue,
+          // but we also call it explicitly in case queue is empty)
+          triggerQuickSync()
         }
 
         lastForegroundRef.current = now

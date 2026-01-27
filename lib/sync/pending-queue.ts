@@ -126,10 +126,12 @@ async function processPendingItem(
  * Process all pending progress items in the queue
  * @param db Database instance
  * @param reserveQuota Number of API requests to reserve for other operations (e.g., sync)
+ * @param onProgress Optional callback for progress updates (processed, total)
  */
 export async function processQueue(
   db: Database,
-  reserveQuota = 5
+  reserveQuota = 5,
+  onProgress?: (processed: number, total: number) => void
 ): Promise<QueueProcessResult> {
   if (!db) {
     return { processed: 0, failed: 0, remaining: 0, authError: false }
@@ -159,6 +161,7 @@ export async function processQueue(
   let processed = 0
   let failed = 0
   let authError = false
+  const total = items.length
 
   for (const item of items) {
     // Check if we should skip this item (too many recent attempts)
@@ -186,6 +189,7 @@ export async function processQueue(
         // Remove from queue
         await db.delete(pendingProgress).where(eq(pendingProgress.id, item.id))
         processed++
+        onProgress?.(processed, total)
       } else {
         // Update attempt count
         await db

@@ -82,7 +82,7 @@ export default function ReviewSummaryScreen() {
         }
 
         setHasSubmitted(true)
-        backgroundSyncManager.syncNow().catch(() => {})
+        backgroundSyncManager.processPendingQueue().catch(() => {})
       } catch (error) {
         console.error("[ReviewSummary] Error saving progress:", error)
         // Still mark as submitted - we tried

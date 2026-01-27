@@ -2,7 +2,7 @@ import type { ExpoSQLiteDatabase } from "drizzle-orm/expo-sqlite"
 import type { SQLJsDatabase } from "drizzle-orm/sql-js"
 
 import { processQueue, getPendingCount } from "./pending-queue"
-import { performQuickSync } from "./incremental-sync"
+import { performQuickSync, performFullRefreshSync } from "./incremental-sync"
 import { checkIsOnline } from "@/hooks/useNetworkStatus"
 import { getToken } from "@/lib/auth"
 import { wanikaniClient } from "@/lib/wanikani/client"
@@ -16,10 +16,17 @@ type Database = SQLJsDatabase | ExpoSQLiteDatabase | null
 /**
  * Background sync manager
  * Processes pending queue items when online and syncs latest data
+ * 
+ * Following Tsurukame's pattern, sync is triggered by:
+ * - Dashboard focus (useDashboardFocusSync)
+ * - App foreground (useAppStateSync)
+ * - Hourly timer (useHourlySync)
+ * - Pull-to-refresh (manual)
+ * 
+ * NOT by a periodic interval timer (too aggressive for battery/rate limits)
  */
 class BackgroundSyncManager {
   private isRunning = false
-  private intervalId: NodeJS.Timeout | null = null
   private db: Database = null
   private lastQuickSyncAt = 0
 
@@ -35,32 +42,8 @@ class BackgroundSyncManager {
       wanikaniClient.setToken(token)
     }
 
-    // Start periodic sync
-    this.startPeriodicSync()
-
-    // Do an immediate sync attempt
-    this.syncNow()
-  }
-
-  /**
-   * Start periodic background sync (every 30 seconds)
-   */
-  startPeriodicSync(): void {
-    if (this.intervalId) return
-
-    this.intervalId = setInterval(() => {
-      this.syncNow()
-    }, 30000) // 30 seconds
-  }
-
-  /**
-   * Stop periodic background sync
-   */
-  stopPeriodicSync(): void {
-    if (this.intervalId) {
-      clearInterval(this.intervalId)
-      this.intervalId = null
-    }
+    // Process any pending queue items on startup
+    this.processPendingQueue()
   }
 
   /**
@@ -74,9 +57,10 @@ class BackgroundSyncManager {
   }
 
   /**
-   * Trigger an immediate sync attempt
+   * Process pending queue items (lessons/reviews waiting to be sent)
+   * Called when network becomes available or after reviews/lessons
    */
-  async syncNow(): Promise<void> {
+  async processPendingQueue(): Promise<void> {
     if (this.isRunning || !this.db) return
 
     // Check if we have pending items
@@ -86,7 +70,7 @@ class BackgroundSyncManager {
     // Check if we're online
     const isOnline = await checkIsOnline()
     if (!isOnline) {
-      console.log("[BackgroundSync] Offline, skipping sync")
+      console.log("[BackgroundSync] Offline, skipping queue processing")
       return
     }
 
@@ -94,19 +78,25 @@ class BackgroundSyncManager {
     if (!wanikaniClient.isAuthenticated) {
       const token = await getToken()
       if (!token) {
-        console.log("[BackgroundSync] No token, skipping sync")
+        console.log("[BackgroundSync] No token, skipping queue processing")
         return
       }
       wanikaniClient.setToken(token)
     }
 
     this.isRunning = true
-    useBackgroundSyncStore.getState().setIsSyncing(true)
+    const store = useBackgroundSyncStore.getState()
+    store.startSync(false)
 
     try {
       console.log(`[BackgroundSync] Processing ${pendingCount} pending items...`)
-      // Reserve 5 requests for quick sync after processing
-      const result = await processQueue(this.db, 5)
+      
+      // Process queue with progress reporting
+      const result = await processQueue(this.db, 5, (processed, total) => {
+        const progress = total > 0 ? (processed / total) * 50 : 0 // First 50% for queue
+        store.setProgress(progress)
+      })
+      
       console.log(
         `[BackgroundSync] Processed: ${result.processed}, Failed: ${result.failed}, Remaining: ${result.remaining}`
       )
@@ -118,7 +108,6 @@ class BackgroundSyncManager {
       if (result.authError) {
         console.log("[BackgroundSync] Auth error detected, forcing logout")
         useAuthStore.getState().forceLogout("Your session has expired. Please log in again.")
-        this.stopPeriodicSync()
         return
       }
 
@@ -126,16 +115,17 @@ class BackgroundSyncManager {
       if (result.processed > 0) {
         try {
           console.log("[BackgroundSync] Queue processed, fetching latest assignments...")
-          await performQuickSync(this.db!)
+          store.setProgress(50)
+          await performQuickSync(this.db!, (progress) => {
+            store.setProgress(50 + progress * 0.5) // Last 50% for quick sync
+          })
           this.lastQuickSyncAt = Date.now()
         } catch (syncError) {
           if (syncError instanceof WaniKaniError && syncError.isAuthError) {
             console.log("[BackgroundSync] Quick sync auth error, forcing logout")
             useAuthStore.getState().forceLogout("Your session has expired. Please log in again.")
-            this.stopPeriodicSync()
           } else {
             console.error("[BackgroundSync] Quick sync failed:", syncError)
-            // Don't throw - this is best-effort
           }
         }
       }
@@ -151,19 +141,21 @@ class BackgroundSyncManager {
           {
             details: { stack: error instanceof Error ? error.stack : undefined },
           }
-        ).catch(() => {}) // Ignore logging failures
+        ).catch(() => {})
       }
     } finally {
       this.isRunning = false
-      useBackgroundSyncStore.getState().setIsSyncing(false)
-      // Update pending count one more time after sync completes
+      store.completeSync()
       await this.updatePendingCount()
     }
   }
 
   /**
    * Trigger a quick sync to fetch latest assignments
-   * Use this when app comes to foreground
+   * Use this when:
+   * - App comes to foreground
+   * - Dashboard gains focus
+   * - Hourly timer fires
    */
   async quickSync(): Promise<void> {
     if (this.isRunning || !this.db) return
@@ -193,21 +185,22 @@ class BackgroundSyncManager {
     }
 
     this.isRunning = true
-    useBackgroundSyncStore.getState().setIsSyncing(true)
+    const store = useBackgroundSyncStore.getState()
+    store.startSync(false)
 
     try {
       console.log("[BackgroundSync] Starting quick sync...")
-      await performQuickSync(this.db)
+      await performQuickSync(this.db, (progress) => {
+        store.setProgress(progress)
+      })
       this.lastQuickSyncAt = Date.now()
     } catch (error) {
       if (error instanceof WaniKaniError && error.isAuthError) {
         console.log("[BackgroundSync] Quick sync auth error, forcing logout")
         useAuthStore.getState().forceLogout("Your session has expired. Please log in again.")
-        this.stopPeriodicSync()
       } else {
         console.error("[BackgroundSync] Quick sync error:", error)
         
-        // Log error to database for debugging
         if (this.db) {
           await logError(
             this.db,
@@ -222,7 +215,67 @@ class BackgroundSyncManager {
       }
     } finally {
       this.isRunning = false
-      useBackgroundSyncStore.getState().setIsSyncing(false)
+      store.completeSync()
+    }
+  }
+
+  /**
+   * Trigger a full refresh sync
+   * Use this for pull-to-refresh when user explicitly wants latest data
+   * Shows fullscreen overlay
+   */
+  async fullRefreshSync(): Promise<void> {
+    if (this.isRunning || !this.db) return
+
+    // Check if we're online
+    const isOnline = await checkIsOnline()
+    if (!isOnline) {
+      console.log("[BackgroundSync] Offline, skipping full refresh")
+      return
+    }
+
+    // Check if we have a token
+    if (!wanikaniClient.isAuthenticated) {
+      const token = await getToken()
+      if (!token) {
+        console.log("[BackgroundSync] No token, skipping full refresh")
+        return
+      }
+      wanikaniClient.setToken(token)
+    }
+
+    this.isRunning = true
+    const store = useBackgroundSyncStore.getState()
+    store.startSync(true) // isFullRefresh = true
+
+    try {
+      console.log("[BackgroundSync] Starting full refresh sync...")
+      await performFullRefreshSync(this.db, (progress) => {
+        store.setProgress(progress)
+      })
+      this.lastQuickSyncAt = Date.now()
+    } catch (error) {
+      if (error instanceof WaniKaniError && error.isAuthError) {
+        console.log("[BackgroundSync] Full refresh auth error, forcing logout")
+        useAuthStore.getState().forceLogout("Your session has expired. Please log in again.")
+      } else {
+        console.error("[BackgroundSync] Full refresh error:", error)
+        
+        if (this.db) {
+          await logError(
+            this.db,
+            "sync",
+            error instanceof Error ? error.message : "Full refresh failed",
+            {
+              code: error instanceof WaniKaniError ? error.code : undefined,
+              details: { stack: error instanceof Error ? error.stack : undefined },
+            }
+          ).catch(() => {})
+        }
+      }
+    } finally {
+      this.isRunning = false
+      store.completeSync()
     }
   }
 
@@ -230,7 +283,6 @@ class BackgroundSyncManager {
    * Clean up resources
    */
   destroy(): void {
-    this.stopPeriodicSync()
     this.db = null
   }
 }
@@ -247,19 +299,27 @@ export async function initializeBackgroundSync(db: Database): Promise<void> {
 }
 
 /**
- * Trigger an immediate sync attempt
+ * Process pending queue items
  * Call this when network becomes available or after completing reviews/lessons
  */
 export async function triggerSync(): Promise<void> {
-  await backgroundSyncManager.syncNow()
+  await backgroundSyncManager.processPendingQueue()
 }
 
 /**
  * Trigger a quick sync to fetch latest assignments
- * Call this when app comes to foreground
+ * Call this when app comes to foreground, dashboard gains focus, or hourly timer fires
  */
 export async function triggerQuickSync(): Promise<void> {
   await backgroundSyncManager.quickSync()
+}
+
+/**
+ * Trigger a full refresh sync
+ * Call this for pull-to-refresh
+ */
+export async function triggerFullRefreshSync(): Promise<void> {
+  await backgroundSyncManager.fullRefreshSync()
 }
 
 /**

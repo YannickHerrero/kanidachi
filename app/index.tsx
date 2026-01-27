@@ -15,10 +15,13 @@ import { SrsBreakdown } from "@/components/dashboard/srs-breakdown"
 import { ForecastChart } from "@/components/dashboard/forecast-chart"
 import { BrowseCard } from "@/components/dashboard/browse-card"
 import { StatsCard } from "@/components/dashboard/stats-card"
-import { HeaderSyncIndicator } from "@/components/dashboard/header-sync-indicator"
+import { SyncProgressBar } from "@/components/dashboard/sync-progress-bar"
+import { FullRefreshOverlay } from "@/components/dashboard/full-refresh-overlay"
 import { VacationBanner } from "@/components/dashboard/vacation-banner"
 import { WeeklyForecast } from "@/components/dashboard/weekly-forecast"
 import { useDashboardData } from "@/hooks/useDashboardData"
+import { useDashboardFocusSync } from "@/hooks/useDashboardFocusSync"
+import { useHourlySync } from "@/hooks/useHourlySync"
 import { useColorScheme } from "@/lib/useColorScheme"
 
 export default function Dashboard() {
@@ -38,6 +41,10 @@ export default function Dashboard() {
     error,
     refetch,
   } = useDashboardData()
+
+  // Sync hooks - following Tsurukame's pattern
+  useDashboardFocusSync() // Sync when dashboard gains focus
+  useHourlySync() // Sync at the top of each hour
 
   const handleSettingsPress = () => {
     router.push("/settings")
@@ -86,6 +93,12 @@ export default function Dashboard() {
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+      {/* Sync Progress Bar - positioned at top of screen */}
+      <SyncProgressBar />
+      
+      {/* Full Refresh Overlay - shown during pull-to-refresh */}
+      <FullRefreshOverlay />
+
       <ScrollView
         className="flex-1"
         contentContainerClassName="p-4 gap-4"
@@ -105,8 +118,6 @@ export default function Dashboard() {
             )}
           </View>
           <View className="flex-row items-center">
-            {/* Sync indicator in header */}
-            <HeaderSyncIndicator />
             <Button
               variant="ghost"
               size="icon"

@@ -10,10 +10,10 @@ import {
   getWeeklyForecast,
   getCurrentUser,
 } from "@/db/queries"
-import { performFullRefreshSync } from "@/lib/sync/incremental-sync"
-import { checkIsOnline } from "@/hooks/useNetworkStatus"
+import { triggerFullRefreshSync } from "@/lib/sync/background-sync"
 import { useAuthStore } from "@/stores/auth"
 import { useSettingsStore } from "@/stores/settings"
+import { useBackgroundSyncStore } from "@/stores/background-sync"
 
 export interface DashboardData {
   /** Number of reviews available now */
@@ -152,24 +152,35 @@ export function useDashboardData() {
     fetchData()
   }, [fetchData])
 
+  // Auto-refetch when sync completes
+  // This ensures dashboard always shows latest data after any sync
+  const isSyncing = useBackgroundSyncStore((s) => s.isSyncing)
+  const prevSyncingRef = React.useRef(isSyncing)
+
+  React.useEffect(() => {
+    // Detect sync completion (was syncing, now not syncing)
+    if (prevSyncingRef.current && !isSyncing) {
+      console.log("[useDashboardData] Sync completed, refreshing dashboard data...")
+      fetchData()
+    }
+    prevSyncingRef.current = isSyncing
+  }, [isSyncing, fetchData])
+
   const refetch = React.useCallback(async () => {
-    // On pull-to-refresh, do a full sync to get latest from server
-    const isOnline = await checkIsOnline()
+    // On pull-to-refresh, trigger full sync via background sync manager
+    // The sync manager handles online check, auth, and progress tracking
     const authStatus = useAuthStore.getState().status
 
-    if (isOnline && authStatus === "authenticated" && db) {
-      try {
-        console.log("[useDashboardData] Pull-to-refresh, triggering full sync...")
-        await performFullRefreshSync(db)
-      } catch (error) {
-        console.error("[useDashboardData] Full sync failed:", error)
-        // Continue with local data refresh even if sync fails
-      }
+    if (authStatus === "authenticated") {
+      console.log("[useDashboardData] Pull-to-refresh, triggering full sync...")
+      // This is async but we don't await it - the sync runs in background
+      // and the auto-refetch effect above will refresh data when it completes
+      triggerFullRefreshSync()
     }
 
-    // Then refresh local data
+    // Also do immediate local data refresh
     return fetchData(true)
-  }, [fetchData, db])
+  }, [fetchData])
 
   return {
     ...data,

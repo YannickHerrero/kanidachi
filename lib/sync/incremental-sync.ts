@@ -422,17 +422,26 @@ export async function performIncrementalSync(db: Database): Promise<void> {
  * Use this for:
  * - App foreground sync (to catch reviews done elsewhere)
  * - After pending queue processing
+ * - Dashboard focus
+ * - Hourly timer
  * 
  * This is silent (no UI state updates) and optimized for frequent calls.
  * Returns true if sync completed successfully, false otherwise.
+ * 
+ * @param db Database instance
+ * @param onProgress Optional callback for progress updates (0-100)
  */
-export async function performQuickSync(db: Database): Promise<boolean> {
+export async function performQuickSync(
+  db: Database,
+  onProgress?: (progress: number) => void
+): Promise<boolean> {
   const { setUser } = useAuthStore.getState()
 
   try {
     console.log("[sync] Starting quick sync...")
+    onProgress?.(0)
 
-    // 1. Fetch user (always, to check level/vacation status)
+    // 1. Fetch user (always, to check level/vacation status) - 30%
     const userData = await wanikaniClient.getUser()
     setUser(userData)
 
@@ -444,8 +453,9 @@ export async function performQuickSync(db: Database): Promise<boolean> {
         target: user.id,
         set: userRow,
       })
+    onProgress?.(30)
 
-    // 2. Fetch assignments (most critical for review availability)
+    // 2. Fetch assignments (most critical for review availability) - 30% to 100%
     const assignmentsMeta = await getSyncMetadata(db, "assignments")
     let updatedAfter = assignmentsMeta?.lastSyncAt
 
@@ -456,7 +466,12 @@ export async function performQuickSync(db: Database): Promise<boolean> {
     }
 
     const updatedAssignments = await wanikaniClient.getAllAssignments(
-      { updated_after: updatedAfter }
+      { updated_after: updatedAfter },
+      (loaded, total) => {
+        // Map loaded/total to 30-90% progress
+        const assignmentProgress = total > 0 ? (loaded / total) * 60 : 60
+        onProgress?.(30 + assignmentProgress)
+      }
     )
 
     if (updatedAssignments.length > 0) {
@@ -472,12 +487,14 @@ export async function performQuickSync(db: Database): Promise<boolean> {
           })
       }
     }
+    onProgress?.(95)
 
     // Update sync metadata
     await db.update(syncMetadata)
       .set({ lastSyncAt: new Date().toISOString() })
       .where(eq(syncMetadata.id, "assignments"))
 
+    onProgress?.(100)
     console.log("[sync] Quick sync completed successfully")
     return true
   } catch (error) {
@@ -498,19 +515,26 @@ export async function performQuickSync(db: Database): Promise<boolean> {
  * Use this for pull-to-refresh when user explicitly wants latest data
  * 
  * Similar to performQuickSync but includes review_statistics and level_progressions
- * Still silent (no UI state updates).
+ * 
+ * @param db Database instance
+ * @param onProgress Optional callback for progress updates (0-100)
  */
-export async function performFullRefreshSync(db: Database): Promise<boolean> {
+export async function performFullRefreshSync(
+  db: Database,
+  onProgress?: (progress: number) => void
+): Promise<boolean> {
   const { setUser } = useAuthStore.getState()
 
   try {
     console.log("[sync] Starting full refresh sync...")
+    onProgress?.(0)
 
-    // 1. User
+    // 1. User - 0% to 10%
     const userData = await wanikaniClient.getUser()
     setUser(userData)
     const userRow = transformUser(userData)
     await db.insert(user).values(userRow).onConflictDoUpdate({ target: user.id, set: userRow })
+    onProgress?.(10)
 
     // Helper to get updated_after with 1 hour fallback
     const getUpdatedAfter = async (key: string) => {
@@ -519,9 +543,15 @@ export async function performFullRefreshSync(db: Database): Promise<boolean> {
       return new Date(Date.now() - 60 * 60 * 1000).toISOString()
     }
 
-    // 2. Assignments
+    // 2. Assignments - 10% to 50%
     const assignmentsUpdatedAfter = await getUpdatedAfter("assignments")
-    const updatedAssignments = await wanikaniClient.getAllAssignments({ updated_after: assignmentsUpdatedAfter })
+    const updatedAssignments = await wanikaniClient.getAllAssignments(
+      { updated_after: assignmentsUpdatedAfter },
+      (loaded, total) => {
+        const p = total > 0 ? (loaded / total) * 40 : 40
+        onProgress?.(10 + p)
+      }
+    )
     if (updatedAssignments.length > 0) {
       console.log(`[sync] Full refresh: ${updatedAssignments.length} assignments`)
       for (const assignment of updatedAssignments) {
@@ -530,10 +560,17 @@ export async function performFullRefreshSync(db: Database): Promise<boolean> {
       }
     }
     await db.update(syncMetadata).set({ lastSyncAt: new Date().toISOString() }).where(eq(syncMetadata.id, "assignments"))
+    onProgress?.(50)
 
-    // 3. Review Statistics (for accuracy updates)
+    // 3. Review Statistics (for accuracy updates) - 50% to 75%
     const reviewStatsUpdatedAfter = await getUpdatedAfter("review_statistics")
-    const updatedReviewStats = await wanikaniClient.getAllReviewStatistics({ updated_after: reviewStatsUpdatedAfter })
+    const updatedReviewStats = await wanikaniClient.getAllReviewStatistics(
+      { updated_after: reviewStatsUpdatedAfter },
+      (loaded, total) => {
+        const p = total > 0 ? (loaded / total) * 25 : 25
+        onProgress?.(50 + p)
+      }
+    )
     if (updatedReviewStats.length > 0) {
       console.log(`[sync] Full refresh: ${updatedReviewStats.length} review statistics`)
       for (const stat of updatedReviewStats) {
@@ -542,10 +579,17 @@ export async function performFullRefreshSync(db: Database): Promise<boolean> {
       }
     }
     await db.update(syncMetadata).set({ lastSyncAt: new Date().toISOString() }).where(eq(syncMetadata.id, "review_statistics"))
+    onProgress?.(75)
 
-    // 4. Level Progressions (for level-up detection)
+    // 4. Level Progressions (for level-up detection) - 75% to 100%
     const levelProgressionsUpdatedAfter = await getUpdatedAfter("level_progressions")
-    const updatedLevelProgressions = await wanikaniClient.getAllLevelProgressions({ updated_after: levelProgressionsUpdatedAfter })
+    const updatedLevelProgressions = await wanikaniClient.getAllLevelProgressions(
+      { updated_after: levelProgressionsUpdatedAfter },
+      (loaded, total) => {
+        const p = total > 0 ? (loaded / total) * 25 : 25
+        onProgress?.(75 + p)
+      }
+    )
     if (updatedLevelProgressions.length > 0) {
       console.log(`[sync] Full refresh: ${updatedLevelProgressions.length} level progressions`)
       for (const progression of updatedLevelProgressions) {
@@ -554,6 +598,7 @@ export async function performFullRefreshSync(db: Database): Promise<boolean> {
       }
     }
     await db.update(syncMetadata).set({ lastSyncAt: new Date().toISOString() }).where(eq(syncMetadata.id, "level_progressions"))
+    onProgress?.(100)
 
     console.log("[sync] Full refresh sync completed successfully")
     return true
