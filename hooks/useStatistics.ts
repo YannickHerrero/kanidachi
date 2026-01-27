@@ -9,6 +9,7 @@ import {
   getSrsBreakdown,
 } from "@/db/queries"
 import type { subjects } from "@/db/schema"
+import { useSettingsStore } from "@/stores/settings"
 
 export interface AccuracyStats {
   totalCorrect: number
@@ -83,6 +84,7 @@ const initialData: StatisticsData = {
 
 export function useStatistics() {
   const { db } = useDatabase()
+  const hideKanaVocabulary = useSettingsStore((s) => s.hideKanaVocabulary)
   const [data, setData] = React.useState<StatisticsData>(initialData)
   const [isLoading, setIsLoading] = React.useState(true)
   const [isRefreshing, setIsRefreshing] = React.useState(false)
@@ -108,12 +110,12 @@ export function useStatistics() {
         totalStats,
         srsBreakdown,
       ] = await Promise.all([
-        getOverallAccuracy(db),
-        getAccuracyByType(db),
-        getLeeches(db),
+        getOverallAccuracy(db, hideKanaVocabulary),
+        getAccuracyByType(db, hideKanaVocabulary),
+        getLeeches(db, 75, 50, hideKanaVocabulary),
         getLevelTimeline(db),
-        getTotalReviewStats(db),
-        getSrsBreakdown(db),
+        getTotalReviewStats(db, hideKanaVocabulary),
+        getSrsBreakdown(db, hideKanaVocabulary),
       ])
 
       setData({
@@ -131,7 +133,7 @@ export function useStatistics() {
       setIsLoading(false)
       setIsRefreshing(false)
     }
-  }, [db])
+  }, [db, hideKanaVocabulary])
 
   // Initial fetch
   React.useEffect(() => {

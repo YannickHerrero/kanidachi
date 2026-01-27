@@ -248,16 +248,21 @@ export async function getWeeklyForecast(db: Database) {
 /**
  * Get SRS stage breakdown
  */
-export async function getSrsBreakdown(db: Database) {
+export async function getSrsBreakdown(db: Database, hideKanaVocabulary = false) {
   if (!db) return { apprentice: 0, guru: 0, master: 0, enlightened: 0, burned: 0 }
-  
+
+  const conditions = [isNotNull(assignments.startedAt)]
+  if (hideKanaVocabulary) {
+    conditions.push(sql`${assignments.subjectType} != 'kana_vocabulary'`)
+  }
+
   const result = await (db as ExpoSQLiteDatabase)
     .select({
       srsStage: assignments.srsStage,
       cnt: sql<number>`count(*)`,
     })
     .from(assignments)
-    .where(isNotNull(assignments.startedAt))
+    .where(and(...conditions))
     .groupBy(assignments.srsStage)
 
   const breakdown = {
@@ -834,8 +839,13 @@ export async function getStudyMaterialForSubject(db: Database, subjectId: number
 /**
  * Get overall accuracy statistics
  */
-export async function getOverallAccuracy(db: Database) {
+export async function getOverallAccuracy(db: Database, hideKanaVocabulary = false) {
   if (!db) return { totalCorrect: 0, totalIncorrect: 0, percentage: 0 }
+
+  const conditions = []
+  if (hideKanaVocabulary) {
+    conditions.push(sql`${reviewStatistics.subjectType} != 'kana_vocabulary'`)
+  }
 
   const result = await (db as ExpoSQLiteDatabase)
     .select({
@@ -845,6 +855,7 @@ export async function getOverallAccuracy(db: Database) {
       readingIncorrect: sql<number>`sum(${reviewStatistics.readingIncorrect})`,
     })
     .from(reviewStatistics)
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
 
   const row = result[0] as {
     meaningCorrect: number | null
@@ -864,8 +875,13 @@ export async function getOverallAccuracy(db: Database) {
 /**
  * Get accuracy breakdown by subject type
  */
-export async function getAccuracyByType(db: Database) {
+export async function getAccuracyByType(db: Database, hideKanaVocabulary = false) {
   if (!db) return []
+
+  const conditions = []
+  if (hideKanaVocabulary) {
+    conditions.push(sql`${reviewStatistics.subjectType} != 'kana_vocabulary'`)
+  }
 
   const result = await (db as ExpoSQLiteDatabase)
     .select({
@@ -877,6 +893,7 @@ export async function getAccuracyByType(db: Database) {
       cnt: sql<number>`count(*)`,
     })
     .from(reviewStatistics)
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
     .groupBy(reviewStatistics.subjectType)
 
   return (result as Array<{
@@ -906,8 +923,22 @@ export async function getAccuracyByType(db: Database) {
  * Get leeches (subjects with low accuracy - percentage < threshold)
  * Leeches are items that the user struggles with
  */
-export async function getLeeches(db: Database, threshold = 75, limit = 50) {
+export async function getLeeches(db: Database, threshold = 75, limit = 50, hideKanaVocabulary = false) {
   if (!db) return []
+
+  // Build conditions
+  const conditions = [
+    lte(reviewStatistics.percentageCorrect, threshold),
+    // Ensure at least 4 total reviews to be considered a leech
+    gte(
+      sql`${reviewStatistics.meaningCorrect} + ${reviewStatistics.meaningIncorrect} + ${reviewStatistics.readingCorrect} + ${reviewStatistics.readingIncorrect}`,
+      4
+    ),
+  ]
+
+  if (hideKanaVocabulary) {
+    conditions.push(sql`${reviewStatistics.subjectType} != 'kana_vocabulary'`)
+  }
 
   // Get review statistics with low percentage correct
   // We also check that there are at least some reviews (to avoid items just started)
@@ -918,16 +949,7 @@ export async function getLeeches(db: Database, threshold = 75, limit = 50) {
     })
     .from(reviewStatistics)
     .innerJoin(subjects, eq(reviewStatistics.subjectId, subjects.id))
-    .where(
-      and(
-        lte(reviewStatistics.percentageCorrect, threshold),
-        // Ensure at least 4 total reviews to be considered a leech
-        gte(
-          sql`${reviewStatistics.meaningCorrect} + ${reviewStatistics.meaningIncorrect} + ${reviewStatistics.readingCorrect} + ${reviewStatistics.readingIncorrect}`,
-          4
-        )
-      )
-    )
+    .where(and(...conditions))
     .orderBy(reviewStatistics.percentageCorrect)
 
   return (result as Array<{
@@ -983,8 +1005,14 @@ export async function getLevelTimeline(db: Database) {
 /**
  * Get total review counts over time (from pending progress and review statistics)
  */
-export async function getTotalReviewStats(db: Database) {
+export async function getTotalReviewStats(db: Database, hideKanaVocabulary = false) {
   if (!db) return { totalReviews: 0, totalLessons: 0 }
+
+  // Build conditions for review statistics
+  const reviewConditions = []
+  if (hideKanaVocabulary) {
+    reviewConditions.push(sql`${reviewStatistics.subjectType} != 'kana_vocabulary'`)
+  }
 
   // Get total from review statistics (correct + incorrect for both meaning and reading)
   const result = await (db as ExpoSQLiteDatabase)
@@ -993,6 +1021,7 @@ export async function getTotalReviewStats(db: Database) {
       totalReading: sql<number>`sum(${reviewStatistics.readingCorrect} + ${reviewStatistics.readingIncorrect})`,
     })
     .from(reviewStatistics)
+    .where(reviewConditions.length > 0 ? and(...reviewConditions) : undefined)
 
   const row = result[0] as {
     totalMeaning: number | null
@@ -1002,11 +1031,17 @@ export async function getTotalReviewStats(db: Database) {
   // Total reviews is the sum of all answers (meaning + reading reviews)
   const totalReviews = (row?.totalMeaning ?? 0) + (row?.totalReading ?? 0)
 
+  // Build conditions for assignments
+  const lessonConditions = [isNotNull(assignments.startedAt)]
+  if (hideKanaVocabulary) {
+    lessonConditions.push(sql`${assignments.subjectType} != 'kana_vocabulary'`)
+  }
+
   // Get total lessons started
   const lessonsResult = await (db as ExpoSQLiteDatabase)
     .select({ cnt: sql<number>`count(*)` })
     .from(assignments)
-    .where(isNotNull(assignments.startedAt))
+    .where(and(...lessonConditions))
 
   const totalLessons = (lessonsResult[0] as { cnt: number })?.cnt ?? 0
 
