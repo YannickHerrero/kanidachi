@@ -14,7 +14,7 @@ export function ReviewProgressBar({ current, total, completed }: ReviewProgressB
   const percentage = total > 0 ? Math.round((current / total) * 100) : 0
 
   return (
-    <View className="flex-row items-center gap-3 px-4">
+    <View className="flex-row items-center gap-3">
       <View className="flex-1">
         <Progress value={percentage} className="h-2" />
       </View>

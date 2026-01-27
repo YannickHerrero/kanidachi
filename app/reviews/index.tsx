@@ -187,11 +187,13 @@ export default function ReviewSessionScreen() {
           <X size={24} color={colorScheme === "dark" ? "#fff" : "#000"} />
         </Button>
 
-        <ReviewProgressBar
-          current={progress.current}
-          total={progress.total}
-          completed={progress.completed}
-        />
+        <View className="flex-1 mx-2">
+          <ReviewProgressBar
+            current={progress.current}
+            total={progress.total}
+            completed={progress.completed}
+          />
+        </View>
 
         <View className="flex-row items-center gap-1">
           {/* Wrap Up button */}

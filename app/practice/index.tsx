@@ -109,11 +109,13 @@ export default function PracticeSessionScreen() {
           <X size={24} color={colorScheme === "dark" ? "#fff" : "#000"} />
         </Button>
 
-        <ReviewProgressBar
-          current={progress.current}
-          total={progress.total}
-          completed={progress.current - 1}
-        />
+        <View className="flex-1 mx-2">
+          <ReviewProgressBar
+            current={progress.current}
+            total={progress.total}
+            completed={progress.current - 1}
+          />
+        </View>
 
         <View className="bg-amber-500/20 px-2 py-1 rounded">
           <Text className="text-xs text-amber-600 dark:text-amber-400">
