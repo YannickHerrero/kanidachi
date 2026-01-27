@@ -103,9 +103,9 @@ export default function ReviewSessionScreen() {
           onPress: () => {
             endSession()
             if (progress.completed > 0) {
-              router.replace("/reviews/summary")
+              router.dismissTo("/reviews/summary")
             } else {
-              router.replace("/")
+              router.dismissTo("/")
             }
           },
         },

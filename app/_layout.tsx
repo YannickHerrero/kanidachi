@@ -154,7 +154,7 @@ export default function RootLayout() {
               <Stack.Screen name="lessons/index" options={{ headerShown: false }} />
               <Stack.Screen name="lessons/content" options={{ headerShown: false }} />
               <Stack.Screen name="lessons/quiz" options={{ headerShown: false }} />
-              <Stack.Screen name="reviews/index" options={{ headerShown: false }} />
+              <Stack.Screen name="reviews/index" options={{ headerShown: false, gestureEnabled: false }} />
               <Stack.Screen name="reviews/summary" options={{ headerShown: false }} />
               <Stack.Screen name="browse/index" options={{ headerShown: false }} />
               <Stack.Screen name="browse/level/[level]" options={{ headerShown: false }} />
