@@ -2,7 +2,7 @@ import * as React from "react"
 import { Alert, View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useRouter, Stack } from "expo-router"
-import { X, Flag } from "lucide-react-native"
+import { X } from "lucide-react-native"
 
 import { Button } from "@/components/ui/button"
 import { Text } from "@/components/ui/text"
@@ -195,37 +195,16 @@ export default function ReviewSessionScreen() {
           />
         </View>
 
-        <View className="flex-row items-center gap-1">
-          {/* Wrap Up button */}
-          {!isWrapUp && remainingCount > wrapUpBatchSize && (
-            <Button
-              variant="outline"
-              size="sm"
-              onPress={handleWrapUp}
-              className="flex-row items-center gap-1"
-            >
-              <Flag size={14} color={colorScheme === "dark" ? "#fff" : "#000"} />
-              <Text className="text-xs">Wrap Up</Text>
-            </Button>
-          )}
-
-          {isWrapUp && (
-            <View className="bg-amber-500/20 px-2 py-1 rounded mr-1">
-              <Text className="text-xs text-amber-600 dark:text-amber-400">
-                Wrap Up
-              </Text>
-            </View>
-          )}
-
-          {/* Actions menu */}
-          <ReviewActions
-            canUndo={canUndo}
-            isFlipped={isFlipped}
-            onUndo={undoLastAnswer}
-            onAskAgainLater={askAgainLater}
-            onMarkCorrect={markCorrectOverride}
-          />
-        </View>
+        {/* Actions menu */}
+        <ReviewActions
+          canUndo={canUndo}
+          isFlipped={isFlipped}
+          canWrapUp={!isWrapUp && remainingCount > wrapUpBatchSize}
+          onUndo={undoLastAnswer}
+          onAskAgainLater={askAgainLater}
+          onMarkCorrect={markCorrectOverride}
+          onWrapUp={handleWrapUp}
+        />
       </View>
 
       {/* Card */}

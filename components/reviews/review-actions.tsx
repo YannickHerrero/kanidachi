@@ -1,6 +1,6 @@
 import * as React from "react"
 import { Platform } from "react-native"
-import { MoreHorizontal, Undo2, RotateCcw, Check } from "lucide-react-native"
+import { MoreHorizontal, Undo2, RotateCcw, Check, Flag } from "lucide-react-native"
 import * as Haptics from "expo-haptics"
 
 import { Button } from "@/components/ui/button"
@@ -17,17 +17,21 @@ import { useColorScheme } from "@/lib/useColorScheme"
 interface ReviewActionsProps {
   canUndo: boolean
   isFlipped: boolean
+  canWrapUp?: boolean
   onUndo: () => void
   onAskAgainLater: () => void
   onMarkCorrect: () => void
+  onWrapUp?: () => void
 }
 
 export function ReviewActions({
   canUndo,
   isFlipped,
+  canWrapUp,
   onUndo,
   onAskAgainLater,
   onMarkCorrect,
+  onWrapUp,
 }: ReviewActionsProps) {
   const { colorScheme } = useColorScheme()
   const [open, setOpen] = React.useState(false)
@@ -57,6 +61,14 @@ export function ReviewActions({
     onMarkCorrect()
   }
 
+  const handleWrapUp = () => {
+    setOpen(false)
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+    }
+    onWrapUp?.()
+  }
+
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
@@ -73,6 +85,17 @@ export function ReviewActions({
           <RotateCcw size={18} color={iconColor} />
           <Text>Ask Again Later</Text>
         </DropdownMenuItem>
+
+        {/* Wrap Up - only available when not already in wrap-up mode */}
+        {canWrapUp && (
+          <DropdownMenuItem
+            onPress={handleWrapUp}
+            className="flex-row items-center gap-3"
+          >
+            <Flag size={18} color={iconColor} />
+            <Text>Wrap Up</Text>
+          </DropdownMenuItem>
+        )}
 
         {/* Mark Correct - only when card is flipped (after seeing answer) */}
         {isFlipped && (
