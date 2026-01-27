@@ -12,9 +12,15 @@ interface LevelTimeChartProps {
 
 export function LevelTimeChart({ levelTimeline }: LevelTimeChartProps) {
   const { colorScheme } = useColorScheme()
-  const completedLevels = levelTimeline.filter(
-    (level) => level.timeSpentDays !== null && level.passedAt !== null
-  )
+  const scrollRef = React.useRef<ScrollView | null>(null)
+  const completedLevels = React.useMemo(() => {
+    return levelTimeline.filter(
+      (level, index, list) =>
+        level.timeSpentDays !== null &&
+        level.passedAt !== null &&
+        list.findIndex((entry) => entry.level === level.level) === index
+    )
+  }, [levelTimeline])
   const hasData = completedLevels.length > 0
 
   const maxDays = hasData
@@ -63,9 +69,13 @@ export function LevelTimeChart({ levelTimeline }: LevelTimeChartProps) {
               Days to level up
             </Text>
             <ScrollView
+              ref={scrollRef}
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerClassName="gap-3 px-1 pb-2"
+              onContentSizeChange={() => {
+                scrollRef.current?.scrollToEnd({ animated: false })
+              }}
             >
               {completedLevels.map((level) => {
                 const timeSpent = level.timeSpentDays ?? 0

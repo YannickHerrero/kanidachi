@@ -968,6 +968,7 @@ export async function getLevelTimeline(db: Database) {
     }
 
     return {
+      id: row.id,
       level: row.level,
       unlockedAt: row.unlockedAt,
       startedAt: row.startedAt,

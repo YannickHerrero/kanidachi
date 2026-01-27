@@ -11,7 +11,61 @@ interface LevelTimelineProps {
 }
 
 export function LevelTimeline({ levelTimeline, currentLevel }: LevelTimelineProps) {
-  const hasData = levelTimeline.length > 0
+  const nowSeconds = Math.floor(Date.now() / 1000)
+
+  const timelineEntries = React.useMemo(() => {
+    const hasCurrent = levelTimeline.some(
+      (entry) => entry.level === currentLevel && entry.passedAt === null
+    )
+    const baseEntries = hasCurrent
+      ? [...levelTimeline]
+      : [
+          ...levelTimeline,
+          {
+            id: -currentLevel,
+            level: currentLevel,
+            unlockedAt: null,
+            startedAt: null,
+            passedAt: null,
+            completedAt: null,
+            abandonedAt: null,
+            timeSpentDays: null,
+          },
+        ]
+
+    return baseEntries
+      .map((entry) => {
+        if (entry.level !== currentLevel || entry.passedAt !== null) return entry
+
+        const startedAt = entry.startedAt ?? entry.unlockedAt
+        if (!startedAt) return entry
+
+        const timeSpentDays = Math.max(
+          0,
+          Math.round((nowSeconds - startedAt) / (60 * 60 * 24))
+        )
+
+        return {
+          ...entry,
+          timeSpentDays,
+        }
+      })
+      .sort((a, b) => {
+        const aSort =
+          (a.level === currentLevel && a.passedAt === null
+            ? a.startedAt ?? a.unlockedAt ?? nowSeconds
+            : a.startedAt ?? a.unlockedAt ?? a.passedAt ?? a.completedAt ?? a.abandonedAt) ??
+          0
+        const bSort =
+          (b.level === currentLevel && b.passedAt === null
+            ? b.startedAt ?? b.unlockedAt ?? nowSeconds
+            : b.startedAt ?? b.unlockedAt ?? b.passedAt ?? b.completedAt ?? b.abandonedAt) ??
+          0
+        return aSort - bSort
+      })
+  }, [currentLevel, levelTimeline, nowSeconds])
+
+  const hasData = timelineEntries.length > 0
 
   // Format date from unix timestamp
   const formatDate = (timestamp: number | null) => {
@@ -33,7 +87,7 @@ export function LevelTimeline({ levelTimeline, currentLevel }: LevelTimelineProp
   }
 
   // Calculate average time per level (excluding current level)
-  const completedLevels = levelTimeline.filter(
+  const completedLevels = timelineEntries.filter(
     (l) => l.timeSpentDays !== null && l.passedAt !== null
   )
   const averageTime =
@@ -108,13 +162,13 @@ export function LevelTimeline({ levelTimeline, currentLevel }: LevelTimelineProp
               Timeline
             </Text>
             <View className="gap-1">
-              {levelTimeline.slice().reverse().slice(0, 10).map((level) => {
+              {timelineEntries.slice(-10).map((level) => {
                 const isCompleted = level.passedAt !== null
                 const isCurrent = level.level === currentLevel
 
                 return (
                   <View
-                    key={level.level}
+                    key={level.id}
                     className="flex-row items-center gap-3"
                   >
                     {/* Level badge */}
@@ -177,7 +231,7 @@ export function LevelTimeline({ levelTimeline, currentLevel }: LevelTimelineProp
               })}
             </View>
 
-            {levelTimeline.length > 10 && (
+            {timelineEntries.length > 10 && (
               <Text className="text-xs text-muted-foreground text-center pt-2">
                 Showing last 10 levels
               </Text>

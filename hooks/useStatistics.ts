@@ -36,6 +36,7 @@ export interface Leech {
 }
 
 export interface LevelProgressionData {
+  id: number
   level: number
   unlockedAt: number | null
   startedAt: number | null
