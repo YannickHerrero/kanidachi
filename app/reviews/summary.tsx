@@ -31,12 +31,17 @@ export default function ReviewSummaryScreen() {
   // Calculate summary
   const summary = React.useMemo((): SessionSummary => {
     const resultsArray = Array.from(results.values())
-    const correctCount = resultsArray.filter((r) => r.correct).length
-    const incorrectCount = resultsArray.filter((r) => !r.correct).length
+    // Count as correct only if no wrong answers on first attempt
+    const correctCount = resultsArray.filter(
+      (r) => r.meaningWrongCount === 0 && r.readingWrongCount === 0
+    ).length
+    const incorrectCount = resultsArray.length - correctCount
     const totalReviewed = resultsArray.length
 
     const incorrectAssignmentIds = new Set(
-      resultsArray.filter((r) => !r.correct).map((r) => r.assignmentId)
+      resultsArray
+        .filter((r) => r.meaningWrongCount > 0 || r.readingWrongCount > 0)
+        .map((r) => r.assignmentId)
     )
     const incorrectItems = items.filter((item) =>
       incorrectAssignmentIds.has(item.assignment.id)
