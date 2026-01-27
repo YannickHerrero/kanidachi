@@ -65,3 +65,34 @@ export const DARK_THEME: Theme = {
   },
   colors: NAV_THEME.dark,
 };
+
+/**
+ * Adaptive colors for mnemonic markup highlighting.
+ * Follows Tsurukame's approach:
+ * - Light mode: dark text on pastel backgrounds
+ * - Dark mode: colored text with no/minimal background
+ */
+export const MNEMONIC_COLORS = {
+  radical: {
+    light: { foreground: "#000000", background: "#D6F1FF" },
+    dark: { foreground: "#4AC3FF", background: "transparent" },
+  },
+  kanji: {
+    light: { foreground: "#000000", background: "#FFD6F1" },
+    dark: { foreground: "#FF4AC3", background: "transparent" },
+  },
+  vocabulary: {
+    light: { foreground: "#000000", background: "#F1D6FF" },
+    dark: { foreground: "#C34AFF", background: "transparent" },
+  },
+  reading: {
+    light: { foreground: "#FFFFFF", background: "#555555" },
+    dark: { foreground: "#FFFFFF", background: "#555555" },
+  },
+  japanese: {
+    light: { foreground: "inherit", background: "transparent" },
+    dark: { foreground: "inherit", background: "transparent" },
+  },
+} as const
+
+export type MnemonicColorKey = keyof typeof MNEMONIC_COLORS

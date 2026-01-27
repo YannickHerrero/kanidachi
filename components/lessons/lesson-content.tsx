@@ -6,6 +6,7 @@ import { Text } from "@/components/ui/text"
 import { Muted } from "@/components/ui/typography"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { FormattedText } from "@/components/ui/formatted-text"
 import { AudioPlayer } from "@/components/subject/audio-player"
 import { RadicalImage, parseCharacterImages } from "@/components/subject/radical-image"
 import { SubjectChip } from "@/components/subject/subject-chip"
@@ -197,13 +198,14 @@ export function LessonContent({ subject }: LessonContentProps) {
             <CardTitle className="text-base">Meaning Mnemonic</CardTitle>
           </CardHeader>
           <CardContent>
-            <Text className="text-base leading-relaxed">
-              {subject.meaningMnemonic}
-            </Text>
+            <FormattedText text={subject.meaningMnemonic} />
             {subject.meaningHint && (
               <View className="mt-3 p-3 bg-muted rounded-lg">
                 <Muted className="text-xs mb-1">Hint</Muted>
-                <Text className="text-sm">{subject.meaningHint}</Text>
+                <FormattedText
+                  text={subject.meaningHint}
+                  style={{ fontSize: 14, lineHeight: 20 }}
+                />
               </View>
             )}
           </CardContent>
@@ -217,13 +219,14 @@ export function LessonContent({ subject }: LessonContentProps) {
             <CardTitle className="text-base">Reading Mnemonic</CardTitle>
           </CardHeader>
           <CardContent>
-            <Text className="text-base leading-relaxed">
-              {subject.readingMnemonic}
-            </Text>
+            <FormattedText text={subject.readingMnemonic} />
             {subject.readingHint && (
               <View className="mt-3 p-3 bg-muted rounded-lg">
                 <Muted className="text-xs mb-1">Hint</Muted>
-                <Text className="text-sm">{subject.readingHint}</Text>
+                <FormattedText
+                  text={subject.readingHint}
+                  style={{ fontSize: 14, lineHeight: 20 }}
+                />
               </View>
             )}
           </CardContent>

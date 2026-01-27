@@ -5,7 +5,7 @@ import { Pencil, Plus } from "lucide-react-native"
 import { Text } from "@/components/ui/text"
 import { Muted } from "@/components/ui/typography"
 import { Separator } from "@/components/ui/separator"
-import { ExpandableText } from "@/components/ui/expandable-text"
+import { FormattedText } from "@/components/ui/formatted-text"
 import { AudioButton } from "@/components/subject/audio-player"
 import { RadicalImage, parseCharacterImages } from "@/components/subject/radical-image"
 import { StudyMaterialEditor } from "@/components/subject/study-material-editor"
@@ -184,10 +184,10 @@ export function CardBack({ subject }: CardBackProps) {
           {subject.meaningMnemonic && (
             <View className="w-full">
               <Muted className="text-xs mb-2">Mnemonic</Muted>
-              <ExpandableText
+              <FormattedText
                 text={subject.meaningMnemonic}
-                numberOfLines={3}
-                className="text-base leading-relaxed"
+                expandable
+                collapsedLines={3}
               />
             </View>
           )}
@@ -196,10 +196,10 @@ export function CardBack({ subject }: CardBackProps) {
           {subject.readingMnemonic && (
             <View className="w-full mt-4">
               <Muted className="text-xs mb-2">Reading Mnemonic</Muted>
-              <ExpandableText
+              <FormattedText
                 text={subject.readingMnemonic}
-                numberOfLines={3}
-                className="text-base leading-relaxed"
+                expandable
+                collapsedLines={3}
               />
             </View>
           )}
