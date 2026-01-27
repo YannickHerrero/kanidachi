@@ -9,7 +9,9 @@ import { FormattedText } from "@/components/ui/formatted-text"
 import { AudioButton } from "@/components/subject/audio-player"
 import { RadicalImage, parseCharacterImages } from "@/components/subject/radical-image"
 import { StudyMaterialEditor } from "@/components/subject/study-material-editor"
-import { parseMeanings, parseReadings, parseContextSentences, parseStringArray } from "@/db/queries"
+import { SubjectChip } from "@/components/subject/subject-chip"
+import { parseMeanings, parseReadings, parseContextSentences, parseStringArray, parseNumberArray, getSubjectsByIds } from "@/db/queries"
+import { useDatabase } from "@/db/provider"
 import { useSettingsStore } from "@/stores/settings"
 import { useStudyMaterial, parseMeaningSynonyms } from "@/hooks/useStudyMaterial"
 import { useColorScheme } from "@/lib/useColorScheme"
@@ -28,6 +30,7 @@ interface CardBackProps {
 }
 
 export function CardBack({ subject }: CardBackProps) {
+  const { db } = useDatabase()
   const { colorScheme } = useColorScheme()
   const autoPlayAudio = useSettingsStore((s) => s.autoPlayAudioReviews)
   const meanings = parseMeanings(subject.meanings)
@@ -40,6 +43,43 @@ export function CardBack({ subject }: CardBackProps) {
   const userSynonyms = parseMeaningSynonyms(studyMaterial?.meaningSynonyms)
 
   const editIconColor = colorScheme === "dark" ? "#9ca3af" : "#6b7280"
+
+  // Parse related subject IDs
+  const componentSubjectIds = parseNumberArray(subject.componentSubjectIds)
+  const visuallySimilarIds = parseNumberArray(subject.visuallySimilarSubjectIds)
+  const amalgamationIds = parseNumberArray(subject.amalgamationSubjectIds)
+
+  // State for related subjects
+  const [componentSubjects, setComponentSubjects] = React.useState<Subject[]>([])
+  const [visuallySimilarSubjects, setVisuallySimilarSubjects] = React.useState<Subject[]>([])
+  const [amalgamationSubjects, setAmalgamationSubjects] = React.useState<Subject[]>([])
+
+  // Fetch component subjects (radicals for kanji, kanji for vocab)
+  React.useEffect(() => {
+    if (db && componentSubjectIds.length > 0) {
+      getSubjectsByIds(db, componentSubjectIds).then(setComponentSubjects)
+    } else {
+      setComponentSubjects([])
+    }
+  }, [db, subject.id])
+
+  // Fetch visually similar kanji (kanji only)
+  React.useEffect(() => {
+    if (db && visuallySimilarIds.length > 0 && subject.type === "kanji") {
+      getSubjectsByIds(db, visuallySimilarIds).then(setVisuallySimilarSubjects)
+    } else {
+      setVisuallySimilarSubjects([])
+    }
+  }, [db, subject.id, subject.type])
+
+  // Fetch amalgamation subjects (found in kanji / used in vocabulary)
+  React.useEffect(() => {
+    if (db && amalgamationIds.length > 0) {
+      getSubjectsByIds(db, amalgamationIds).then(setAmalgamationSubjects)
+    } else {
+      setAmalgamationSubjects([])
+    }
+  }, [db, subject.id])
 
   // Check if this subject has audio (vocabulary or kana_vocabulary)
   const hasAudio = subject.type === "vocabulary" || subject.type === "kana_vocabulary"
@@ -57,6 +97,24 @@ export function CardBack({ subject }: CardBackProps) {
   const vocabReadings = readings.filter((r) => !r.type)
 
   const typeColor = TYPE_COLORS[subject.type as keyof typeof TYPE_COLORS] ?? TYPE_COLORS.vocabulary
+
+  // Determine section titles based on subject type
+  const componentTitle = subject.type === "kanji"
+    ? "Radicals Used"
+    : subject.type === "vocabulary" || subject.type === "kana_vocabulary"
+      ? "Kanji Used"
+      : "Components"
+
+  const amalgamationTitle = subject.type === "radical"
+    ? "Found in Kanji"
+    : subject.type === "kanji"
+      ? "Used in Vocabulary"
+      : "Related Items"
+
+  // Check if we have any related subject sections to display
+  const hasRelatedSections = componentSubjects.length > 0 ||
+    visuallySimilarSubjects.length > 0 ||
+    amalgamationSubjects.length > 0
 
   return (
     <StudyMaterialEditor
@@ -167,6 +225,65 @@ export function CardBack({ subject }: CardBackProps) {
 
           <Separator className="my-4 w-full" />
 
+          {/* Component Subjects (Radicals Used / Kanji Used) */}
+          {componentSubjects.length > 0 && (
+            <View className="w-full mb-4">
+              <Muted className="text-xs mb-2">{componentTitle}</Muted>
+              <View className="flex-row flex-wrap gap-2">
+                {componentSubjects.map((component) => (
+                  <SubjectChip
+                    key={component.id}
+                    subject={component}
+                    size="md"
+                    showMeaning
+                  />
+                ))}
+              </View>
+            </View>
+          )}
+
+          {/* Visually Similar Kanji (kanji only) */}
+          {subject.type === "kanji" && visuallySimilarSubjects.length > 0 && (
+            <View className="w-full mb-4">
+              <Muted className="text-xs mb-2">Visually Similar Kanji</Muted>
+              <View className="flex-row flex-wrap gap-2">
+                {visuallySimilarSubjects.map((similar) => (
+                  <SubjectChip
+                    key={similar.id}
+                    subject={similar}
+                    size="md"
+                    showMeaning
+                  />
+                ))}
+              </View>
+            </View>
+          )}
+
+          {/* Amalgamations (Found in Kanji / Used in Vocabulary) */}
+          {amalgamationSubjects.length > 0 && (
+            <View className="w-full mb-4">
+              <Muted className="text-xs mb-2">{amalgamationTitle}</Muted>
+              <View className="flex-row flex-wrap gap-2">
+                {amalgamationSubjects.slice(0, 20).map((item) => (
+                  <SubjectChip
+                    key={item.id}
+                    subject={item}
+                    size="md"
+                    showMeaning
+                  />
+                ))}
+              </View>
+              {amalgamationSubjects.length > 20 && (
+                <Muted className="text-sm mt-2">
+                  +{amalgamationSubjects.length - 20} more...
+                </Muted>
+              )}
+            </View>
+          )}
+
+          {/* Separator before mnemonics if we had related sections */}
+          {hasRelatedSections && <Separator className="my-4 w-full" />}
+
           {/* Parts of Speech (vocabulary only) */}
           {partsOfSpeech.length > 0 && (
             <View className="w-full mb-4">
@@ -189,6 +306,15 @@ export function CardBack({ subject }: CardBackProps) {
                 expandable
                 collapsedLines={3}
               />
+              {subject.meaningHint && (
+                <View className="mt-3 p-3 bg-muted rounded-lg">
+                  <Muted className="text-xs mb-1">Hint</Muted>
+                  <FormattedText
+                    text={subject.meaningHint}
+                    style={{ fontSize: 14, lineHeight: 20 }}
+                  />
+                </View>
+              )}
             </View>
           )}
 
@@ -201,6 +327,15 @@ export function CardBack({ subject }: CardBackProps) {
                 expandable
                 collapsedLines={3}
               />
+              {subject.readingHint && (
+                <View className="mt-3 p-3 bg-muted rounded-lg">
+                  <Muted className="text-xs mb-1">Hint</Muted>
+                  <FormattedText
+                    text={subject.readingHint}
+                    style={{ fontSize: 14, lineHeight: 20 }}
+                  />
+                </View>
+              )}
             </View>
           )}
 
