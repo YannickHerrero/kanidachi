@@ -1,26 +1,27 @@
-// Using the legacy FileSystem API for compatibility
-import {
-  cacheDirectory,
-  getInfoAsync,
-  makeDirectoryAsync,
-  downloadAsync,
-  deleteAsync,
-  readDirectoryAsync,
-} from "expo-file-system/legacy"
+import { File, Directory, Paths } from "expo-file-system"
 import { Platform } from "react-native"
 
 import type { PronunciationAudio } from "@/db/schema"
 
 // Audio cache directory
-const AUDIO_CACHE_DIR = `${cacheDirectory ?? ""}audio/`
+const AUDIO_CACHE_DIR_NAME = "audio"
 
-// Ensure the cache directory exists
-async function ensureCacheDir(): Promise<void> {
-  if (Platform.OS === "web" || !cacheDirectory) return
+/**
+ * Get the audio cache directory
+ */
+function getAudioCacheDir(): Directory {
+  return new Directory(Paths.cache, AUDIO_CACHE_DIR_NAME)
+}
 
-  const dirInfo = await getInfoAsync(AUDIO_CACHE_DIR)
-  if (!dirInfo.exists) {
-    await makeDirectoryAsync(AUDIO_CACHE_DIR, { intermediates: true })
+/**
+ * Ensure the cache directory exists
+ */
+function ensureCacheDir(): void {
+  if (Platform.OS === "web") return
+
+  const cacheDir = getAudioCacheDir()
+  if (!cacheDir.exists) {
+    cacheDir.create()
   }
 }
 
@@ -35,21 +36,24 @@ function getCacheFilename(subjectId: number, voiceActorId: number): string {
  * Get the local cache path for an audio file
  */
 export function getLocalCachePath(subjectId: number, voiceActorId: number): string {
-  return `${AUDIO_CACHE_DIR}${getCacheFilename(subjectId, voiceActorId)}`
+  const cacheDir = getAudioCacheDir()
+  const filename = getCacheFilename(subjectId, voiceActorId)
+  return `${cacheDir.uri}/${filename}`
 }
 
 /**
  * Check if an audio file is cached locally
  */
-export async function isAudioCached(
+export function isAudioCached(
   subjectId: number,
   voiceActorId: number
-): Promise<boolean> {
-  if (Platform.OS === "web" || !cacheDirectory) return false
+): boolean {
+  if (Platform.OS === "web") return false
 
-  const localPath = getLocalCachePath(subjectId, voiceActorId)
-  const fileInfo = await getInfoAsync(localPath)
-  return fileInfo.exists
+  const cacheDir = getAudioCacheDir()
+  const filename = getCacheFilename(subjectId, voiceActorId)
+  const file = new File(cacheDir, filename)
+  return file.exists
 }
 
 /**
@@ -61,28 +65,26 @@ export async function cacheAudio(
   voiceActorId: number,
   url: string
 ): Promise<string | null> {
-  if (Platform.OS === "web" || !cacheDirectory) return null
+  if (Platform.OS === "web") return null
 
   try {
-    await ensureCacheDir()
+    ensureCacheDir()
 
-    const localPath = getLocalCachePath(subjectId, voiceActorId)
+    const cacheDir = getAudioCacheDir()
+    const filename = getCacheFilename(subjectId, voiceActorId)
+    const file = new File(cacheDir, filename)
 
     // Check if already cached
-    const fileInfo = await getInfoAsync(localPath)
-    if (fileInfo.exists) {
-      return localPath
+    if (file.exists) {
+      return file.uri
     }
 
     // Download the file
-    const downloadResult = await downloadAsync(url, localPath)
+    const downloadedFile = await File.downloadFileAsync(url, file, {
+      idempotent: true,
+    })
 
-    if (downloadResult.status !== 200) {
-      console.error("Failed to download audio:", downloadResult.status)
-      return null
-    }
-
-    return localPath
+    return downloadedFile.uri
   } catch (error) {
     console.error("Failed to cache audio:", error)
     return null
@@ -93,21 +95,22 @@ export async function cacheAudio(
  * Get the audio source (local path if cached, otherwise URL)
  * This implements "stream and cache" - plays from URL and caches in background
  */
-export async function getAudioSource(
+export function getAudioSource(
   subjectId: number,
   voiceActorId: number,
   url: string
-): Promise<{ uri: string; shouldCache: boolean }> {
-  if (Platform.OS === "web" || !cacheDirectory) {
+): { uri: string; shouldCache: boolean } {
+  if (Platform.OS === "web") {
     return { uri: url, shouldCache: false }
   }
 
   // Check if already cached
-  const localPath = getLocalCachePath(subjectId, voiceActorId)
-  const fileInfo = await getInfoAsync(localPath)
+  const cacheDir = getAudioCacheDir()
+  const filename = getCacheFilename(subjectId, voiceActorId)
+  const file = new File(cacheDir, filename)
 
-  if (fileInfo.exists) {
-    return { uri: localPath, shouldCache: false }
+  if (file.exists) {
+    return { uri: file.uri, shouldCache: false }
   }
 
   // Not cached - return URL and indicate we should cache
@@ -116,6 +119,7 @@ export async function getAudioSource(
 
 /**
  * Select the best audio for playback based on voice actor preference
+ * Prioritizes MP3 format (audio/mpeg) for iOS compatibility
  */
 export function selectAudio(
   audios: PronunciationAudio[],
@@ -123,28 +127,35 @@ export function selectAudio(
 ): PronunciationAudio | null {
   if (audios.length === 0) return null
 
+  // Filter to only MP3 format for iOS compatibility
+  // iOS doesn't support OGG format natively
+  const mp3Audios = audios.filter((a) => a.contentType === "audio/mpeg")
+
+  // Use MP3 audios if available, otherwise fall back to all audios
+  const availableAudios = mp3Audios.length > 0 ? mp3Audios : audios
+
   // If a preferred voice actor is set, try to find their audio
   if (preferredVoiceActorId) {
-    const preferred = audios.find(
+    const preferred = availableAudios.find(
       (a) => a.metadata.voiceActorId === preferredVoiceActorId
     )
     if (preferred) return preferred
   }
 
   // Otherwise return the first audio (WaniKani returns them in order of preference)
-  return audios[0]
+  return availableAudios[0]
 }
 
 /**
  * Clear all cached audio files
  */
 export async function clearAudioCache(): Promise<void> {
-  if (Platform.OS === "web" || !cacheDirectory) return
+  if (Platform.OS === "web") return
 
   try {
-    const dirInfo = await getInfoAsync(AUDIO_CACHE_DIR)
-    if (dirInfo.exists) {
-      await deleteAsync(AUDIO_CACHE_DIR, { idempotent: true })
+    const cacheDir = getAudioCacheDir()
+    if (cacheDir.exists) {
+      cacheDir.delete()
     }
   } catch (error) {
     console.error("Failed to clear audio cache:", error)
@@ -154,24 +165,14 @@ export async function clearAudioCache(): Promise<void> {
 /**
  * Get the total size of the audio cache in bytes
  */
-export async function getAudioCacheSize(): Promise<number> {
-  if (Platform.OS === "web" || !cacheDirectory) return 0
+export function getAudioCacheSize(): number {
+  if (Platform.OS === "web") return 0
 
   try {
-    const dirInfo = await getInfoAsync(AUDIO_CACHE_DIR)
-    if (!dirInfo.exists) return 0
+    const cacheDir = getAudioCacheDir()
+    if (!cacheDir.exists) return 0
 
-    const files = await readDirectoryAsync(AUDIO_CACHE_DIR)
-    let totalSize = 0
-
-    for (const file of files) {
-      const fileInfo = await getInfoAsync(`${AUDIO_CACHE_DIR}${file}`)
-      if (fileInfo.exists && "size" in fileInfo) {
-        totalSize += fileInfo.size ?? 0
-      }
-    }
-
-    return totalSize
+    return cacheDir.size ?? 0
   } catch (error) {
     console.error("Failed to get audio cache size:", error)
     return 0
@@ -204,9 +205,9 @@ export async function preloadAudio(
   preferredVoiceActorId?: number,
   limit = 5
 ): Promise<void> {
-  if (Platform.OS === "web" || !cacheDirectory) return
+  if (Platform.OS === "web") return
 
-  await ensureCacheDir()
+  ensureCacheDir()
 
   // Process items up to the limit, in background (don't await all)
   const itemsToPreload = items.slice(0, limit)
@@ -218,7 +219,7 @@ export async function preloadAudio(
     const voiceActorId = audio.metadata.voiceActorId
 
     // Check if already cached
-    const isCached = await isAudioCached(item.subjectId, voiceActorId)
+    const isCached = isAudioCached(item.subjectId, voiceActorId)
     if (isCached) continue
 
     // Start caching in background (don't await)

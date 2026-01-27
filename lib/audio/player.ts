@@ -1,4 +1,9 @@
-import { Audio, type AVPlaybackStatus, type AVPlaybackSource } from "expo-av"
+import {
+  createAudioPlayer,
+  setAudioModeAsync,
+  type AudioPlayer as ExpoAudioPlayer,
+  type AudioSource,
+} from "expo-audio"
 import { Platform } from "react-native"
 
 // Audio playback states
@@ -6,25 +11,24 @@ export type AudioState = "idle" | "loading" | "playing" | "paused" | "error"
 
 // Audio player configuration
 export interface AudioPlayerConfig {
-  shouldDuckAndroid?: boolean
-  staysActiveInBackground?: boolean
+  shouldPlayInBackground?: boolean
 }
 
 const DEFAULT_CONFIG: AudioPlayerConfig = {
-  shouldDuckAndroid: true,
-  staysActiveInBackground: false,
+  shouldPlayInBackground: false,
 }
 
 /**
  * Audio player service for WaniKani pronunciation audio
- * Uses expo-av for cross-platform audio playback
+ * Uses expo-audio for cross-platform audio playback
  */
 class AudioPlayer {
-  private sound: Audio.Sound | null = null
+  private player: ExpoAudioPlayer | null = null
   private isInitialized = false
   private currentUrl: string | null = null
   private stateListeners: Set<(state: AudioState) => void> = new Set()
   private currentState: AudioState = "idle"
+  private statusSubscription: { remove: () => void } | null = null
 
   /**
    * Initialize the audio session (call once on app startup)
@@ -33,10 +37,10 @@ class AudioPlayer {
     if (this.isInitialized) return
 
     try {
-      await Audio.setAudioModeAsync({
-        playsInSilentModeIOS: true,
-        staysActiveInBackground: config.staysActiveInBackground ?? false,
-        shouldDuckAndroid: config.shouldDuckAndroid ?? true,
+      await setAudioModeAsync({
+        playsInSilentMode: true,
+        shouldPlayInBackground: config.shouldPlayInBackground ?? false,
+        interruptionMode: "duckOthers",
       })
       this.isInitialized = true
     } catch (error) {
@@ -47,7 +51,7 @@ class AudioPlayer {
   /**
    * Play audio from a URL or local file path
    */
-  async play(source: string | AVPlaybackSource): Promise<void> {
+  async play(source: string | AudioSource): Promise<void> {
     try {
       // Initialize if needed
       if (!this.isInitialized) {
@@ -60,18 +64,56 @@ class AudioPlayer {
       this.setState("loading")
 
       // Create the source object
-      const audioSource: AVPlaybackSource =
+      const audioSource: AudioSource =
         typeof source === "string" ? { uri: source } : source
 
-      // Create and load the sound
-      const { sound } = await Audio.Sound.createAsync(
-        audioSource,
-        { shouldPlay: true },
-        this.onPlaybackStatusUpdate
+      // Create a new player with the source
+      this.player = createAudioPlayer(audioSource)
+      this.currentUrl = typeof source === "string" ? source : null
+
+      // Subscribe to playback status updates
+      this.statusSubscription = this.player.addListener(
+        "playbackStatusUpdate",
+        (status) => {
+          if (status.playing) {
+            this.setState("playing")
+          } else if (status.currentTime >= status.duration && status.duration > 0) {
+            // Playback finished
+            this.stop()
+          } else if (!status.playing && this.currentState === "playing") {
+            this.setState("paused")
+          }
+        }
       )
 
-      this.sound = sound
-      this.currentUrl = typeof source === "string" ? source : null
+      // Wait for the audio to be loaded
+      // expo-audio loads asynchronously, we'll start playing once loaded
+      const checkLoaded = (): Promise<void> => {
+        return new Promise((resolve, reject) => {
+          const checkInterval = setInterval(() => {
+            if (!this.player) {
+              clearInterval(checkInterval)
+              reject(new Error("Player was stopped"))
+              return
+            }
+            if (this.player.isLoaded) {
+              clearInterval(checkInterval)
+              resolve()
+            }
+          }, 50)
+
+          // Timeout after 10 seconds
+          setTimeout(() => {
+            clearInterval(checkInterval)
+            reject(new Error("Audio loading timeout"))
+          }, 10000)
+        })
+      }
+
+      await checkLoaded()
+
+      // Start playing
+      this.player.play()
       this.setState("playing")
     } catch (error) {
       console.error("Failed to play audio:", error)
@@ -84,9 +126,9 @@ class AudioPlayer {
    * Pause the currently playing audio
    */
   async pause(): Promise<void> {
-    if (this.sound) {
+    if (this.player) {
       try {
-        await this.sound.pauseAsync()
+        this.player.pause()
         this.setState("paused")
       } catch (error) {
         console.error("Failed to pause audio:", error)
@@ -98,9 +140,9 @@ class AudioPlayer {
    * Resume paused audio
    */
   async resume(): Promise<void> {
-    if (this.sound) {
+    if (this.player) {
       try {
-        await this.sound.playAsync()
+        this.player.play()
         this.setState("playing")
       } catch (error) {
         console.error("Failed to resume audio:", error)
@@ -112,14 +154,18 @@ class AudioPlayer {
    * Stop and unload the current audio
    */
   async stop(): Promise<void> {
-    if (this.sound) {
+    if (this.statusSubscription) {
+      this.statusSubscription.remove()
+      this.statusSubscription = null
+    }
+
+    if (this.player) {
       try {
-        await this.sound.stopAsync()
-        await this.sound.unloadAsync()
+        this.player.remove()
       } catch (error) {
-        // Sound might already be unloaded, ignore errors
+        // Player might already be removed, ignore errors
       }
-      this.sound = null
+      this.player = null
       this.currentUrl = null
       this.setState("idle")
     }
@@ -162,22 +208,6 @@ class AudioPlayer {
     this.currentState = state
     for (const listener of this.stateListeners) {
       listener(state)
-    }
-  }
-
-  private onPlaybackStatusUpdate = (status: AVPlaybackStatus): void => {
-    if (!status.isLoaded) {
-      // Handle error state
-      if (status.error) {
-        console.error("Playback error:", status.error)
-        this.setState("error")
-      }
-      return
-    }
-
-    // Handle playback finished
-    if (status.didJustFinish && !status.isLooping) {
-      this.stop()
     }
   }
 }

@@ -92,7 +92,7 @@ export function useAudio(options: UseAudioOptions): UseAudioResult {
       const url = selectedAudio.url
 
       // Get source (cached or remote)
-      const { uri, shouldCache } = await getAudioSource(subjectId, voiceActorId, url)
+      const { uri, shouldCache } = getAudioSource(subjectId, voiceActorId, url)
 
       // Play the audio
       await audioPlayer.play(uri)
@@ -168,7 +168,7 @@ export function usePlayAudio() {
         const voiceActorId = selectedAudio.metadata.voiceActorId
         const url = selectedAudio.url
 
-        const { uri, shouldCache } = await getAudioSource(subjectId, voiceActorId, url)
+        const { uri, shouldCache } = getAudioSource(subjectId, voiceActorId, url)
         await audioPlayer.play(uri)
 
         if (shouldCache) {

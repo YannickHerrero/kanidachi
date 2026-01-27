@@ -11,8 +11,8 @@ export const CacheSettingsItem = () => {
   const [cacheSize, setCacheSize] = useState<number>(0)
   const [isClearing, setIsClearing] = useState(false)
 
-  const loadCacheSize = async () => {
-    const size = await getAudioCacheSize()
+  const loadCacheSize = () => {
+    const size = getAudioCacheSize()
     setCacheSize(size)
   }
 
