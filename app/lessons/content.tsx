@@ -13,11 +13,11 @@ import {
   selectContentProgress,
   selectAllViewed,
 } from "@/stores/lessons"
-import { useColorScheme } from "@/lib/useColorScheme"
+import { useThemeColors } from "@/hooks/useThemeColors"
 
 export default function LessonContentScreen() {
   const router = useRouter()
-  const { colorScheme } = useColorScheme()
+  const colors = useThemeColors()
 
   const {
     phase,
@@ -76,7 +76,7 @@ export default function LessonContentScreen() {
   const isFirstItem = progress.current === 1
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }} edges={["top"]}>
       <Stack.Screen
         options={{
           headerShown: false,
@@ -84,11 +84,11 @@ export default function LessonContentScreen() {
       />
 
       {/* Header */}
-      <View className="flex-row items-center justify-between px-4 py-3 border-b border-border">
+      <View className="flex-row items-center justify-between px-4 py-3 border-b" style={{ borderColor: colors.border }}>
         <Button variant="ghost" size="icon" onPress={handleBack}>
           <ChevronLeft
             size={24}
-            color={colorScheme === "dark" ? "#fff" : "#000"}
+            color={colors.foreground}
           />
         </Button>
 
@@ -99,7 +99,7 @@ export default function LessonContentScreen() {
         {/* Skip to Quiz button - always visible, Start Quiz when all viewed */}
         {isLastItem && allViewed ? (
           <Button size="sm" onPress={handleStartQuiz}>
-            <Text className="text-primary-foreground">Start Quiz</Text>
+            <Text style={{ color: colors.primaryForeground }}>Start Quiz</Text>
           </Button>
         ) : (
           <Button
@@ -108,8 +108,8 @@ export default function LessonContentScreen() {
             onPress={handleStartQuiz}
             className="flex-row items-center gap-1"
           >
-            <FastForward size={16} color={colorScheme === "dark" ? "#9ca3af" : "#6b7280"} />
-            <Text className="text-muted-foreground text-xs">Skip to Quiz</Text>
+            <FastForward size={16} color={colors.mutedForeground} />
+            <Text className="text-xs" style={{ color: colors.mutedForeground }}>Skip to Quiz</Text>
           </Button>
         )}
       </View>
@@ -118,7 +118,7 @@ export default function LessonContentScreen() {
       <LessonContent subject={currentItem.subject} />
 
       {/* Navigation */}
-      <View className="flex-row items-center justify-between px-4 py-4 border-t border-border">
+      <View className="flex-row items-center justify-between px-4 py-4 border-t" style={{ borderColor: colors.border }}>
         <Button
           variant="outline"
           onPress={handlePrevious}
@@ -127,23 +127,23 @@ export default function LessonContentScreen() {
         >
           <ChevronLeft
             size={18}
-            color={isFirstItem ? "#9ca3af" : colorScheme === "dark" ? "#fff" : "#000"}
+            color={isFirstItem ? colors.mutedForeground : colors.foreground}
           />
-          <Text className={isFirstItem ? "text-muted-foreground" : ""}>
+          <Text style={isFirstItem ? { color: colors.mutedForeground } : undefined}>
             Previous
           </Text>
         </Button>
 
         {isLastItem ? (
           <Button onPress={handleStartQuiz}>
-            <Text className="text-primary-foreground">Start Quiz</Text>
+            <Text style={{ color: colors.primaryForeground }}>Start Quiz</Text>
           </Button>
         ) : (
           <Button
             onPress={handleNext}
             className="flex-row items-center gap-1"
           >
-            <Text className="text-primary-foreground">Next</Text>
+            <Text style={{ color: colors.primaryForeground }}>Next</Text>
             <ChevronRight size={18} color="#fff" />
           </Button>
         )}

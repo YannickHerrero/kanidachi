@@ -18,8 +18,10 @@ import { useSettingsStore } from "@/stores/settings"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
+import { useThemeColors } from "@/hooks/useThemeColors"
 
 export const AudioSettingItem = () => {
+  const colors = useThemeColors()
   const {
     autoPlayAudioLessons,
     autoPlayAudioReviews,
@@ -38,12 +40,12 @@ export const AudioSettingItem = () => {
         />
       </BottomSheetOpenTrigger>
       <BottomSheetContent>
-        <BottomSheetHeader className="bg-background">
-          <Text className="text-foreground text-xl font-bold pb-1">
+        <BottomSheetHeader style={{ backgroundColor: colors.background }}>
+          <Text className="text-xl font-bold pb-1" style={{ color: colors.foreground }}>
             Audio Settings
           </Text>
         </BottomSheetHeader>
-        <BottomSheetView className="gap-5 pt-6 bg-background">
+        <BottomSheetView className="gap-5 pt-6" style={{ backgroundColor: colors.background }}>
           {/* Auto-play in Lessons */}
           <Pressable
             className="flex-row items-center justify-between py-2"
@@ -51,7 +53,7 @@ export const AudioSettingItem = () => {
           >
             <View className="flex-1 pr-4">
               <H4>Auto-play in Lessons</H4>
-              <Text className="text-sm text-muted-foreground">
+              <Text className="text-sm" style={{ color: colors.mutedForeground }}>
                 Automatically play pronunciation audio when viewing lesson content
               </Text>
             </View>
@@ -70,7 +72,7 @@ export const AudioSettingItem = () => {
           >
             <View className="flex-1 pr-4">
               <H4>Auto-play in Reviews</H4>
-              <Text className="text-sm text-muted-foreground">
+              <Text className="text-sm" style={{ color: colors.mutedForeground }}>
                 Automatically play pronunciation audio when revealing the answer
               </Text>
             </View>

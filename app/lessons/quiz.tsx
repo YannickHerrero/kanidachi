@@ -15,14 +15,14 @@ import {
   selectCurrentQuizItem,
   selectQuizProgress,
 } from "@/stores/lessons"
-import { useColorScheme } from "@/lib/useColorScheme"
+import { useThemeColors } from "@/hooks/useThemeColors"
 import { useDatabase } from "@/db/provider"
 import { addPendingProgress, markLessonsCompleted } from "@/db/queries"
 
 export default function LessonQuizScreen() {
   const router = useRouter()
   const navigation = useNavigation<NavigationProp<ParamListBase>>()
-  const { colorScheme } = useColorScheme()
+  const colors = useThemeColors()
   const { db } = useDatabase()
 
   const { phase, lessonItems, quizResults, submitQuizAnswer, reset } = useLessonStore()
@@ -114,7 +114,7 @@ export default function LessonQuizScreen() {
     const totalCount = lessonItems.length
 
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
         <Stack.Screen options={{ headerShown: false }} />
         <View className="flex-1 items-center justify-center p-6">
           <Card className="w-full max-w-sm">
@@ -122,18 +122,18 @@ export default function LessonQuizScreen() {
               <Text className="text-4xl mb-2">
                 {correctCount === totalCount ? "Perfect!" : "Complete!"}
               </Text>
-              <Text className="text-6xl font-bold text-primary mb-4">
+              <Text className="text-6xl font-bold mb-4" style={{ color: colors.primary }}>
                 {totalCount}
               </Text>
-              <Text className="text-lg text-muted-foreground mb-6">
+              <Text className="text-lg mb-6" style={{ color: colors.mutedForeground }}>
                 lessons completed
               </Text>
 
               {isSubmitting ? (
-                <Text className="text-muted-foreground">Saving progress...</Text>
+                <Text style={{ color: colors.mutedForeground }}>Saving progress...</Text>
               ) : (
                 <Button onPress={() => router.replace("/")} className="w-full">
-                  <Text className="text-primary-foreground">Back to Dashboard</Text>
+                  <Text style={{ color: colors.primaryForeground }}>Back to Dashboard</Text>
                 </Button>
               )}
             </CardContent>
@@ -148,20 +148,20 @@ export default function LessonQuizScreen() {
     : 0
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }} edges={["top"]}>
       <Stack.Screen options={{ headerShown: false }} />
 
       {/* Header */}
       <View className="flex-row items-center justify-between px-4 py-3">
         <Button variant="ghost" size="icon" onPress={handleEndSession}>
-          <X size={24} color={colorScheme === "dark" ? "#fff" : "#000"} />
+          <X size={24} color={colors.foreground} />
         </Button>
 
         <View className="flex-1 mx-4">
           <Progress value={progressPercentage} className="h-2" />
         </View>
 
-        <Text className="text-sm text-muted-foreground w-16 text-right">
+        <Text className="text-sm w-16 text-right" style={{ color: colors.mutedForeground }}>
           {progress.current}/{progress.total}
         </Text>
       </View>

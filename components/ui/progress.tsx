@@ -8,6 +8,7 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import {cn} from "@/lib/utils";
+import {useThemeColors} from "@/hooks/useThemeColors";
 import * as ProgressPrimitive from "../primitives/progress";
 
 const Progress = React.forwardRef<
@@ -15,14 +16,16 @@ const Progress = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof ProgressPrimitive.Root> & {
     indicatorClassName?: string;
   }
->(({className, value, indicatorClassName, ...props}, ref) => {
+>(({className, value, indicatorClassName, style, ...props}, ref) => {
+  const colors = useThemeColors();
   return (
     <ProgressPrimitive.Root
       ref={ref}
       className={cn(
-        "relative h-4 w-full overflow-hidden rounded-full bg-secondary",
+        "relative h-4 w-full overflow-hidden rounded-full",
         className,
       )}
+      style={[{backgroundColor: colors.secondary}, style]}
       {...props}
     >
       <Indicator value={value} className={indicatorClassName} />
@@ -37,6 +40,7 @@ function Indicator({
   value,
   className,
 }: {value: number | undefined | null; className?: string}) {
+  const colors = useThemeColors();
   const progress = useDerivedValue(() => value ?? 0);
 
   const indicator = useAnimatedStyle(() => {
@@ -57,10 +61,10 @@ function Indicator({
     return (
       <ProgressPrimitive.Indicator
         className={cn(
-          "h-full w-full flex-1 bg-primary web:transition-all",
+          "h-full w-full flex-1 web:transition-all",
           className,
         )}
-        style={{transform: `translateX(-${ 100 - (value ?? 0) }%)`}}
+        style={[{transform: `translateX(-${ 100 - (value ?? 0) }%)`, backgroundColor: colors.primary}]}
       />
     );
   }
@@ -68,8 +72,8 @@ function Indicator({
   return (
     <ProgressPrimitive.Indicator asChild>
       <Animated.View
-        style={indicator}
-        className={cn("h-full bg-foreground", className)}
+        style={[indicator, {backgroundColor: colors.foreground}]}
+        className={cn("h-full", className)}
       />
     </ProgressPrimitive.Indicator>
   );

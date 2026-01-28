@@ -15,8 +15,10 @@ import { LessonSettingsItem } from "@/components/settings/LessonSettingsItem"
 import { ReviewSettingsItem } from "@/components/settings/ReviewSettingsItem"
 import { CacheSettingsItem } from "@/components/settings/CacheSettingsItem"
 import { LogoutItem } from "@/components/settings/LogoutItem"
+import { useThemeColors } from "@/hooks/useThemeColors"
 
 export default function Settings() {
+  const colors = useThemeColors()
   const openExternalURL = (url: string) => {
     if (Platform.OS === "web") {
       Linking.openURL(url)
@@ -26,7 +28,7 @@ export default function Settings() {
   }
 
   return (
-    <ScrollView className="flex-1 w-full px-6 bg-background pt-4 gap-y-6">
+    <ScrollView className="flex-1 w-full px-6 pt-4 gap-y-6" style={{ backgroundColor: colors.background }}>
       <List>
         {/* Appearance */}
         <ListHeader>

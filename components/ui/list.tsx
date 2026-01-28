@@ -9,7 +9,7 @@ interface ListHeaderProps extends ViewProps {
 
 export const ListHeader: React.FC<ListHeaderProps> = ({children, className, ...props}) => {
 	return (
-		<View className={cn("py-1.5 px-4 text-background", className)} {...props}>
+		<View className={cn("py-1.5 px-4", className)} {...props}>
 			{children}
 		</View>
 	);
@@ -21,6 +21,10 @@ const List: React.FC<ListProps> = ({children, className, ...props}) => {
 	const childrenArray = React.Children.toArray(children);
 	const modifiedChildren = childrenArray.map((child, index) => {
 		if (!React.isValidElement(child)) {
+			return child;
+		}
+		// Skip className injection for React.Fragment since it only accepts key and children props
+		if (child.type === React.Fragment) {
 			return child;
 		}
 		let injectClassName = "";

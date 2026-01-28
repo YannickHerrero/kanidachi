@@ -4,6 +4,7 @@ import { View } from "react-native"
 import { Text } from "@/components/ui/text"
 import { Muted } from "@/components/ui/typography"
 import { RadicalImage, parseCharacterImages } from "@/components/subject/radical-image"
+import { useThemeColors } from "@/hooks/useThemeColors"
 import type { Subject } from "@/stores/reviews"
 
 // Subject type colors
@@ -26,6 +27,7 @@ interface CardFrontProps {
 }
 
 export function CardFront({ subject }: CardFrontProps) {
+  const colors = useThemeColors()
   const typeColor = TYPE_COLORS[subject.type as keyof typeof TYPE_COLORS] ?? TYPE_COLORS.vocabulary
   const typeLabel = TYPE_LABELS[subject.type as keyof typeof TYPE_LABELS] ?? "Item"
 
@@ -56,7 +58,7 @@ export function CardFront({ subject }: CardFrontProps) {
 
       {/* Instruction */}
       <View className="items-center">
-        <Text className="text-lg text-muted-foreground">
+        <Text className="text-lg" style={{ color: colors.mutedForeground }}>
           Tap to reveal answer
         </Text>
       </View>

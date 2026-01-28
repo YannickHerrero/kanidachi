@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, View } from "react-native"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Text } from "@/components/ui/text"
-import { useColorScheme } from "@/lib/useColorScheme"
+import { useThemeColors } from "@/hooks/useThemeColors"
 import type { LevelProgressionData } from "@/hooks/useStatistics"
 
 interface LevelTimeChartProps {
@@ -12,7 +12,7 @@ interface LevelTimeChartProps {
 }
 
 export function LevelTimeChart({ levelTimeline, currentLevel }: LevelTimeChartProps) {
-  const { colorScheme } = useColorScheme()
+  const colors = useThemeColors()
   const scrollRef = React.useRef<ScrollView | null>(null)
   const nowSeconds = Math.floor(Date.now() / 1000)
   const timelineEntries = React.useMemo(() => {
@@ -105,7 +105,7 @@ export function LevelTimeChart({ levelTimeline, currentLevel }: LevelTimeChartPr
       )
     : 0
 
-  const barColor = colorScheme === "dark" ? "#a78bfa" : "#7c3aed"
+  const barColor = colors.background === '#0a0a0b' ? "#a78bfa" : "#7c3aed"
   const chartHeight = 140
 
   return (
@@ -117,27 +117,27 @@ export function LevelTimeChart({ levelTimeline, currentLevel }: LevelTimeChartPr
         {hasSummaryData && (
           <View className="flex-row flex-wrap gap-4 pb-2">
             <View className="flex-1 min-w-[100px]">
-              <Text className="text-2xl font-bold text-foreground">
+              <Text className="text-2xl font-bold" style={{ color: colors.foreground }}>
                 {averageDays}
               </Text>
-              <Text className="text-xs text-muted-foreground">Avg. Days/Level</Text>
+              <Text className="text-xs" style={{ color: colors.mutedForeground }}>Avg. Days/Level</Text>
             </View>
             <View className="flex-1 min-w-[100px]">
-              <Text className="text-2xl font-bold text-foreground">{maxDays}</Text>
-              <Text className="text-xs text-muted-foreground">Longest Level</Text>
+              <Text className="text-2xl font-bold" style={{ color: colors.foreground }}>{maxDays}</Text>
+              <Text className="text-xs" style={{ color: colors.mutedForeground }}>Longest Level</Text>
             </View>
             <View className="flex-1 min-w-[100px]">
-              <Text className="text-2xl font-bold text-foreground">
+              <Text className="text-2xl font-bold" style={{ color: colors.foreground }}>
                 {completedLevels.length}
               </Text>
-              <Text className="text-xs text-muted-foreground">Levels Completed</Text>
+              <Text className="text-xs" style={{ color: colors.mutedForeground }}>Levels Completed</Text>
             </View>
           </View>
         )}
 
         {hasChartData && (
-          <View className="pt-2 border-t border-border">
-            <Text className="text-sm font-medium text-muted-foreground pb-2">
+          <View className="pt-2 border-t" style={{ borderColor: colors.border }}>
+            <Text className="text-sm font-medium pb-2" style={{ color: colors.mutedForeground }}>
               Days to level up
             </Text>
             <ScrollView
@@ -168,8 +168,8 @@ export function LevelTimeChart({ levelTimeline, currentLevel }: LevelTimeChartPr
                         ]}
                       />
                     </View>
-                    <Text className="text-xs text-foreground">{level.level}</Text>
-                    <Text className="text-[10px] text-muted-foreground">
+                    <Text className="text-xs" style={{ color: colors.foreground }}>{level.level}</Text>
+                    <Text className="text-[10px]" style={{ color: colors.mutedForeground }}>
                       {timeSpent}d
                     </Text>
                   </View>
@@ -181,7 +181,7 @@ export function LevelTimeChart({ levelTimeline, currentLevel }: LevelTimeChartPr
 
         {!hasChartData && (
           <View className="items-center py-4">
-            <Text className="text-sm text-muted-foreground text-center">
+            <Text className="text-sm text-center" style={{ color: colors.mutedForeground }}>
               Complete a level to see time spent per level
             </Text>
           </View>

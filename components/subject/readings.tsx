@@ -4,6 +4,7 @@ import { View } from "react-native"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Text } from "@/components/ui/text"
 import { Muted } from "@/components/ui/typography"
+import { useThemeColors } from "@/hooks/useThemeColors"
 import { parseReadings } from "@/db/queries"
 import type { subjects } from "@/db/schema"
 
@@ -14,8 +15,9 @@ interface ReadingsProps {
 }
 
 export function Readings({ subject }: ReadingsProps) {
+  const colors = useThemeColors()
   const readings = parseReadings(subject.readings)
-  
+
   if (readings.length === 0) {
     return null
   }
@@ -45,7 +47,7 @@ export function Readings({ subject }: ReadingsProps) {
                 </Text>
               </View>
             )}
-            
+
             {kunyomiReadings.length > 0 && (
               <View>
                 <Muted className="text-xs mb-1">Kun'yomi</Muted>
@@ -58,7 +60,7 @@ export function Readings({ subject }: ReadingsProps) {
             {nanoriReadings.length > 0 && (
               <View>
                 <Muted className="text-xs mb-1">Nanori (name reading)</Muted>
-                <Text className="text-lg text-muted-foreground">
+                <Text className="text-lg" style={{ color: colors.mutedForeground }}>
                   {nanoriReadings.map((r) => r.reading).join(", ")}
                 </Text>
               </View>

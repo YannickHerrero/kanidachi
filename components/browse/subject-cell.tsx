@@ -7,6 +7,7 @@ import { InlineRadicalImage, parseCharacterImages } from "@/components/subject/r
 import { cn } from "@/lib/utils"
 import { parseMeanings, parseReadings } from "@/db/queries"
 import type { subjects, assignments } from "@/db/schema"
+import { useThemeColors } from "@/hooks/useThemeColors"
 
 type Subject = typeof subjects.$inferSelect
 type Assignment = typeof assignments.$inferSelect
@@ -31,9 +32,8 @@ const TYPE_COLORS = {
   },
 } as const
 
-// SRS stage colors
+// SRS stage colors - static colors, don't need theme switching
 const SRS_COLORS = {
-  locked: "bg-muted text-muted-foreground",
   lesson: "bg-gray-400 text-white",
   apprentice: "bg-pink-500 text-white",
   guru: "bg-purple-500 text-white",
@@ -52,11 +52,13 @@ const SRS_LABELS = {
   burned: "Burned",
 } as const
 
-function getSrsCategory(assignment: Assignment | null): keyof typeof SRS_COLORS {
+type SrsCategory = keyof typeof SRS_COLORS | "locked"
+
+function getSrsCategory(assignment: Assignment | null): SrsCategory {
   if (!assignment) return "locked"
   if (!assignment.unlockedAt) return "locked"
   if (!assignment.startedAt) return "lesson"
-  
+
   const stage = assignment.srsStage
   if (stage >= 1 && stage <= 4) return "apprentice"
   if (stage >= 5 && stage <= 6) return "guru"
@@ -79,6 +81,7 @@ export function SubjectCell({
   onPress,
   showSrsStage = true,
 }: SubjectCellProps) {
+  const colors = useThemeColors()
   const typeColors = TYPE_COLORS[subject.type as keyof typeof TYPE_COLORS] ?? TYPE_COLORS.vocabulary
   const srsCategory = getSrsCategory(assignment)
   const isLocked = srsCategory === "locked"
@@ -99,30 +102,33 @@ export function SubjectCell({
     <Pressable
       onPress={onPress}
       className={cn(
-        "flex-row items-center p-3 border-b border-border",
+        "flex-row items-center p-3",
         isLocked && "opacity-50"
       )}
+      style={{ borderBottomWidth: 1, borderBottomColor: colors.border }}
     >
       {/* Character badge */}
       <View
         className={cn(
           "w-12 h-12 rounded-lg items-center justify-center mr-3",
-          isLocked ? "bg-muted" : typeColors.bg
+          !isLocked && typeColors.bg
         )}
+        style={isLocked ? { backgroundColor: colors.muted } : undefined}
       >
         {isImageOnlyRadical ? (
           <InlineRadicalImage
             characterImages={characterImages}
             characters={subject.characters}
             size={24}
-            className={isLocked ? "text-muted-foreground" : typeColors.text}
+            className={typeColors.text}
           />
         ) : (
           <Text
             className={cn(
               "text-xl font-semibold",
-              isLocked ? "text-muted-foreground" : typeColors.text
+              !isLocked && typeColors.text
             )}
+            style={isLocked ? { color: colors.mutedForeground } : undefined}
           >
             {subject.characters ?? "?"}
           </Text>
@@ -131,11 +137,11 @@ export function SubjectCell({
 
       {/* Content */}
       <View className="flex-1">
-        <Text className="text-base font-medium text-foreground" numberOfLines={1}>
+        <Text className="text-base font-medium" style={{ color: colors.foreground }} numberOfLines={1}>
           {primaryMeaning}
         </Text>
         {primaryReading && (
-          <Text className="text-sm text-muted-foreground" numberOfLines={1}>
+          <Text className="text-sm" style={{ color: colors.mutedForeground }} numberOfLines={1}>
             {primaryReading}
           </Text>
         )}
@@ -143,8 +149,16 @@ export function SubjectCell({
 
       {/* SRS Badge */}
       {showSrsStage && (
-        <Badge className={cn("ml-2", SRS_COLORS[srsCategory])}>
-          <Text className="text-xs">{SRS_LABELS[srsCategory]}</Text>
+        <Badge
+          className={cn("ml-2", srsCategory !== "locked" && SRS_COLORS[srsCategory as keyof typeof SRS_COLORS])}
+          style={srsCategory === "locked" ? { backgroundColor: colors.muted } : undefined}
+        >
+          <Text
+            className="text-xs"
+            style={srsCategory === "locked" ? { color: colors.mutedForeground } : undefined}
+          >
+            {SRS_LABELS[srsCategory]}
+          </Text>
         </Badge>
       )}
     </Pressable>

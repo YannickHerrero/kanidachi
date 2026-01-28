@@ -12,7 +12,6 @@ import {
   useBottomSheetModal,
 } from "@gorhom/bottom-sheet";
 import type {BottomSheetModalMethods} from "@gorhom/bottom-sheet/lib/typescript/types";
-import {useTheme} from "@react-navigation/native";
 import * as React from "react";
 import {
   type GestureResponderEvent,
@@ -23,8 +22,8 @@ import {
 } from "react-native";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 import {X} from "../../components/Icons";
-import {useColorScheme} from "../../lib/useColorScheme";
 import {cn} from "../../lib/utils";
+import {useThemeColors} from "@/hooks/useThemeColors";
 import * as Slot from "../primitives/slot";
 import {Button} from "./button";
 
@@ -92,8 +91,7 @@ const BottomSheetContent = React.forwardRef<
     ref,
   ) => {
     const insets = useSafeAreaInsets();
-    const {isDarkColorScheme} = useColorScheme();
-    const {colors} = useTheme();
+    const colors = useThemeColors();
     const {sheetRef} = useBottomSheetContext();
 
     React.useImperativeHandle(
@@ -111,7 +109,7 @@ const BottomSheetContent = React.forwardRef<
       (props: BottomSheetBackdropProps) => {
         const {
           pressBehavior = "close",
-          opacity = isDarkColorScheme ? 0.3 : 0.7,
+          opacity = 0.5,
           disappearsOnIndex = CLOSED_INDEX,
           style,
           onPress,
@@ -136,7 +134,7 @@ const BottomSheetContent = React.forwardRef<
           />
         );
       },
-      [backdropProps, colors],
+      [backdropProps],
     );
 
     return (
@@ -148,7 +146,7 @@ const BottomSheetContent = React.forwardRef<
         enableDynamicSizing={enableDynamicSizing}
         backgroundStyle={[{backgroundColor: colors.card}, backgroundStyle]}
         handleIndicatorStyle={{
-          backgroundColor: colors.text,
+          backgroundColor: colors.foreground,
         }}
         topInset={insets.top}
         android_keyboardInputMode={android_keyboardInputMode}
@@ -233,15 +231,25 @@ type BottomSheetTextInputProps = React.ComponentPropsWithoutRef<
 const BottomSheetTextInput = React.forwardRef<
   BottomSheetTextInputRef,
   BottomSheetTextInputProps
->(({className, placeholderClassName, ...props}, ref) => {
+>(({className, placeholderClassName, style, ...props}, ref) => {
+  const colors = useThemeColors();
   return (
     <GBottomSheetTextInput
       ref={ref}
       className={cn(
-        "rounded-md border border-input bg-background px-3 text-xl h-14 leading-[1.25] text-foreground items-center  placeholder:text-muted-foreground disabled:opacity-50",
+        "rounded-md border px-3 text-xl h-14 leading-[1.25] items-center disabled:opacity-50",
         className,
       )}
-      placeholderClassName={cn("text-muted-foreground", placeholderClassName)}
+      style={[
+        {
+          borderColor: colors.input,
+          backgroundColor: colors.background,
+          color: colors.foreground,
+        },
+        style,
+      ]}
+      placeholderTextColor={colors.mutedForeground}
+      placeholderClassName={cn(placeholderClassName)}
       {...props}
     />
   );
@@ -272,8 +280,9 @@ type BottomSheetHeaderProps = React.ComponentPropsWithoutRef<typeof View>;
 const BottomSheetHeader = React.forwardRef<
   BottomSheetHeaderRef,
   BottomSheetHeaderProps
->(({className, children, ...props}, ref) => {
+>(({className, children, style, ...props}, ref) => {
   const {dismiss} = useBottomSheetModal();
+  const colors = useThemeColors();
   function close() {
     if (Keyboard.isVisible()) {
       Keyboard.dismiss();
@@ -284,14 +293,15 @@ const BottomSheetHeader = React.forwardRef<
     <View
       ref={ref}
       className={cn(
-        "border-b border-border flex-row items-center justify-between pl-4",
+        "border-b flex-row items-center justify-between pl-4",
         className,
       )}
+      style={[{borderColor: colors.border}, style]}
       {...props}
     >
       {children}
       <Button onPress={close} variant="ghost" className="pr-4">
-        <X className="text-muted-foreground" size={24} />
+        <X color={colors.mutedForeground} size={24} />
       </Button>
     </View>
   );

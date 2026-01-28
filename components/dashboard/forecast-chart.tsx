@@ -4,6 +4,7 @@ import { View } from "react-native"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Text } from "@/components/ui/text"
 import { Muted } from "@/components/ui/typography"
+import { useThemeColors } from "@/hooks/useThemeColors"
 
 interface ForecastChartProps {
   /** Array of { hour: number, count: number } for next 24 hours */
@@ -13,6 +14,8 @@ interface ForecastChartProps {
 }
 
 export function ForecastChart({ forecast, currentReviews }: ForecastChartProps) {
+  const colors = useThemeColors()
+
   // Build cumulative forecast data
   // hour 0 = now, hour 1 = +1h, etc.
   const hours = React.useMemo(() => {
@@ -77,12 +80,13 @@ export function ForecastChart({ forecast, currentReviews }: ForecastChartProps) 
           <>
             {displayHours.map((hour, index) => (
               <View key={hour.label} className="flex-row items-center gap-3">
-                <Text className="w-10 text-sm text-muted-foreground">{hour.label}</Text>
-                <View className="flex-1 h-5 bg-muted rounded-full overflow-hidden">
+                <Text className="w-10 text-sm" style={{ color: colors.mutedForeground }}>{hour.label}</Text>
+                <View className="flex-1 h-5 rounded-full overflow-hidden" style={{ backgroundColor: colors.muted }}>
                   <View
-                    className="h-full bg-primary rounded-full"
+                    className="h-full rounded-full"
                     style={{
                       width: `${(hour.cumulative / maxCount) * 100}%`,
+                      backgroundColor: colors.primary,
                     }}
                   />
                 </View>

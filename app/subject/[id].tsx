@@ -23,11 +23,11 @@ import {
   AudioPlayer,
 } from "@/components/subject"
 import { useSubject } from "@/hooks/useSubject"
-import { useColorScheme } from "@/lib/useColorScheme"
+import { useThemeColors } from "@/hooks/useThemeColors"
 
 export default function SubjectDetailScreen() {
   const router = useRouter()
-  const { colorScheme } = useColorScheme()
+  const colors = useThemeColors()
   const params = useLocalSearchParams<{ id: string }>()
   const subjectId = Number.parseInt(params.id ?? "0", 10)
 
@@ -54,11 +54,11 @@ export default function SubjectDetailScreen() {
     }
   }
 
-  const iconColor = colorScheme === "dark" ? "#fff" : "#000"
+  const iconColor = colors.foreground
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
         <Stack.Screen options={{ headerShown: false }} />
         <View className="flex-1">
           {/* Header skeleton */}
@@ -76,10 +76,10 @@ export default function SubjectDetailScreen() {
 
   if (error || !data) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
         <Stack.Screen options={{ headerShown: false }} />
         <View className="flex-1 items-center justify-center p-4">
-          <Text className="text-destructive text-center">
+          <Text className="text-center" style={{ color: colors.destructive }}>
             {error ?? "Subject not found"}
           </Text>
           <Button onPress={handleBack} className="mt-4">
@@ -93,7 +93,7 @@ export default function SubjectDetailScreen() {
   const { subject, assignment } = data
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["bottom"]}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }} edges={["bottom"]}>
       <Stack.Screen options={{ headerShown: false }} />
 
       <ScrollView

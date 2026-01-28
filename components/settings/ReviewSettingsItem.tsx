@@ -19,6 +19,7 @@ import {
   type ReviewOrdering,
 } from "@/stores/settings"
 import { Separator } from "@/components/ui/separator"
+import { useThemeColors } from "@/hooks/useThemeColors"
 
 // Wrap-up batch size options
 const WRAPUP_BATCH_OPTIONS = [5, 10, 15, 20, 25] as const
@@ -62,25 +63,27 @@ interface OptionItemProps {
   description?: string
   selected: boolean
   onPress: () => void
+  colors: ReturnType<typeof useThemeColors>
 }
 
-function OptionItem({ title, description, selected, onPress }: OptionItemProps) {
+function OptionItem({ title, description, selected, onPress, colors }: OptionItemProps) {
   return (
     <Pressable className="py-3" onPress={onPress}>
       <View className="flex flex-row justify-between items-center">
         <View className="flex-1 pr-4">
           <H4>{title}</H4>
           {description && (
-            <Text className="text-sm text-muted-foreground">{description}</Text>
+            <Text className="text-sm" style={{ color: colors.mutedForeground }}>{description}</Text>
           )}
         </View>
-        {selected && <Check className="text-accent-foreground" />}
+        {selected && <Check color={colors.accentForeground} />}
       </View>
     </Pressable>
   )
 }
 
 export const ReviewSettingsItem = () => {
+  const colors = useThemeColors()
   const {
     reviewOrdering,
     wrapUpBatchSize,
@@ -104,19 +107,19 @@ export const ReviewSettingsItem = () => {
           itemLeft={(props) => <Shuffle {...props} />}
           label="Reviews"
           itemRight={() => (
-            <Text className="text-muted-foreground">{selectedOrderingTitle}</Text>
+            <Text style={{ color: colors.mutedForeground }}>{selectedOrderingTitle}</Text>
           )}
         />
       </BottomSheetOpenTrigger>
       <BottomSheetContent>
-        <BottomSheetHeader className="bg-background">
-          <Text className="text-foreground text-xl font-bold pb-1">
+        <BottomSheetHeader style={{ backgroundColor: colors.background }}>
+          <Text className="text-xl font-bold pb-1" style={{ color: colors.foreground }}>
             Review Settings
           </Text>
         </BottomSheetHeader>
-        <BottomSheetView className="gap-2 pt-4 bg-background">
+        <BottomSheetView className="gap-2 pt-4" style={{ backgroundColor: colors.background }}>
           {/* Ordering Section */}
-          <Text className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+          <Text className="text-sm font-semibold uppercase tracking-wide" style={{ color: colors.mutedForeground }}>
             Order
           </Text>
           {ORDERING_OPTIONS.map((option) => (
@@ -126,16 +129,17 @@ export const ReviewSettingsItem = () => {
               description={option.description}
               selected={reviewOrdering === option.value}
               onPress={() => setReviewOrdering(option.value)}
+              colors={colors}
             />
           ))}
 
           <Separator className="my-2" />
 
           {/* Wrap-up Batch Size Section */}
-          <Text className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mt-2">
+          <Text className="text-sm font-semibold uppercase tracking-wide mt-2" style={{ color: colors.mutedForeground }}>
             Wrap-up Batch Size
           </Text>
-          <Text className="text-sm text-muted-foreground mb-2">
+          <Text className="text-sm mb-2" style={{ color: colors.mutedForeground }}>
             Number of items to complete when wrapping up a session
           </Text>
           <View className="flex-row flex-wrap gap-2 mb-4">
@@ -143,18 +147,16 @@ export const ReviewSettingsItem = () => {
               <Pressable
                 key={size}
                 onPress={() => setWrapUpBatchSize(size)}
-                className={`px-4 py-2 rounded-lg border ${
-                  wrapUpBatchSize === size
-                    ? "bg-primary border-primary"
-                    : "bg-card border-border"
-                }`}
+                className="px-4 py-2 rounded-lg"
+                style={{
+                  backgroundColor: wrapUpBatchSize === size ? colors.primary : colors.card,
+                  borderWidth: 1,
+                  borderColor: wrapUpBatchSize === size ? colors.primary : colors.border,
+                }}
               >
                 <Text
-                  className={
-                    wrapUpBatchSize === size
-                      ? "text-primary-foreground font-medium"
-                      : "text-foreground"
-                  }
+                  className={wrapUpBatchSize === size ? "font-medium" : undefined}
+                  style={{ color: wrapUpBatchSize === size ? colors.primaryForeground : colors.foreground }}
                 >
                   {size}
                 </Text>
@@ -165,10 +167,10 @@ export const ReviewSettingsItem = () => {
           <Separator className="my-2" />
 
           {/* Session Item Limit Section */}
-          <Text className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mt-2">
+          <Text className="text-sm font-semibold uppercase tracking-wide mt-2" style={{ color: colors.mutedForeground }}>
             Session Item Limit
           </Text>
-          <Text className="text-sm text-muted-foreground mb-2">
+          <Text className="text-sm mb-2" style={{ color: colors.mutedForeground }}>
             Maximum number of items per review session
           </Text>
           <View className="flex-row flex-wrap gap-2 mb-4">
@@ -176,18 +178,16 @@ export const ReviewSettingsItem = () => {
               <Pressable
                 key={option.label}
                 onPress={() => setReviewItemLimit(option.value)}
-                className={`px-4 py-2 rounded-lg border ${
-                  reviewItemLimit === option.value
-                    ? "bg-primary border-primary"
-                    : "bg-card border-border"
-                }`}
+                className="px-4 py-2 rounded-lg"
+                style={{
+                  backgroundColor: reviewItemLimit === option.value ? colors.primary : colors.card,
+                  borderWidth: 1,
+                  borderColor: reviewItemLimit === option.value ? colors.primary : colors.border,
+                }}
               >
                 <Text
-                  className={
-                    reviewItemLimit === option.value
-                      ? "text-primary-foreground font-medium"
-                      : "text-foreground"
-                  }
+                  className={reviewItemLimit === option.value ? "font-medium" : undefined}
+                  style={{ color: reviewItemLimit === option.value ? colors.primaryForeground : colors.foreground }}
                 >
                   {option.label}
                 </Text>
@@ -198,45 +198,41 @@ export const ReviewSettingsItem = () => {
           <Separator className="my-2" />
 
           {/* Minimize Penalty Section */}
-          <Text className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mt-2">
+          <Text className="text-sm font-semibold uppercase tracking-wide mt-2" style={{ color: colors.mutedForeground }}>
             Minimize Review Penalty
           </Text>
-          <Text className="text-sm text-muted-foreground mb-2">
+          <Text className="text-sm mb-2" style={{ color: colors.mutedForeground }}>
             Cap wrong count at 1 even if you get an item wrong multiple times
           </Text>
           <View className="flex-row gap-2 mb-4">
             <Pressable
               onPress={() => setMinimizeReviewPenalty(true)}
-              className={`px-4 py-2 rounded-lg border ${
-                minimizeReviewPenalty
-                  ? "bg-primary border-primary"
-                  : "bg-card border-border"
-              }`}
+              className="px-4 py-2 rounded-lg"
+              style={{
+                backgroundColor: minimizeReviewPenalty ? colors.primary : colors.card,
+                borderWidth: 1,
+                borderColor: minimizeReviewPenalty ? colors.primary : colors.border,
+              }}
             >
               <Text
-                className={
-                  minimizeReviewPenalty
-                    ? "text-primary-foreground font-medium"
-                    : "text-foreground"
-                }
+                className={minimizeReviewPenalty ? "font-medium" : undefined}
+                style={{ color: minimizeReviewPenalty ? colors.primaryForeground : colors.foreground }}
               >
                 Enabled
               </Text>
             </Pressable>
             <Pressable
               onPress={() => setMinimizeReviewPenalty(false)}
-              className={`px-4 py-2 rounded-lg border ${
-                !minimizeReviewPenalty
-                  ? "bg-primary border-primary"
-                  : "bg-card border-border"
-              }`}
+              className="px-4 py-2 rounded-lg"
+              style={{
+                backgroundColor: !minimizeReviewPenalty ? colors.primary : colors.card,
+                borderWidth: 1,
+                borderColor: !minimizeReviewPenalty ? colors.primary : colors.border,
+              }}
             >
               <Text
-                className={
-                  !minimizeReviewPenalty
-                    ? "text-primary-foreground font-medium"
-                    : "text-foreground"
-                }
+                className={!minimizeReviewPenalty ? "font-medium" : undefined}
+                style={{ color: !minimizeReviewPenalty ? colors.primaryForeground : colors.foreground }}
               >
                 Disabled
               </Text>

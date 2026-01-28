@@ -13,13 +13,13 @@ import { LevelTimeChart } from "@/components/stats/level-time-chart"
 import { LevelTimeline } from "@/components/stats/level-timeline"
 import { LeechList } from "@/components/stats/leech-list"
 import { useStatistics } from "@/hooks/useStatistics"
-import { useColorScheme } from "@/lib/useColorScheme"
+import { useThemeColors } from "@/hooks/useThemeColors"
 import { getCurrentUser } from "@/db/queries"
 import { useDatabase } from "@/db/provider"
 
 export default function StatsScreen() {
   const router = useRouter()
-  const { colorScheme } = useColorScheme()
+  const colors = useThemeColors()
   const { db } = useDatabase()
   const [currentLevel, setCurrentLevel] = React.useState(1)
   const {
@@ -53,7 +53,7 @@ export default function StatsScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
         <View className="flex-1 p-4 gap-4">
           {/* Header skeleton */}
           <View className="flex-row items-center gap-3 mb-2">
@@ -72,9 +72,9 @@ export default function StatsScreen() {
 
   if (error) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
         <View className="flex-1 items-center justify-center p-4 gap-4">
-          <Text className="text-destructive text-center">{error}</Text>
+          <Text className="text-center" style={{ color: colors.destructive }}>{error}</Text>
           <Button onPress={refetch}>
             <Text>Try Again</Text>
           </Button>
@@ -92,7 +92,7 @@ export default function StatsScreen() {
     srsBreakdown.burned
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }} edges={["top"]}>
       <ScrollView
         className="flex-1"
         contentContainerClassName="p-4 gap-4"
@@ -111,7 +111,7 @@ export default function StatsScreen() {
           >
             <ChevronLeft
               size={24}
-              color={colorScheme === "dark" ? "#ffffff" : "#000000"}
+              color={colors.foreground}
             />
           </Button>
           <H1 className="text-2xl">Statistics</H1>
@@ -119,20 +119,20 @@ export default function StatsScreen() {
 
         {/* Summary row */}
         <View className="flex-row flex-wrap gap-2 mb-2">
-          <View className="flex-1 min-w-[100px] bg-card rounded-lg p-3 border border-border">
-            <Text className="text-2xl font-bold text-foreground">
+          <View className="flex-1 min-w-[100px] rounded-lg p-3 border" style={{ backgroundColor: colors.card, borderColor: colors.border }}>
+            <Text className="text-2xl font-bold" style={{ color: colors.foreground }}>
               {totalStats.totalLessons.toLocaleString()}
             </Text>
             <Muted className="text-xs">Items Studied</Muted>
           </View>
-          <View className="flex-1 min-w-[100px] bg-card rounded-lg p-3 border border-border">
-            <Text className="text-2xl font-bold text-foreground">
+          <View className="flex-1 min-w-[100px] rounded-lg p-3 border" style={{ backgroundColor: colors.card, borderColor: colors.border }}>
+            <Text className="text-2xl font-bold" style={{ color: colors.foreground }}>
               {totalStats.totalReviews.toLocaleString()}
             </Text>
             <Muted className="text-xs">Total Answers</Muted>
           </View>
-          <View className="flex-1 min-w-[100px] bg-card rounded-lg p-3 border border-border">
-            <Text className="text-2xl font-bold text-foreground">
+          <View className="flex-1 min-w-[100px] rounded-lg p-3 border" style={{ backgroundColor: colors.card, borderColor: colors.border }}>
+            <Text className="text-2xl font-bold" style={{ color: colors.foreground }}>
               {srsBreakdown.burned.toLocaleString()}
             </Text>
             <Muted className="text-xs">Burned</Muted>

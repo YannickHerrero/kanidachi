@@ -3,6 +3,7 @@ import { View, Pressable, ScrollView } from "react-native"
 
 import { Text } from "@/components/ui/text"
 import { cn } from "@/lib/utils"
+import { useThemeColors } from "@/hooks/useThemeColors"
 
 export type SubjectTypeFilter = "all" | "radical" | "kanji" | "vocabulary"
 
@@ -31,12 +32,14 @@ export function TypeFilter({
   counts,
   showCounts = true,
 }: TypeFilterProps) {
+  const colors = useThemeColors()
+
   return (
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
       contentContainerClassName="px-4 py-2 gap-2"
-      className="bg-muted/30"
+      style={{ backgroundColor: colors.muted + '4D' }}
     >
       {FILTERS.map((filter) => {
         const count = counts?.[filter.key] ?? 0
@@ -46,18 +49,12 @@ export function TypeFilter({
           <Pressable
             key={filter.key}
             onPress={() => onFilterChange(filter.key)}
-            className={cn(
-              "px-3 py-1.5 rounded-full",
-              isSelected ? "bg-primary" : "bg-muted"
-            )}
+            className="px-3 py-1.5 rounded-full"
+            style={{ backgroundColor: isSelected ? colors.primary : colors.muted }}
           >
             <Text
-              className={cn(
-                "text-sm",
-                isSelected
-                  ? "text-primary-foreground font-medium"
-                  : "text-muted-foreground"
-              )}
+              className={cn("text-sm", isSelected && "font-medium")}
+              style={{ color: isSelected ? colors.primaryForeground : colors.mutedForeground }}
             >
               {filter.label}
               {showCounts && counts ? ` (${count})` : ""}

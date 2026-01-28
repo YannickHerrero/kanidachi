@@ -16,7 +16,7 @@ import { Muted } from "@/components/ui/typography"
 import { useDatabase } from "@/db/provider"
 import { wanikaniClient } from "@/lib/wanikani/client"
 import { studyMaterials } from "@/db/schema"
-import { useColorScheme } from "@/lib/useColorScheme"
+import { useThemeColors } from "@/hooks/useThemeColors"
 import type { StudyMaterial } from "@/hooks/useStudyMaterial"
 
 interface StudyMaterialEditorProps {
@@ -33,7 +33,8 @@ export function StudyMaterialEditor({
   children,
 }: StudyMaterialEditorProps) {
   const { db } = useDatabase()
-  const { colorScheme } = useColorScheme()
+  const colors = useThemeColors()
+  const isDark = colors.background === '#0a0a0b'
   const { ref, open, close } = useBottomSheet()
   const [editType, setEditType] = React.useState<"synonyms" | "meaningNote" | "readingNote">("synonyms")
   const [isSaving, setIsSaving] = React.useState(false)
@@ -47,7 +48,7 @@ export function StudyMaterialEditor({
 
   const openEditor = (type: "synonyms" | "meaningNote" | "readingNote") => {
     setEditType(type)
-    
+
     if (type === "synonyms") {
       // Parse existing synonyms
       const existing = studyMaterial?.meaningSynonyms
@@ -60,7 +61,7 @@ export function StudyMaterialEditor({
     } else if (type === "readingNote") {
       setNoteText(studyMaterial?.readingNote ?? "")
     }
-    
+
     open()
   }
 
@@ -151,7 +152,8 @@ export function StudyMaterialEditor({
     }
   }
 
-  const iconColor = colorScheme === "dark" ? "#fff" : "#000"
+  const blueColor = isDark ? "#60a5fa" : "#2563eb"
+  const blueTextColor = isDark ? "#60a5fa" : "#2563eb"
 
   return (
     <>
@@ -175,11 +177,12 @@ export function StudyMaterialEditor({
                   {synonyms.map((synonym, index) => (
                     <View
                       key={index}
-                      className="flex-row items-center bg-blue-500/20 px-3 py-1.5 rounded-full gap-2"
+                      className="flex-row items-center px-3 py-1.5 rounded-full gap-2"
+                      style={{ backgroundColor: 'rgba(59, 130, 246, 0.2)' }}
                     >
-                      <Text className="text-blue-600 dark:text-blue-400">{synonym}</Text>
+                      <Text style={{ color: blueTextColor }}>{synonym}</Text>
                       <Pressable onPress={() => removeSynonym(index)}>
-                        <X size={16} color={colorScheme === "dark" ? "#60a5fa" : "#2563eb"} />
+                        <X size={16} color={blueColor} />
                       </Pressable>
                     </View>
                   ))}
@@ -219,7 +222,7 @@ export function StudyMaterialEditor({
 
             {/* Save button */}
             <Button onPress={handleSave} disabled={isSaving} className="mb-4">
-              <Text className="text-primary-foreground font-semibold">
+              <Text className="font-semibold" style={{ color: colors.primaryForeground }}>
                 {isSaving ? "Saving..." : "Save"}
               </Text>
             </Button>

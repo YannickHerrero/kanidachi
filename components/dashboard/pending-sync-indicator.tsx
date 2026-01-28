@@ -7,7 +7,7 @@ import { useDatabase } from "@/db/provider"
 import { getPendingProgressCount } from "@/db/queries"
 import { processQueue } from "@/lib/sync/pending-queue"
 import { useNetworkStatus } from "@/hooks/useNetworkStatus"
-import { useColorScheme } from "@/lib/useColorScheme"
+import { useThemeColors } from "@/hooks/useThemeColors"
 
 /**
  * Shows a banner when there are pending reviews/lessons to sync.
@@ -15,7 +15,8 @@ import { useColorScheme } from "@/lib/useColorScheme"
  */
 export function PendingSyncIndicator() {
   const { db } = useDatabase()
-  const { colorScheme } = useColorScheme()
+  const colors = useThemeColors()
+  const isDark = colors.background === '#0a0a0b'
   const { isConnected, isInternetReachable } = useNetworkStatus()
   const isOnline = isConnected && isInternetReachable !== false
   const [pendingCount, setPendingCount] = React.useState(0)
@@ -53,13 +54,18 @@ export function PendingSyncIndicator() {
     return null
   }
 
-  const iconColor = colorScheme === "dark" ? "#fbbf24" : "#d97706"
-  const textColor = colorScheme === "dark" ? "text-amber-400" : "text-amber-600"
+  const iconColor = isDark ? "#fbbf24" : "#d97706"
+  const textColor = isDark ? "#fbbf24" : "#d97706"
 
   return (
     <Pressable
       onPress={handlePress}
-      className="flex-row items-center gap-2 bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2"
+      className="flex-row items-center gap-2 rounded-lg px-3 py-2"
+      style={{
+        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+        borderWidth: 1,
+        borderColor: 'rgba(245, 158, 11, 0.3)'
+      }}
     >
       {isSyncing ? (
         <Loader2 size={16} color={iconColor} className="animate-spin" />
@@ -68,7 +74,7 @@ export function PendingSyncIndicator() {
       ) : (
         <CloudOff size={16} color={iconColor} />
       )}
-      <Text className={`text-sm ${textColor} flex-1`}>
+      <Text className="text-sm flex-1" style={{ color: textColor }}>
         {isSyncing
           ? "Syncing..."
           : isOnline
@@ -76,7 +82,7 @@ export function PendingSyncIndicator() {
             : `${pendingCount} item${pendingCount > 1 ? "s" : ""} waiting for connection`}
       </Text>
       {isOnline && !isSyncing && (
-        <Text className={`text-xs ${textColor}`}>Tap to retry</Text>
+        <Text className="text-xs" style={{ color: textColor }}>Tap to retry</Text>
       )}
     </Pressable>
   )

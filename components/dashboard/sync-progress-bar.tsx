@@ -11,7 +11,7 @@ import Animated, {
 } from "react-native-reanimated"
 
 import { useBackgroundSyncStore } from "@/stores/background-sync"
-import { useColorScheme } from "@/lib/useColorScheme"
+import { useThemeColors } from "@/hooks/useThemeColors"
 
 const BAR_HEIGHT = 3
 const FADE_IN_DURATION = 200
@@ -27,7 +27,7 @@ const FADE_OUT_DURATION = 600
  * - Fades out when sync completes (600ms)
  */
 export function SyncProgressBar() {
-  const { colorScheme } = useColorScheme()
+  const colors = useThemeColors()
   const isSyncing = useBackgroundSyncStore((s) => s.isSyncing)
   const progress = useBackgroundSyncStore((s) => s.progress)
   
@@ -82,7 +82,7 @@ export function SyncProgressBar() {
     return null
   }
 
-  const barColor = colorScheme === "dark" ? "#60a5fa" : "#3b82f6" // blue-400 / blue-500
+  const barColor = colors.background === '#0a0a0b' ? "#60a5fa" : "#3b82f6" // blue-400 / blue-500
 
   return (
     <Animated.View style={[styles.container, containerStyle]}>

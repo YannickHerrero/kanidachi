@@ -18,14 +18,14 @@ import {
   selectRemainingCount,
   selectIsSessionComplete,
 } from "@/stores/reviews"
-import { useColorScheme } from "@/lib/useColorScheme"
+import { useThemeColors } from "@/hooks/useThemeColors"
 import { useSettingsStore } from "@/stores/settings"
 import { preloadAudio } from "@/lib/audio/cache"
 import { parsePronunciationAudios } from "@/db/queries"
 
 export default function ReviewSessionScreen() {
   const router = useRouter()
-  const { colorScheme } = useColorScheme()
+  const colors = useThemeColors()
 
   const { items, isLoading, error } = useAvailableReviews()
 
@@ -128,7 +128,7 @@ export default function ReviewSessionScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
         <Stack.Screen options={{ headerShown: false }} />
         <View className="flex-1 p-4 gap-4">
           <View className="flex-row items-center gap-3">
@@ -149,7 +149,7 @@ export default function ReviewSessionScreen() {
     // Determine error type based on message
     const errorType = error.toLowerCase().includes("network") ? "network" : "generic"
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
         <Stack.Screen options={{ headerShown: false }} />
         <ErrorView
           type={errorType}
@@ -162,7 +162,7 @@ export default function ReviewSessionScreen() {
 
   if (items.length === 0) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
         <Stack.Screen options={{ headerShown: false }} />
         <EmptyState
           type="reviews"
@@ -178,13 +178,13 @@ export default function ReviewSessionScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }} edges={["top"]}>
       <Stack.Screen options={{ headerShown: false }} />
 
       {/* Header */}
       <View className="flex-row items-center justify-between px-4 py-3">
         <Button variant="ghost" size="icon" onPress={handleEndSession}>
-          <X size={24} color={colorScheme === "dark" ? "#fff" : "#000"} />
+          <X size={24} color={colors.foreground} />
         </Button>
 
         <View className="flex-1 mx-2">

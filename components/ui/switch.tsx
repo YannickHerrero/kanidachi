@@ -7,58 +7,51 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import * as SwitchPrimitives from "@/components/primitives/switch";
-import {useColorScheme} from "@/lib/useColorScheme";
+import {useThemeColors} from "@/hooks/useThemeColors";
 
 import {cn} from "@/lib/utils";
 
 const SwitchWeb = React.forwardRef<
   React.ElementRef<typeof SwitchPrimitives.Root>,
   React.ComponentPropsWithoutRef<typeof SwitchPrimitives.Root>
->(({className, ...props}, ref) => (
-  <SwitchPrimitives.Root
-    className={cn(
-      "peer flex-row h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed",
-      props.checked ? "bg-primary" : "bg-input",
-      props.disabled && "opacity-50",
-      className,
-    )}
-    {...props}
-    ref={ref}
-  >
-    <SwitchPrimitives.Thumb
+>(({className, style, ...props}, ref) => {
+  const colors = useThemeColors();
+  return (
+    <SwitchPrimitives.Root
       className={cn(
-        "pointer-events-none block h-5 w-5 rounded-full bg-background shadow-md shadow-foreground/5 ring-0 transition-transform",
-        props.checked ? "translate-x-5" : "translate-x-0",
+        "peer flex-row h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed",
+        props.disabled && "opacity-50",
+        className,
       )}
-    />
-  </SwitchPrimitives.Root>
-));
+      style={[{backgroundColor: props.checked ? colors.primary : colors.input}, style]}
+      {...props}
+      ref={ref}
+    >
+      <SwitchPrimitives.Thumb
+        className={cn(
+          "pointer-events-none block h-5 w-5 rounded-full shadow-md shadow-foreground/5 ring-0 transition-transform",
+          props.checked ? "translate-x-5" : "translate-x-0",
+        )}
+        style={{backgroundColor: colors.background}}
+      />
+    </SwitchPrimitives.Root>
+  );
+});
 
 SwitchWeb.displayName = "SwitchWeb";
-
-const RGB_COLORS = {
-  light: {
-    primary: "rgb(24, 24, 27)",
-    input: "rgb(228, 228, 231)",
-  },
-  dark: {
-    primary: "rgb(250, 250, 250)",
-    input: "rgb(39, 39, 42)",
-  },
-} as const;
 
 const SwitchNative = React.forwardRef<
   React.ElementRef<typeof SwitchPrimitives.Root>,
   React.ComponentPropsWithoutRef<typeof SwitchPrimitives.Root>
 >(({className, ...props}, ref) => {
-  const {colorScheme} = useColorScheme();
+  const colors = useThemeColors();
   const translateX = useDerivedValue(() => (props.checked ? 18 : 0));
   const animatedRootStyle = useAnimatedStyle(() => {
     return {
       backgroundColor: interpolateColor(
         translateX.value,
         [0, 18],
-        [RGB_COLORS[colorScheme].input, RGB_COLORS[colorScheme].primary],
+        [colors.input, colors.primary],
       ),
     };
   });
@@ -85,9 +78,8 @@ const SwitchNative = React.forwardRef<
       >
         <Animated.View style={animatedThumbStyle}>
           <SwitchPrimitives.Thumb
-            className={
-              "h-7 w-7 rounded-full bg-background shadow-md shadow-foreground/25 ring-0"
-            }
+            className="h-7 w-7 rounded-full shadow-md shadow-foreground/25 ring-0"
+            style={{backgroundColor: colors.background}}
           />
         </Animated.View>
       </SwitchPrimitives.Root>

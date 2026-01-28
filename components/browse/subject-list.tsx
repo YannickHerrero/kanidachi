@@ -6,6 +6,7 @@ import { useRouter } from "expo-router"
 import { Text } from "@/components/ui/text"
 import { SubjectCell } from "./subject-cell"
 import type { SubjectWithAssignment, GroupedSubjects } from "@/hooks/useSubjectsByLevel"
+import { useThemeColors } from "@/hooks/useThemeColors"
 
 interface SectionHeader {
   type: "header"
@@ -27,6 +28,7 @@ interface SubjectListProps {
 
 export function SubjectList({ grouped, showSrsStage = true }: SubjectListProps) {
   const router = useRouter()
+  const colors = useThemeColors()
 
   // Flatten grouped data into a list with section headers
   const data = React.useMemo<ListItem[]>(() => {
@@ -66,8 +68,8 @@ export function SubjectList({ grouped, showSrsStage = true }: SubjectListProps) 
   const renderItem = ({ item }: { item: ListItem }) => {
     if (item.type === "header") {
       return (
-        <View className="px-4 py-3 bg-muted/50 border-b border-border">
-          <Text className="text-sm font-semibold text-muted-foreground">
+        <View className="px-4 py-3" style={{ backgroundColor: colors.muted + '80', borderBottomWidth: 1, borderBottomColor: colors.border }}>
+          <Text className="text-sm font-semibold" style={{ color: colors.mutedForeground }}>
             {item.title} ({item.count})
           </Text>
         </View>
@@ -91,7 +93,7 @@ export function SubjectList({ grouped, showSrsStage = true }: SubjectListProps) 
   if (data.length === 0) {
     return (
       <View className="flex-1 items-center justify-center p-8">
-        <Text className="text-muted-foreground text-center">
+        <Text className="text-center" style={{ color: colors.mutedForeground }}>
           No subjects found for this level
         </Text>
       </View>

@@ -6,8 +6,10 @@ import { Text } from "@/components/ui/text"
 import { HardDrive } from "@/lib/icons"
 import ListItem from "@/components/ui/list-item"
 import { clearAudioCache, getAudioCacheSize, formatBytes } from "@/lib/audio/cache"
+import { useThemeColors } from "@/hooks/useThemeColors"
 
 export const CacheSettingsItem = () => {
+  const colors = useThemeColors()
   const [cacheSize, setCacheSize] = useState<number>(0)
   const [isClearing, setIsClearing] = useState(false)
 
@@ -60,7 +62,7 @@ export const CacheSettingsItem = () => {
       label="Clear Audio Cache"
       onPress={handleClearCache}
       itemRight={() => (
-        <Text className="text-muted-foreground">
+        <Text style={{ color: colors.mutedForeground }}>
           {isClearing ? "Clearing..." : formatBytes(cacheSize)}
         </Text>
       )}

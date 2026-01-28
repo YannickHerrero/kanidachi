@@ -11,11 +11,11 @@ import { ErrorView } from "@/components/ui/error-view"
 import { EmptyState } from "@/components/ui/empty-state"
 import { SearchBar, SubjectCell, TypeFilter, type SubjectTypeFilter } from "@/components/browse"
 import { useSearchSubjects } from "@/hooks/useSearchSubjects"
-import { useColorScheme } from "@/lib/useColorScheme"
+import { useThemeColors } from "@/hooks/useThemeColors"
 
 export default function SearchScreen() {
   const router = useRouter()
-  const { colorScheme } = useColorScheme()
+  const colors = useThemeColors()
   const [query, setQuery] = React.useState("")
   const [typeFilter, setTypeFilter] = React.useState<SubjectTypeFilter>("all")
   const { results, isSearching, error, search, clearResults } = useSearchSubjects()
@@ -66,14 +66,14 @@ export default function SearchScreen() {
     clearResults()
   }
 
-  const iconColor = colorScheme === "dark" ? "#fff" : "#000"
+  const iconColor = colors.foreground
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }} edges={["top"]}>
       <Stack.Screen options={{ headerShown: false }} />
 
       {/* Header with search */}
-      <View className="flex-row items-center gap-2 px-4 py-3 border-b border-border">
+      <View className="flex-row items-center gap-2 px-4 py-3" style={{ borderBottomWidth: 1, borderBottomColor: colors.border }}>
         <Button variant="ghost" size="icon" onPress={handleBack}>
           <ChevronLeft size={24} color={iconColor} />
         </Button>
@@ -94,7 +94,7 @@ export default function SearchScreen() {
         {/* Loading state */}
         {isSearching && (
           <View className="p-4">
-            <Text className="text-muted-foreground text-center">
+            <Text className="text-center" style={{ color: colors.mutedForeground }}>
               Searching...
             </Text>
           </View>
@@ -140,8 +140,8 @@ export default function SearchScreen() {
             />
 
             {/* Results count */}
-            <View className="px-4 py-2 border-b border-border">
-              <Text className="text-sm text-muted-foreground">
+            <View className="px-4 py-2" style={{ borderBottomWidth: 1, borderBottomColor: colors.border }}>
+              <Text className="text-sm" style={{ color: colors.mutedForeground }}>
                 {filteredResults.length} result
                 {filteredResults.length !== 1 ? "s" : ""}
                 {typeFilter !== "all" && ` (filtered from ${results.length})`}
@@ -151,7 +151,7 @@ export default function SearchScreen() {
             {/* Filtered results empty state */}
             {filteredResults.length === 0 && (
               <View className="flex-1 items-center justify-center p-8">
-                <Text className="text-muted-foreground text-center">
+                <Text className="text-center" style={{ color: colors.mutedForeground }}>
                   No {typeFilter} subjects found
                 </Text>
               </View>

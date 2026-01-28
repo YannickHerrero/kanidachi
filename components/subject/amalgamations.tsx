@@ -4,6 +4,7 @@ import { View } from "react-native"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Text } from "@/components/ui/text"
 import { SubjectChip } from "./subject-chip"
+import { useThemeColors } from "@/hooks/useThemeColors"
 import type { subjects } from "@/db/schema"
 
 type Subject = typeof subjects.$inferSelect
@@ -14,6 +15,8 @@ interface AmalgamationsProps {
 }
 
 export function Amalgamations({ subject, amalgamationSubjects }: AmalgamationsProps) {
+  const colors = useThemeColors()
+
   if (amalgamationSubjects.length === 0) {
     return null
   }
@@ -46,7 +49,7 @@ export function Amalgamations({ subject, amalgamationSubjects }: AmalgamationsPr
           ))}
         </View>
         {hasMore && (
-          <Text className="text-sm text-muted-foreground mt-2">
+          <Text className="text-sm mt-2" style={{ color: colors.mutedForeground }}>
             +{amalgamationSubjects.length - 20} more...
           </Text>
         )}

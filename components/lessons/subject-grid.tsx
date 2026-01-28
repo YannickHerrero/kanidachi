@@ -5,6 +5,7 @@ import { FlashList } from "@shopify/flash-list"
 import { SubjectCell } from "./subject-cell"
 import { Text } from "@/components/ui/text"
 import { Muted } from "@/components/ui/typography"
+import { useThemeColors } from "@/hooks/useThemeColors"
 import type { LessonItem } from "@/stores/lessons"
 
 interface SubjectGridProps {
@@ -14,6 +15,8 @@ interface SubjectGridProps {
 }
 
 export function SubjectGrid({ items, selectedIds, onToggle }: SubjectGridProps) {
+  const colors = useThemeColors()
+
   if (items.length === 0) {
     return (
       <View className="flex-1 items-center justify-center p-8">
@@ -58,8 +61,8 @@ export function SubjectGrid({ items, selectedIds, onToggle }: SubjectGridProps) 
   const renderItem = ({ item }: { item: typeof flatData[number] }) => {
     if (item.type === "header") {
       return (
-        <View className="px-2 py-3 bg-background">
-          <Text className="text-sm font-semibold text-muted-foreground">
+        <View className="px-2 py-3" style={{ backgroundColor: colors.background }}>
+          <Text className="text-sm font-semibold" style={{ color: colors.mutedForeground }}>
             Level {item.level}
           </Text>
         </View>
@@ -85,7 +88,7 @@ export function SubjectGrid({ items, selectedIds, onToggle }: SubjectGridProps) 
           <View key={level}>
             {/* Level header */}
             <View className="py-3">
-              <Text className="text-sm font-semibold text-muted-foreground">
+              <Text className="text-sm font-semibold" style={{ color: colors.mutedForeground }}>
                 Level {level}
               </Text>
             </View>

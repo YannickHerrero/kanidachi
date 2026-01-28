@@ -13,6 +13,7 @@ import { SubjectChip } from "@/components/subject/subject-chip"
 import { parseMeanings, parseReadings, parseContextSentences, parseNumberArray, getSubjectsByIds } from "@/db/queries"
 import { useSettingsStore } from "@/stores/settings"
 import { useDatabase } from "@/db/provider"
+import { useThemeColors } from "@/hooks/useThemeColors"
 import type { Subject } from "@/stores/lessons"
 
 // Subject type colors
@@ -36,6 +37,7 @@ interface LessonContentProps {
 
 export function LessonContent({ subject }: LessonContentProps) {
   const { db } = useDatabase()
+  const colors = useThemeColors()
   const autoPlayAudio = useSettingsStore((s) => s.autoPlayAudioLessons)
   const meanings = parseMeanings(subject.meanings)
   const readings = parseReadings(subject.readings)
@@ -89,9 +91,10 @@ export function LessonContent({ subject }: LessonContentProps) {
 
   return (
     <ScrollView
-      className="flex-1 bg-background"
+      className="flex-1"
       contentContainerClassName="p-4 gap-4"
       showsVerticalScrollIndicator={false}
+      style={{ backgroundColor: colors.background }}
     >
       {/* Character Header */}
       <View className={`items-center py-8 rounded-xl ${typeColor}`}>
@@ -200,7 +203,7 @@ export function LessonContent({ subject }: LessonContentProps) {
           <CardContent>
             <FormattedText text={subject.meaningMnemonic} />
             {subject.meaningHint && (
-              <View className="mt-3 p-3 bg-muted rounded-lg">
+              <View className="mt-3 p-3 rounded-lg" style={{ backgroundColor: colors.muted }}>
                 <Muted className="text-xs mb-1">Hint</Muted>
                 <FormattedText
                   text={subject.meaningHint}
@@ -221,7 +224,7 @@ export function LessonContent({ subject }: LessonContentProps) {
           <CardContent>
             <FormattedText text={subject.readingMnemonic} />
             {subject.readingHint && (
-              <View className="mt-3 p-3 bg-muted rounded-lg">
+              <View className="mt-3 p-3 rounded-lg" style={{ backgroundColor: colors.muted }}>
                 <Muted className="text-xs mb-1">Hint</Muted>
                 <FormattedText
                   text={subject.readingHint}

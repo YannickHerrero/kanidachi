@@ -3,7 +3,7 @@ import { TextInput, View, Pressable } from "react-native"
 import { Search, X } from "lucide-react-native"
 
 import { cn } from "@/lib/utils"
-import { useColorScheme } from "@/lib/useColorScheme"
+import { useThemeColors } from "@/hooks/useThemeColors"
 
 interface SearchBarProps {
   value: string
@@ -22,7 +22,7 @@ export function SearchBar({
   autoFocus = false,
   className,
 }: SearchBarProps) {
-  const { colorScheme } = useColorScheme()
+  const colors = useThemeColors()
   const inputRef = React.useRef<TextInput>(null)
 
   const handleClear = () => {
@@ -31,14 +31,15 @@ export function SearchBar({
     inputRef.current?.focus()
   }
 
-  const iconColor = colorScheme === "dark" ? "#a1a1aa" : "#71717a"
+  const iconColor = colors.mutedForeground
 
   return (
     <View
       className={cn(
-        "flex-row items-center bg-muted rounded-lg px-3 py-2",
+        "flex-row items-center rounded-lg px-3 py-2",
         className
       )}
+      style={{ backgroundColor: colors.muted }}
     >
       <Search size={20} color={iconColor} />
       <TextInput
@@ -50,7 +51,8 @@ export function SearchBar({
         autoFocus={autoFocus}
         autoCapitalize="none"
         autoCorrect={false}
-        className="flex-1 ml-2 text-base text-foreground"
+        className="flex-1 ml-2 text-base"
+        style={{ color: colors.foreground }}
         returnKeyType="search"
       />
       {value.length > 0 && (

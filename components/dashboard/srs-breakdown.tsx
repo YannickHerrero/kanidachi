@@ -5,7 +5,7 @@ import { ChevronRight } from "lucide-react-native"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Text } from "@/components/ui/text"
-import { useColorScheme } from "@/lib/useColorScheme"
+import { useThemeColors } from "@/hooks/useThemeColors"
 
 // WaniKani SRS colors
 const SRS_COLORS = {
@@ -32,7 +32,7 @@ export function SrsBreakdown({
   burned,
 }: SrsBreakdownProps) {
   const router = useRouter()
-  const { colorScheme } = useColorScheme()
+  const colors = useThemeColors()
   const total = apprentice + guru + master + enlightened + burned
 
   // Calculate percentages for each segment
@@ -53,8 +53,6 @@ export function SrsBreakdown({
     router.push(`/browse/srs/${category}`)
   }
 
-  const chevronColor = colorScheme === "dark" ? "#6b7280" : "#9ca3af"
-
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -62,7 +60,7 @@ export function SrsBreakdown({
       </CardHeader>
       <CardContent className="gap-4">
         {/* Stacked bar */}
-        <View className="h-6 flex-row rounded-full overflow-hidden bg-muted">
+        <View className="h-6 flex-row rounded-full overflow-hidden" style={{ backgroundColor: colors.muted }}>
           {segments.map((segment) => {
             const width = getWidth(segment.count)
             if (width === 0) return null
@@ -92,22 +90,22 @@ export function SrsBreakdown({
                 className="w-3 h-3 rounded-full mr-2"
                 style={{ backgroundColor: segment.color }}
               />
-              <Text className="text-sm text-muted-foreground flex-1">
+              <Text className="text-sm flex-1" style={{ color: colors.mutedForeground }}>
                 {segment.label}
               </Text>
-              <Text className="font-medium text-foreground mr-1">
+              <Text className="font-medium mr-1" style={{ color: colors.foreground }}>
                 {segment.count}
               </Text>
               {segment.count > 0 && (
-                <ChevronRight size={16} color={chevronColor} />
+                <ChevronRight size={16} color={colors.mutedForeground} />
               )}
             </Pressable>
           ))}
         </View>
 
         {/* Total */}
-        <Text className="text-sm text-muted-foreground">
-          Total items: <Text className="font-medium text-foreground">{total}</Text>
+        <Text className="text-sm" style={{ color: colors.mutedForeground }}>
+          Total items: <Text className="font-medium" style={{ color: colors.foreground }}>{total}</Text>
         </Text>
       </CardContent>
     </Card>

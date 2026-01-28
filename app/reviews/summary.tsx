@@ -13,13 +13,13 @@ import { useReviewStore, type SessionSummary } from "@/stores/reviews"
 import { useDatabase } from "@/db/provider"
 import { addPendingProgress } from "@/db/queries"
 import { parseMeanings } from "@/db/queries"
-import { useColorScheme } from "@/lib/useColorScheme"
+import { useThemeColors } from "@/hooks/useThemeColors"
 import { useSettingsStore } from "@/stores/settings"
 import { backgroundSyncManager } from "@/lib/sync/background-sync"
 
 export default function ReviewSummaryScreen() {
   const router = useRouter()
-  const { colorScheme } = useColorScheme()
+  const colors = useThemeColors()
   const { db } = useDatabase()
 
   const { results, items, reset } = useReviewStore()
@@ -118,7 +118,7 @@ export default function ReviewSummaryScreen() {
   const isSaving = isSubmitting || (!hasSubmitted && summary.results.length > 0)
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
       <Stack.Screen options={{ headerShown: false }} />
 
       <ScrollView
@@ -129,7 +129,7 @@ export default function ReviewSummaryScreen() {
         {/* Header */}
         <View className="items-center py-8">
           <Text className="text-3xl font-bold mb-2">Session Complete</Text>
-          <Text className="text-muted-foreground">
+          <Text style={{ color: colors.mutedForeground }}>
             {isSaving ? "Saving progress..." : "Great work!"}
           </Text>
         </View>
@@ -193,7 +193,8 @@ export default function ReviewSummaryScreen() {
                 return (
                   <View
                     key={item.assignment.id}
-                    className="flex-row items-center gap-3 p-2 bg-muted rounded-lg"
+                    className="flex-row items-center gap-3 p-2 rounded-lg"
+                    style={{ backgroundColor: colors.muted }}
                   >
                     <View className="w-12 h-12 rounded-lg bg-pink-500 items-center justify-center">
                       <Text className="text-xl text-white font-semibold">
@@ -219,7 +220,7 @@ export default function ReviewSummaryScreen() {
           className="h-14"
           disabled={isSaving}
         >
-          <Text className="text-primary-foreground text-lg font-semibold">
+          <Text className="text-lg font-semibold" style={{ color: colors.primaryForeground }}>
             {isSaving ? "Saving..." : "Back to Dashboard"}
           </Text>
         </Button>

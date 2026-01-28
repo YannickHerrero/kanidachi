@@ -4,6 +4,7 @@ import { View, Pressable } from "react-native"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Text } from "@/components/ui/text"
 import { Muted } from "@/components/ui/typography"
+import { useThemeColors } from "@/hooks/useThemeColors"
 
 interface WeeklyForecastProps {
   /** Daily forecast data for the next 7 days */
@@ -13,6 +14,7 @@ interface WeeklyForecastProps {
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 
 export function WeeklyForecast({ dailyForecast }: WeeklyForecastProps) {
+  const colors = useThemeColors()
   const maxCount = Math.max(...dailyForecast.map((d) => d.count), 1)
   const totalWeek = dailyForecast.reduce((sum, d) => sum + d.count, 0)
 
@@ -37,11 +39,15 @@ export function WeeklyForecast({ dailyForecast }: WeeklyForecastProps) {
                 return (
                   <View key={day.day} className="flex-1 items-center gap-1">
                     <View
-                      className={`w-full rounded-t ${isToday ? "bg-primary" : "bg-muted-foreground/30"}`}
-                      style={{ height: `${height}%` }}
+                      className="w-full rounded-t"
+                      style={{
+                        height: `${height}%`,
+                        backgroundColor: isToday ? colors.primary : `${colors.mutedForeground}4D`,
+                      }}
                     />
                     <Text
-                      className={`text-xs ${isToday ? "font-semibold text-primary" : "text-muted-foreground"}`}
+                      className={`text-xs ${isToday ? "font-semibold" : ""}`}
+                      style={{ color: isToday ? colors.primary : colors.mutedForeground }}
                     >
                       {day.day}
                     </Text>
@@ -51,10 +57,10 @@ export function WeeklyForecast({ dailyForecast }: WeeklyForecastProps) {
             </View>
 
             {/* Legend */}
-            <View className="flex-row flex-wrap gap-3 pt-2 border-t border-border">
+            <View className="flex-row flex-wrap gap-3 pt-2" style={{ borderTopWidth: 1, borderTopColor: colors.border }}>
               {dailyForecast.slice(0, 4).map((day, index) => (
                 <View key={day.day} className="flex-row items-center gap-1">
-                  <Text className="text-xs text-muted-foreground">{day.date}:</Text>
+                  <Text className="text-xs" style={{ color: colors.mutedForeground }}>{day.date}:</Text>
                   <Text className="text-xs font-medium">{day.count}</Text>
                 </View>
               ))}

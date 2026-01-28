@@ -3,7 +3,7 @@ import { View, Pressable, LayoutChangeEvent } from "react-native"
 import { ChevronDown, ChevronUp } from "lucide-react-native"
 
 import { Text } from "@/components/ui/text"
-import { useColorScheme } from "@/lib/useColorScheme"
+import { useThemeColors } from "@/hooks/useThemeColors"
 
 interface ExpandableTextProps {
   text: string
@@ -20,7 +20,7 @@ export function ExpandableText({
   numberOfLines = 3,
   className = "",
 }: ExpandableTextProps) {
-  const { colorScheme } = useColorScheme()
+  const colors = useThemeColors()
   const [expanded, setExpanded] = React.useState(false)
   const [isTruncated, setIsTruncated] = React.useState(false)
   const [fullHeight, setFullHeight] = React.useState(0)
@@ -51,7 +51,7 @@ export function ExpandableText({
     }
   }, [fullHeight, truncatedHeight])
 
-  const iconColor = colorScheme === "dark" ? "#9ca3af" : "#6b7280"
+  const iconColor = colors.mutedForeground
 
   return (
     <View>
@@ -81,12 +81,12 @@ export function ExpandableText({
           {expanded ? (
             <>
               <ChevronUp size={16} color={iconColor} />
-              <Text className="text-sm text-muted-foreground">Show less</Text>
+              <Text className="text-sm" style={{color: colors.mutedForeground}}>Show less</Text>
             </>
           ) : (
             <>
               <ChevronDown size={16} color={iconColor} />
-              <Text className="text-sm text-muted-foreground">Show more</Text>
+              <Text className="text-sm" style={{color: colors.mutedForeground}}>Show more</Text>
             </>
           )}
         </Pressable>

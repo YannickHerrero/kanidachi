@@ -5,6 +5,7 @@ import { useRouter } from "expo-router"
 import { Text } from "@/components/ui/text"
 import { cn } from "@/lib/utils"
 import type { LevelData } from "@/hooks/useLevelProgress"
+import { useThemeColors } from "@/hooks/useThemeColors"
 
 interface LevelGridProps {
   levels: LevelData[]
@@ -17,49 +18,57 @@ interface LevelCellProps {
   isCurrentLevel: boolean
   isLocked: boolean
   onPress: () => void
+  colors: ReturnType<typeof useThemeColors>
 }
 
-function LevelCell({ data, isCurrentLevel, isLocked, onPress }: LevelCellProps) {
+function LevelCell({ data, isCurrentLevel, isLocked, onPress, colors }: LevelCellProps) {
   // Progress bar color based on completion
   const getProgressColor = () => {
-    if (isLocked) return "bg-muted"
-    if (data.percentage === 100) return "bg-green-500"
-    if (data.percentage > 0) return "bg-blue-500"
-    return "bg-muted"
+    if (isLocked) return colors.muted
+    if (data.percentage === 100) return "#22c55e" // green-500
+    if (data.percentage > 0) return "#3b82f6" // blue-500
+    return colors.muted
+  }
+
+  const getBorderColor = () => {
+    if (isCurrentLevel) return colors.primary
+    if (isLocked) return colors.muted
+    return colors.border
+  }
+
+  const getBackgroundColor = () => {
+    if (isCurrentLevel) return colors.primary + '1A' // 10% opacity
+    if (isLocked) return colors.muted + '4D' // 30% opacity
+    return colors.card
+  }
+
+  const getTextColor = () => {
+    if (isCurrentLevel) return colors.primary
+    if (isLocked) return colors.mutedForeground
+    return colors.foreground
   }
 
   return (
     <Pressable
       onPress={onPress}
       disabled={isLocked}
-      className={cn(
-        "aspect-square rounded-lg border-2 items-center justify-center p-1",
-        isCurrentLevel
-          ? "border-primary bg-primary/10"
-          : isLocked
-            ? "border-muted bg-muted/30 opacity-50"
-            : "border-border bg-card"
-      )}
+      className={cn("aspect-square rounded-lg items-center justify-center p-1", isLocked && "opacity-50")}
+      style={{
+        borderWidth: 2,
+        borderColor: getBorderColor(),
+        backgroundColor: getBackgroundColor(),
+      }}
     >
       {/* Level number */}
-      <Text
-        className={cn(
-          "text-lg font-semibold",
-          isCurrentLevel
-            ? "text-primary"
-            : isLocked
-              ? "text-muted-foreground"
-              : "text-foreground"
-        )}
-      >
+      <Text className="text-lg font-semibold" style={{ color: getTextColor() }}>
         {data.level}
       </Text>
 
       {/* Progress bar */}
-      <View className="w-full h-1.5 bg-muted rounded-full mt-1 overflow-hidden">
+      <View className="w-full h-1.5 rounded-full mt-1 overflow-hidden" style={{ backgroundColor: colors.muted }}>
         <View
-          className={cn("h-full rounded-full", getProgressColor())}
-          style={{ width: `${data.percentage}%` }}
+          className="h-full rounded-full"
+          style={{ width: `${data.percentage}%`, backgroundColor: getProgressColor() }}
         />
       </View>
     </Pressable>
@@ -68,6 +77,7 @@ function LevelCell({ data, isCurrentLevel, isLocked, onPress }: LevelCellProps) 
 
 export function LevelGrid({ levels, userLevel, maxLevel }: LevelGridProps) {
   const router = useRouter()
+  const colors = useThemeColors()
 
   const handleLevelPress = (level: number) => {
     router.push(`/browse/level/${level}`)
@@ -90,6 +100,7 @@ export function LevelGrid({ levels, userLevel, maxLevel }: LevelGridProps) {
                 isCurrentLevel={levelData.level === userLevel}
                 isLocked={levelData.level > maxLevel}
                 onPress={() => handleLevelPress(levelData.level)}
+                colors={colors}
               />
             </View>
           ))}

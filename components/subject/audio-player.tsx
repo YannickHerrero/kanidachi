@@ -4,10 +4,9 @@ import { Volume2, VolumeX, Loader } from "lucide-react-native"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Text } from "@/components/ui/text"
-import { Muted } from "@/components/ui/typography"
 import { cn } from "@/lib/utils"
 import { useAudio } from "@/hooks/useAudio"
-import { useColorScheme } from "@/lib/useColorScheme"
+import { useThemeColors } from "@/hooks/useThemeColors"
 import type { subjects } from "@/db/schema"
 
 type Subject = typeof subjects.$inferSelect
@@ -23,8 +22,8 @@ interface AudioPlayerProps {
  * Shows available audio with play button and voice actor info
  */
 export function AudioPlayer({ subject, showCard = true, autoPlay = false }: AudioPlayerProps) {
-  const { colorScheme } = useColorScheme()
-  const iconColor = colorScheme === "dark" ? "#fff" : "#000"
+  const colors = useThemeColors()
+  const iconColor = colors.foreground
 
   const {
     state,
@@ -53,26 +52,24 @@ export function AudioPlayer({ subject, showCard = true, autoPlay = false }: Audi
       <Pressable
         onPress={toggle}
         disabled={isLoading}
-        className={cn(
-          "w-12 h-12 rounded-full items-center justify-center",
-          isPlaying ? "bg-primary" : "bg-muted"
-        )}
+        className="w-12 h-12 rounded-full items-center justify-center"
+        style={{ backgroundColor: isPlaying ? colors.primary : colors.muted }}
       >
         {isLoading ? (
-          <Loader size={24} color={isPlaying ? "#fff" : iconColor} />
+          <Loader size={24} color={isPlaying ? colors.primaryForeground : iconColor} />
         ) : isPlaying ? (
-          <VolumeX size={24} color="#fff" />
+          <VolumeX size={24} color={colors.primaryForeground} />
         ) : (
           <Volume2 size={24} color={iconColor} />
         )}
       </Pressable>
       <View className="flex-1">
-        <Text className="text-base font-medium">
+        <Text className="text-base font-medium" style={{ color: colors.foreground }}>
           {isPlaying ? "Playing..." : "Play Audio"}
         </Text>
-        <Muted className="text-xs">
+        <Text className="text-xs" style={{ color: colors.mutedForeground }}>
           Voice: {voiceActorName}
-        </Muted>
+        </Text>
       </View>
     </View>
   )
@@ -104,8 +101,8 @@ interface AudioButtonProps {
 }
 
 export function AudioButton({ subject, size = "md", autoPlay = false, className }: AudioButtonProps) {
-  const { colorScheme } = useColorScheme()
-  const iconColor = colorScheme === "dark" ? "#fff" : "#000"
+  const colors = useThemeColors()
+  const iconColor = colors.foreground
 
   const {
     state,
@@ -144,14 +141,14 @@ export function AudioButton({ subject, size = "md", autoPlay = false, className 
       className={cn(
         "rounded-full items-center justify-center",
         sizeClasses[size],
-        isPlaying ? "bg-primary" : "bg-muted/50",
         className
       )}
+      style={{ backgroundColor: isPlaying ? colors.primary : `${colors.muted}80` }}
     >
       {isLoading ? (
-        <Loader size={iconSizes[size]} color={isPlaying ? "#fff" : iconColor} />
+        <Loader size={iconSizes[size]} color={isPlaying ? colors.primaryForeground : iconColor} />
       ) : isPlaying ? (
-        <VolumeX size={iconSizes[size]} color="#fff" />
+        <VolumeX size={iconSizes[size]} color={colors.primaryForeground} />
       ) : (
         <Volume2 size={iconSizes[size]} color={iconColor} />
       )}

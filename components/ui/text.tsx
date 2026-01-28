@@ -6,20 +6,23 @@ import type {
   TextRef,
 } from "@/components/primitives/types";
 import {cn} from "@/lib/utils";
+import {useThemeColors} from "@/hooks/useThemeColors";
 
 const TextClassContext = React.createContext<string | undefined>(undefined);
 
 const Text = React.forwardRef<TextRef, SlottableTextProps>(
-  ({className, asChild = false, ...props}, ref) => {
+  ({className, asChild = false, style, ...props}, ref) => {
     const textClass = React.useContext(TextClassContext);
     const Component = asChild ? Slot.Text : RNText;
+    const colors = useThemeColors();
     return (
       <Component
         className={cn(
-          "text-base text-foreground web:select-text",
+          "text-base web:select-text",
           textClass,
           className,
         )}
+        style={[{color: colors.foreground}, style]}
         ref={ref}
         {...props}
       />

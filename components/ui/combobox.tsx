@@ -2,6 +2,7 @@ import * as React from "react";
 import {type ListRenderItemInfo, Text, View} from "react-native";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
 import {cn} from "../../lib/utils";
+import {useThemeColors} from "@/hooks/useThemeColors";
 import {Check, ChevronsUpDown, Search} from "../Icons";
 import {
   BottomSheet,
@@ -53,6 +54,7 @@ const Combobox = React.forwardRef<
     },
     ref,
   ) => {
+    const colors = useThemeColors();
     const insets = useSafeAreaInsets();
     const [search, setSearch] = React.useState("");
     const [selectedItem, setSelectedItem] =
@@ -100,17 +102,17 @@ const Combobox = React.forwardRef<
             }}
           >
             <View className="flex-row flex-1">
-              <Text className={"text-foreground text-xl"}>
+              <Text className="text-xl" style={{color: colors.foreground}}>
                 {listItem.label}
               </Text>
             </View>
             {isSelected && (
-              <Check size={24} className={"text-foreground px-6 mt-1.5"} />
+              <Check size={24} color={colors.foreground} className="px-6 mt-1.5" />
             )}
           </Button>
         );
       },
-      [selectedItem, selectedItemProp],
+      [selectedItem, selectedItemProp, colors],
     );
 
     function onSubmitEditing() {
@@ -157,7 +159,7 @@ const Combobox = React.forwardRef<
             >
               {itemSelected ? itemSelected.label : placeholder ?? ""}
             </Text>
-            <ChevronsUpDown className="text-foreground ml-2 opacity-50" />
+            <ChevronsUpDown color={colors.foreground} className="ml-2 opacity-50" />
           </View>
         </BottomSheetOpenTrigger>
         <BottomSheetContent
@@ -167,11 +169,11 @@ const Combobox = React.forwardRef<
           }}
         >
           <BottomSheetHeader className="border-b-0">
-            <Text className="text-foreground text-xl font-bold text-center px-0.5">
+            <Text className="text-xl font-bold text-center px-0.5" style={{color: colors.foreground}}>
               {placeholder}
             </Text>
           </BottomSheetHeader>
-          <View className="relative px-4 border-b border-border pb-4">
+          <View className="relative px-4 border-b pb-4" style={{borderColor: colors.border}}>
             <BottomSheetTextInput
               role="searchbox"
               ref={inputRef}
@@ -190,7 +192,7 @@ const Combobox = React.forwardRef<
               className="absolute left-4 top-2.5"
               onPress={onSearchIconPress}
             >
-              <Search size={18} className="text-foreground opacity-50" />
+              <Search size={18} color={colors.foreground} className="opacity-50" />
             </Button>
           </View>
           <BottomSheetFlatList
@@ -210,7 +212,7 @@ const Combobox = React.forwardRef<
                   className="items-center flex-row justify-center flex-1  px-3 py-5"
                   style={{minHeight: 70}}
                 >
-                  <Text className={"text-muted-foreground text-xl text-center"}>
+                  <Text className="text-xl text-center" style={{color: colors.mutedForeground}}>
                     {emptyText}
                   </Text>
                 </View>

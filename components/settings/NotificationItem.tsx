@@ -30,8 +30,10 @@ import {
   formatTimeString,
   configureAndroidNotificationChannel,
 } from "@/lib/notifications"
+import { useThemeColors } from "@/hooks/useThemeColors"
 
 export const NotificationItem = () => {
+  const colors = useThemeColors()
   const [permissionStatus, setPermissionStatus] =
     useState<Notifications.PermissionStatus | null>(null)
   const [showTimePicker, setShowTimePicker] = useState(false)
@@ -144,28 +146,28 @@ export const NotificationItem = () => {
           itemLeft={(props) => <Bell {...props} />}
           label="Notifications"
           itemRight={() => (
-            <Text className="text-muted-foreground">
+            <Text style={{ color: colors.mutedForeground }}>
               {notificationsEnabled && isPermissionGranted ? "On" : "Off"}
             </Text>
           )}
         />
       </BottomSheetOpenTrigger>
       <BottomSheetContent>
-        <BottomSheetHeader className="bg-background">
-          <Text className="text-foreground text-xl font-bold pb-1">
+        <BottomSheetHeader style={{ backgroundColor: colors.background }}>
+          <Text className="text-xl font-bold pb-1" style={{ color: colors.foreground }}>
             Notification Settings
           </Text>
         </BottomSheetHeader>
-        <BottomSheetView className="gap-4 pt-6 bg-background">
+        <BottomSheetView className="gap-4 pt-6" style={{ backgroundColor: colors.background }}>
           {/* Permission warning */}
           {isPermissionDenied && (
-            <View className="bg-destructive/10 p-3 rounded-lg mb-2">
-              <Text className="text-sm text-destructive">
+            <View className="p-3 rounded-lg mb-2" style={{ backgroundColor: colors.destructive + '1A' }}>
+              <Text className="text-sm" style={{ color: colors.destructive }}>
                 Notifications are blocked. Please enable them in your device
                 settings.
               </Text>
               <Pressable onPress={openSettings} className="mt-2">
-                <Text className="text-sm text-primary font-medium">
+                <Text className="text-sm font-medium" style={{ color: colors.primary }}>
                   Open Settings
                 </Text>
               </Pressable>
@@ -179,7 +181,7 @@ export const NotificationItem = () => {
           >
             <View className="flex-1 pr-4">
               <H4>Daily Reminder</H4>
-              <Text className="text-sm text-muted-foreground">
+              <Text className="text-sm" style={{ color: colors.mutedForeground }}>
                 Get a daily notification to remind you to do your reviews
               </Text>
             </View>
@@ -200,11 +202,11 @@ export const NotificationItem = () => {
               >
                 <View className="flex-1 pr-4">
                   <H4>Reminder Time</H4>
-                  <Text className="text-sm text-muted-foreground">
+                  <Text className="text-sm" style={{ color: colors.mutedForeground }}>
                     When to receive your daily reminder
                   </Text>
                 </View>
-                <Text className="text-primary font-medium">{formattedTime}</Text>
+                <Text className="font-medium" style={{ color: colors.primary }}>{formattedTime}</Text>
               </Pressable>
 
               {showTimePicker && (
@@ -220,7 +222,7 @@ export const NotificationItem = () => {
           )}
 
           <View className="pt-4">
-            <Text className="text-xs text-muted-foreground text-center">
+            <Text className="text-xs text-center" style={{ color: colors.mutedForeground }}>
               You'll also receive notifications when you have reviews ready
               throughout the day.
             </Text>

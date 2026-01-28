@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Text } from "@/components/ui/text"
 import { cn } from "@/lib/utils"
-import { useColorScheme } from "@/lib/useColorScheme"
+import { useThemeColors } from "@/hooks/useThemeColors"
 
 export type EmptyStateType = "reviews" | "lessons" | "search" | "generic"
 
@@ -71,7 +71,7 @@ export function EmptyState({
   className,
   compact = false,
 }: EmptyStateProps) {
-  const { colorScheme } = useColorScheme()
+  const colors = useThemeColors()
   const config = EMPTY_STATE_CONFIG[type]
   const Icon = CustomIcon ?? config.icon
   const iconColor = config.color
@@ -86,10 +86,10 @@ export function EmptyState({
       >
         <Icon size={24} color={iconColor} />
         <View className="flex-1">
-          <Text className="text-sm font-medium text-foreground">
+          <Text className="text-sm font-medium">
             {title ?? config.title}
           </Text>
-          <Text className="text-xs text-muted-foreground" numberOfLines={2}>
+          <Text className="text-xs" style={{color: colors.mutedForeground}} numberOfLines={2}>
             {message ?? config.message}
           </Text>
         </View>
@@ -110,10 +110,10 @@ export function EmptyState({
       >
         <Icon size={40} color={iconColor} />
       </View>
-      <Text className="text-xl font-semibold text-foreground text-center">
+      <Text className="text-xl font-semibold text-center">
         {title ?? config.title}
       </Text>
-      <Text className="text-sm text-muted-foreground text-center max-w-xs">
+      <Text className="text-sm text-center max-w-xs" style={{color: colors.mutedForeground}}>
         {message ?? config.message}
       </Text>
       {actionText && onAction && (

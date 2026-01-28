@@ -3,6 +3,7 @@ import { View } from "react-native"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Text } from "@/components/ui/text"
+import { useThemeColors } from "@/hooks/useThemeColors"
 import type { AccuracyStats, AccuracyByType } from "@/hooks/useStatistics"
 
 // Colors for subject types
@@ -24,6 +25,7 @@ export function AccuracyChart({
   accuracyByType,
   totalReviews,
 }: AccuracyChartProps) {
+  const colors = useThemeColors()
   const hasData = totalReviews > 0
 
   // Format subject type label
@@ -52,12 +54,13 @@ export function AccuracyChart({
         <View className="items-center py-4">
           <View className="relative w-32 h-32 items-center justify-center">
             {/* Background circle */}
-            <View className="absolute w-full h-full rounded-full border-8 border-muted" />
+            <View className="absolute w-full h-full rounded-full border-8" style={{ borderColor: colors.muted }} />
             {/* Progress circle (using a simple percentage-based approach) */}
             {hasData && (
               <View
-                className="absolute w-full h-full rounded-full border-8 border-primary"
+                className="absolute w-full h-full rounded-full border-8"
                 style={{
+                  borderColor: colors.primary,
                   transform: [{ rotate: "-90deg" }],
                   borderRightColor: "transparent",
                   borderBottomColor: overallAccuracy.percentage > 25 ? undefined : "transparent",
@@ -67,22 +70,22 @@ export function AccuracyChart({
               />
             )}
             {/* Percentage text */}
-            <Text className="text-3xl font-bold text-foreground">
+            <Text className="text-3xl font-bold" style={{ color: colors.foreground }}>
               {hasData ? `${overallAccuracy.percentage}%` : "—"}
             </Text>
-            <Text className="text-sm text-muted-foreground">accuracy</Text>
+            <Text className="text-sm" style={{ color: colors.mutedForeground }}>accuracy</Text>
           </View>
         </View>
 
         {/* Total reviews */}
         <View className="items-center pb-2">
-          <Text className="text-sm text-muted-foreground">
+          <Text className="text-sm" style={{ color: colors.mutedForeground }}>
             Total answers:{" "}
-            <Text className="font-medium text-foreground">
+            <Text className="font-medium" style={{ color: colors.foreground }}>
               {totalReviews.toLocaleString()}
             </Text>
           </Text>
-          <Text className="text-xs text-muted-foreground">
+          <Text className="text-xs" style={{ color: colors.mutedForeground }}>
             ({overallAccuracy.totalCorrect.toLocaleString()} correct,{" "}
             {overallAccuracy.totalIncorrect.toLocaleString()} incorrect)
           </Text>
@@ -90,8 +93,8 @@ export function AccuracyChart({
 
         {/* Accuracy by type */}
         {accuracyByType.length > 0 && (
-          <View className="gap-3 pt-2 border-t border-border">
-            <Text className="text-sm font-medium text-muted-foreground">
+          <View className="gap-3 pt-2 border-t" style={{ borderColor: colors.border }}>
+            <Text className="text-sm font-medium" style={{ color: colors.mutedForeground }}>
               By Type
             </Text>
             {accuracyByType.map((item) => (
@@ -106,16 +109,16 @@ export function AccuracyChart({
                           "#888888",
                       }}
                     />
-                    <Text className="text-sm text-foreground">
+                    <Text className="text-sm" style={{ color: colors.foreground }}>
                       {formatType(item.subjectType)}
                     </Text>
                   </View>
-                  <Text className="text-sm font-medium text-foreground">
+                  <Text className="text-sm font-medium" style={{ color: colors.foreground }}>
                     {item.percentage}%
                   </Text>
                 </View>
                 {/* Progress bar */}
-                <View className="h-2 rounded-full bg-muted overflow-hidden">
+                <View className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: colors.muted }}>
                   <View
                     className="h-full rounded-full"
                     style={{
@@ -134,7 +137,7 @@ export function AccuracyChart({
         {/* Empty state */}
         {!hasData && (
           <View className="items-center py-4">
-            <Text className="text-sm text-muted-foreground text-center">
+            <Text className="text-sm text-center" style={{ color: colors.mutedForeground }}>
               Complete some reviews to see your accuracy statistics
             </Text>
           </View>

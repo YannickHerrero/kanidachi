@@ -10,16 +10,18 @@ import {Muted} from "./typography";
 
 import {ChevronRight} from "@/components/Icons";
 import {cn} from "@/lib/utils";
+import {useThemeColors} from "@/hooks/useThemeColors";
+import type {ThemeColors} from "@/lib/colors";
 
 const listItemTextVariants = cva(
 	"text-base font-normal", // base styles
 	{
 		variants: {
 			variant: {
-				default: "text-foreground",
-				primary: "text-primary",
+				default: "",
+				primary: "",
 				link: "text-blue-500",
-				destructive: "text-destructive",
+				destructive: "",
 			},
 		},
 		defaultVariants: {
@@ -28,8 +30,25 @@ const listItemTextVariants = cva(
 	},
 );
 
+const getListItemTextColor = (variant: string | undefined | null, colors: ThemeColors): string => {
+	switch (variant) {
+		case "default":
+			return colors.foreground;
+		case "primary":
+			return colors.primary;
+		case "destructive":
+			return colors.destructive;
+		case "link":
+			return "#3b82f6"; // blue-500
+		default:
+			return colors.foreground;
+	}
+};
+
 interface ItemProps {
 	className: string;
+	color: string;
+	size: number;
 }
 
 // Define props for ListItem with TypeScript interface
@@ -60,18 +79,25 @@ const ListItem: React.FC<ListItemProps> = ({
 	variant,
 	className,
 	href,
+	style,
 	...props
 }) => {
+	const colors = useThemeColors();
+	const textColor = getListItemTextColor(variant, colors);
+
 	// Automatically add ChevronRight if onPress is defined and detail is true
 	const ItemRight = () => {
 		if (itemRight) {
 			return itemRight({
 				className: cn("size-5 opacity-70", listItemTextVariants({variant})),
+				color: textColor,
+				size: 20,
 			});
 		} else if ((props?.onPress && detail) || (href && detail)) {
 			return (
 				<ChevronRight
 					className={cn("size-5 opacity-70", listItemTextVariants({variant}))}
+					color={textColor}
 				/>
 			);
 		}
@@ -85,11 +111,12 @@ const ListItem: React.FC<ListItemProps> = ({
 	const body = (
 		<Component
 			className={cn(
-				"flex-row items-center justify-between w-full px-4 py-3 border-b border-border bg-card",
+				"flex-row items-center justify-between w-full px-4 py-3 border-b",
 				pressable ? "web:hover:opacity-90 active:opacity-90" : "",
 				listItemTextVariants({variant}),
 				className,
 			)}
+			style={[{borderColor: colors.border, backgroundColor: colors.card}, style]}
 			accessibilityRole={pressable ? "button" : "none"}
 			accessibilityLabel={`${ label }${ description ? `, ${ description }` : "" }`}
 			{...props}
@@ -98,14 +125,15 @@ const ListItem: React.FC<ListItemProps> = ({
 				<View className="mr-3">
 					{itemLeft({
 						className: cn(
-							"text-foreground",
 							listItemTextVariants({variant}),
 						),
+						color: textColor,
+						size: 22,
 					})}
 				</View>
 			)}
 			<View className="flex-1">
-				<Text className={cn(listItemTextVariants({variant}))}>{label}</Text>
+				<Text style={{color: textColor}} className={cn(listItemTextVariants({variant}))}>{label}</Text>
 				{description && <Muted>{description}</Muted>}
 			</View>
 			<ItemRight />

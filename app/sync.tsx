@@ -11,9 +11,11 @@ import { useDatabase } from "@/db/provider"
 import { useSyncStore, SYNC_PHASE_LABELS } from "@/stores/sync"
 import { needsInitialSync, performInitialSync } from "@/lib/sync/initial-sync"
 import { performIncrementalSync } from "@/lib/sync/incremental-sync"
+import { useThemeColors } from "@/hooks/useThemeColors"
 
 export default function SyncScreen() {
   const router = useRouter()
+  const colors = useThemeColors()
   const { db } = useDatabase()
   const { isSyncing, progress, error, reset } = useSyncStore()
   const [started, setStarted] = React.useState(false)
@@ -54,7 +56,7 @@ export default function SyncScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
       <View className="flex-1 justify-center px-6">
         <View className="items-center mb-10">
           <H1 className="text-center mb-2">Syncing your data</H1>
@@ -80,7 +82,7 @@ export default function SyncScreen() {
 
         {error && (
           <View className="items-center gap-4">
-            <Text className="text-destructive text-center">{error}</Text>
+            <Text className="text-center" style={{ color: colors.destructive }}>{error}</Text>
             <Button onPress={handleRetry}>
               <Text>Try Again</Text>
             </Button>

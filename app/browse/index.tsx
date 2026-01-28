@@ -10,11 +10,11 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { LevelGrid } from "@/components/browse"
 import { useLevelProgress } from "@/hooks/useLevelProgress"
-import { useColorScheme } from "@/lib/useColorScheme"
+import { useThemeColors } from "@/hooks/useThemeColors"
 
 export default function BrowseHomeScreen() {
   const router = useRouter()
-  const { colorScheme } = useColorScheme()
+  const colors = useThemeColors()
   const { levels, userLevel, maxLevel, isLoading, error } = useLevelProgress()
 
   const handleBack = () => {
@@ -31,7 +31,7 @@ export default function BrowseHomeScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
         <Stack.Screen options={{ headerShown: false }} />
         <View className="flex-1 p-4 gap-4">
           {/* Header skeleton */}
@@ -56,10 +56,10 @@ export default function BrowseHomeScreen() {
 
   if (error) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
         <Stack.Screen options={{ headerShown: false }} />
         <View className="flex-1 items-center justify-center p-4">
-          <Text className="text-destructive text-center">{error}</Text>
+          <Text className="text-center" style={{ color: colors.destructive }}>{error}</Text>
           <Button onPress={handleBack} className="mt-4">
             <Text>Go Back</Text>
           </Button>
@@ -69,16 +69,16 @@ export default function BrowseHomeScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }} edges={["top"]}>
       <Stack.Screen options={{ headerShown: false }} />
 
       {/* Header */}
-      <View className="flex-row items-center justify-between px-4 py-3 border-b border-border">
+      <View className="flex-row items-center justify-between px-4 py-3" style={{ borderBottomWidth: 1, borderBottomColor: colors.border }}>
         <View className="flex-row items-center gap-2">
           <Button variant="ghost" size="icon" onPress={handleBack}>
             <ChevronLeft
               size={24}
-              color={colorScheme === "dark" ? "#fff" : "#000"}
+              color={colors.foreground}
             />
           </Button>
           <Text className="text-lg font-semibold">Browse</Text>
@@ -87,7 +87,7 @@ export default function BrowseHomeScreen() {
         <Button variant="ghost" size="icon" onPress={handleSearchPress}>
           <Search
             size={24}
-            color={colorScheme === "dark" ? "#fff" : "#000"}
+            color={colors.foreground}
           />
         </Button>
       </View>
@@ -105,9 +105,10 @@ export default function BrowseHomeScreen() {
           <CardContent>
             <Button
               onPress={handleCurrentLevelPress}
-              className="w-full bg-primary"
+              className="w-full"
+              style={{ backgroundColor: colors.primary }}
             >
-              <Text className="text-primary-foreground font-semibold">
+              <Text className="font-semibold" style={{ color: colors.primaryForeground }}>
                 Go to Level {userLevel}
               </Text>
             </Button>

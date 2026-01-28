@@ -9,7 +9,7 @@ import { Text } from "@/components/ui/text"
 import { Skeleton } from "@/components/ui/skeleton"
 import { SubjectCell } from "@/components/browse/subject-cell"
 import { useDatabase } from "@/db/provider"
-import { useColorScheme } from "@/lib/useColorScheme"
+import { useThemeColors } from "@/hooks/useThemeColors"
 import { subjects, assignments } from "@/db/schema"
 import { eq, inArray } from "drizzle-orm"
 
@@ -36,7 +36,7 @@ export default function SrsCategoryScreen() {
   const router = useRouter()
   const { category } = useLocalSearchParams<{ category: string }>()
   const { db } = useDatabase()
-  const { colorScheme } = useColorScheme()
+  const colors = useThemeColors()
   
   const [items, setItems] = React.useState<SubjectWithAssignment[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
@@ -83,10 +83,10 @@ export default function SrsCategoryScreen() {
 
   if (!categoryInfo) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
         <Stack.Screen options={{ headerShown: false }} />
         <View className="flex-1 items-center justify-center p-4">
-          <Text className="text-destructive">Invalid SRS category</Text>
+          <Text style={{ color: colors.destructive }}>Invalid SRS category</Text>
           <Button onPress={handleBack} className="mt-4">
             <Text>Go Back</Text>
           </Button>
@@ -97,7 +97,7 @@ export default function SrsCategoryScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
         <Stack.Screen options={{ headerShown: false }} />
         <View className="flex-1 p-4 gap-2">
           <View className="flex-row items-center gap-2 mb-4">
@@ -113,15 +113,15 @@ export default function SrsCategoryScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }} edges={["top"]}>
       <Stack.Screen options={{ headerShown: false }} />
 
       {/* Header */}
-      <View className="flex-row items-center gap-2 px-4 py-3 border-b border-border">
+      <View className="flex-row items-center gap-2 px-4 py-3" style={{ borderBottomWidth: 1, borderBottomColor: colors.border }}>
         <Button variant="ghost" size="icon" onPress={handleBack}>
           <ChevronLeft
             size={24}
-            color={colorScheme === "dark" ? "#fff" : "#000"}
+            color={colors.foreground}
           />
         </Button>
         <View
@@ -129,7 +129,7 @@ export default function SrsCategoryScreen() {
           style={{ backgroundColor: categoryInfo.color }}
         />
         <Text className="text-lg font-semibold">{categoryInfo.label}</Text>
-        <Text className="text-muted-foreground ml-auto">
+        <Text className="ml-auto" style={{ color: colors.mutedForeground }}>
           {items.length} items
         </Text>
       </View>
@@ -148,7 +148,7 @@ export default function SrsCategoryScreen() {
         )}
         ListEmptyComponent={
           <View className="items-center justify-center py-8">
-            <Text className="text-muted-foreground">No items in this category</Text>
+            <Text style={{ color: colors.mutedForeground }}>No items in this category</Text>
           </View>
         }
       />

@@ -4,6 +4,7 @@ import { View } from "react-native"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Text } from "@/components/ui/text"
 import { Muted } from "@/components/ui/typography"
+import { useThemeColors } from "@/hooks/useThemeColors"
 import { parseMeanings, parseStringArray } from "@/db/queries"
 import type { subjects, studyMaterials } from "@/db/schema"
 
@@ -16,12 +17,13 @@ interface MeaningsProps {
 }
 
 export function Meanings({ subject, studyMaterial }: MeaningsProps) {
+  const colors = useThemeColors()
   const meanings = parseMeanings(subject.meanings)
-  
+
   const primaryMeanings = meanings
     .filter((m) => m.primary)
     .map((m) => m.meaning)
-  
+
   const secondaryMeanings = meanings
     .filter((m) => !m.primary && m.acceptedAnswer)
     .map((m) => m.meaning)
@@ -46,7 +48,7 @@ export function Meanings({ subject, studyMaterial }: MeaningsProps) {
         {secondaryMeanings.length > 0 && (
           <View>
             <Muted className="text-xs mb-1">Alternative meanings</Muted>
-            <Text className="text-base text-muted-foreground">
+            <Text className="text-base" style={{ color: colors.mutedForeground }}>
               {secondaryMeanings.join(", ")}
             </Text>
           </View>

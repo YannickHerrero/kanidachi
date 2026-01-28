@@ -5,7 +5,7 @@ import { GraduationCap } from "lucide-react-native"
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Text } from "@/components/ui/text"
-import { useColorScheme } from "@/lib/useColorScheme"
+import { useThemeColors } from "@/hooks/useThemeColors"
 
 interface LessonCardProps {
   count: number
@@ -16,7 +16,7 @@ interface LessonCardProps {
 // See AGENTS.md for details
 export function LessonCard({ count }: LessonCardProps) {
   const router = useRouter()
-  const { colorScheme } = useColorScheme()
+  const colors = useThemeColors()
   const hasLessons = count > 0
 
   const handlePress = () => {
@@ -37,7 +37,7 @@ export function LessonCard({ count }: LessonCardProps) {
           <CardContent className="p-4 items-center justify-center gap-2">
             <GraduationCap
               size={24}
-              color={hasLessons ? "#fff" : colorScheme === "dark" ? "#a1a1aa" : "#71717a"}
+              color={hasLessons ? "#fff" : colors.mutedForeground}
             />
             <Text
               style={hasLessons ? styles.countActive : styles.countInactive}

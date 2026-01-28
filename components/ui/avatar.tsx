@@ -1,6 +1,7 @@
 import * as React from "react";
 import * as AvatarPrimitive from "@/components/primitives/avatar";
 import {cn} from "@/lib/utils";
+import {useThemeColors} from "@/hooks/useThemeColors";
 
 const Avatar = React.forwardRef<
   React.ElementRef<typeof AvatarPrimitive.Root>,
@@ -32,16 +33,20 @@ AvatarImage.displayName = AvatarPrimitive.Image.displayName;
 const AvatarFallback = React.forwardRef<
   React.ElementRef<typeof AvatarPrimitive.Fallback>,
   React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Fallback>
->(({className, ...props}, ref) => (
-  <AvatarPrimitive.Fallback
-    ref={ref}
-    className={cn(
-      "flex h-full w-full items-center justify-center rounded-full bg-muted",
-      className,
-    )}
-    {...props}
-  />
-));
+>(({className, style, ...props}, ref) => {
+  const colors = useThemeColors();
+  return (
+    <AvatarPrimitive.Fallback
+      ref={ref}
+      className={cn(
+        "flex h-full w-full items-center justify-center rounded-full",
+        className,
+      )}
+      style={[{backgroundColor: colors.muted}, style]}
+      {...props}
+    />
+  );
+});
 AvatarFallback.displayName = AvatarPrimitive.Fallback.displayName;
 
 export {Avatar, AvatarFallback, AvatarImage};

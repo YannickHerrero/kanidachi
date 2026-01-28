@@ -12,12 +12,12 @@ import { EmptyState } from "@/components/ui/empty-state"
 import { SubjectGrid, FilterBar } from "@/components/lessons"
 import { useAvailableLessons } from "@/hooks/useAvailableLessons"
 import { useLessonStore, selectSelectedCount } from "@/stores/lessons"
-import { useColorScheme } from "@/lib/useColorScheme"
+import { useThemeColors } from "@/hooks/useThemeColors"
 import { useSettingsStore } from "@/stores/settings"
 
 export default function LessonPickerScreen() {
   const router = useRouter()
-  const { colorScheme } = useColorScheme()
+  const colors = useThemeColors()
 
   const { filteredItems, items, isLoading, error, typeFilter, setTypeFilter, userLevel } =
     useAvailableLessons()
@@ -66,7 +66,7 @@ export default function LessonPickerScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
         <Stack.Screen
           options={{
             headerShown: false,
@@ -91,7 +91,7 @@ export default function LessonPickerScreen() {
   if (error) {
     const errorType = error.toLowerCase().includes("network") ? "network" : "generic"
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
         <Stack.Screen options={{ headerShown: false }} />
         <ErrorView
           type={errorType}
@@ -104,7 +104,7 @@ export default function LessonPickerScreen() {
 
   if (items.length === 0) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
         <Stack.Screen options={{ headerShown: false }} />
         <EmptyState
           type="lessons"
@@ -116,7 +116,7 @@ export default function LessonPickerScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }} edges={["top"]}>
       <Stack.Screen
         options={{
           headerShown: false,
@@ -124,12 +124,12 @@ export default function LessonPickerScreen() {
       />
 
       {/* Header */}
-      <View className="flex-row items-center justify-between px-4 py-3 border-b border-border">
+      <View className="flex-row items-center justify-between px-4 py-3" style={{ borderBottomWidth: 1, borderBottomColor: colors.border }}>
         <View className="flex-row items-center gap-2">
           <Button variant="ghost" size="icon" onPress={handleBack}>
             <ChevronLeft
               size={24}
-              color={colorScheme === "dark" ? "#fff" : "#000"}
+              color={colors.foreground}
             />
           </Button>
           <Text className="text-lg font-semibold">
@@ -142,7 +142,7 @@ export default function LessonPickerScreen() {
           disabled={selectedCount === 0}
           size="sm"
         >
-          <Text className="text-primary-foreground">
+          <Text style={{ color: colors.primaryForeground }}>
             Start ({selectedCount})
           </Text>
         </Button>

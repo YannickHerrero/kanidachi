@@ -5,6 +5,7 @@ import {buttonTextVariants, buttonVariants} from '@/components/ui/button';
 import * as AlertDialogPrimitive from '@/components/primitives/alert-dialog';
 import {cn} from '@/lib/utils';
 import {TextClassContext} from '@/components/ui/text';
+import {useThemeColors} from '@/hooks/useThemeColors';
 
 const AlertDialog = AlertDialogPrimitive.Root;
 
@@ -62,8 +63,9 @@ const AlertDialogOverlay = Platform.select({
 const AlertDialogContent = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Content> & {portalHost?: string}
->(({className, portalHost, ...props}, ref) => {
+>(({className, portalHost, style, ...props}, ref) => {
   const {open} = AlertDialogPrimitive.useRootContext();
+  const colors = useThemeColors();
 
   return (
     <AlertDialogPortal hostName={portalHost}>
@@ -71,12 +73,13 @@ const AlertDialogContent = React.forwardRef<
         <AlertDialogPrimitive.Content
           ref={ref}
           className={cn(
-            'z-50 max-w-lg gap-4 border border-border bg-background p-6 shadow-lg shadow-foreground/10 web:duration-200 rounded-lg',
+            'z-50 max-w-lg gap-4 border p-6 shadow-lg shadow-foreground/10 web:duration-200 rounded-lg',
             open
               ? 'web:animate-in web:fade-in-0 web:zoom-in-95'
               : 'web:animate-out web:fade-out-0 web:zoom-out-95',
             className
           )}
+          style={[{backgroundColor: colors.background, borderColor: colors.border}, style]}
           {...props}
         />
       </AlertDialogOverlay>
@@ -107,49 +110,69 @@ AlertDialogFooter.displayName = 'AlertDialogFooter';
 const AlertDialogTitle = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Title>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Title>
->(({className, ...props}, ref) => (
-  <AlertDialogPrimitive.Title
-    ref={ref}
-    className={cn('text-lg native:text-xl text-foreground font-semibold', className)}
-    {...props}
-  />
-));
+>(({className, style, ...props}, ref) => {
+  const colors = useThemeColors();
+  return (
+    <AlertDialogPrimitive.Title
+      ref={ref}
+      className={cn('text-lg native:text-xl font-semibold', className)}
+      style={[{color: colors.foreground}, style]}
+      {...props}
+    />
+  );
+});
 AlertDialogTitle.displayName = AlertDialogPrimitive.Title.displayName;
 
 const AlertDialogDescription = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Description>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Description>
->(({className, ...props}, ref) => (
-  <AlertDialogPrimitive.Description
-    ref={ref}
-    className={cn('text-sm native:text-base text-muted-foreground', className)}
-    {...props}
-  />
-));
+>(({className, style, ...props}, ref) => {
+  const colors = useThemeColors();
+  return (
+    <AlertDialogPrimitive.Description
+      ref={ref}
+      className={cn('text-sm native:text-base', className)}
+      style={[{color: colors.mutedForeground}, style]}
+      {...props}
+    />
+  );
+});
 AlertDialogDescription.displayName = AlertDialogPrimitive.Description.displayName;
 
 const AlertDialogAction = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Action>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Action>
->(({className, ...props}, ref) => (
-  <TextClassContext.Provider value={buttonTextVariants({className})}>
-    <AlertDialogPrimitive.Action ref={ref} className={cn(buttonVariants(), className)} {...props} />
-  </TextClassContext.Provider>
-));
+>(({className, style, ...props}, ref) => {
+  const colors = useThemeColors();
+  return (
+    <TextClassContext.Provider value={buttonTextVariants({className})}>
+      <AlertDialogPrimitive.Action
+        ref={ref}
+        className={cn(buttonVariants(), className)}
+        style={[{backgroundColor: colors.primary}, style]}
+        {...props}
+      />
+    </TextClassContext.Provider>
+  );
+});
 AlertDialogAction.displayName = AlertDialogPrimitive.Action.displayName;
 
 const AlertDialogCancel = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Cancel>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Cancel>
->(({className, ...props}, ref) => (
-  <TextClassContext.Provider value={buttonTextVariants({className, variant: 'outline'})}>
-    <AlertDialogPrimitive.Cancel
-      ref={ref}
-      className={cn(buttonVariants({variant: 'outline', className}))}
-      {...props}
-    />
-  </TextClassContext.Provider>
-));
+>(({className, style, ...props}, ref) => {
+  const colors = useThemeColors();
+  return (
+    <TextClassContext.Provider value={buttonTextVariants({className, variant: 'outline'})}>
+      <AlertDialogPrimitive.Cancel
+        ref={ref}
+        className={cn(buttonVariants({variant: 'outline', className}))}
+        style={[{backgroundColor: colors.background, borderColor: colors.input}, style]}
+        {...props}
+      />
+    </TextClassContext.Provider>
+  );
+});
 AlertDialogCancel.displayName = AlertDialogPrimitive.Cancel.displayName;
 
 export {

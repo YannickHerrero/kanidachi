@@ -10,11 +10,13 @@ import { Text } from "@/components/ui/text"
 import { H1, Muted } from "@/components/ui/typography"
 import { useAuthStore } from "@/stores/auth"
 import { isValidTokenFormat } from "@/lib/auth"
+import { useThemeColors } from "@/hooks/useThemeColors"
 
 const WANIKANI_TOKENS_URL = "https://www.wanikani.com/settings/personal_access_tokens"
 
 export default function Login() {
   const router = useRouter()
+  const colors = useThemeColors()
   const { login, isLoggingIn, error, clearError } = useAuthStore()
   const [token, setToken] = React.useState("")
   const [validationError, setValidationError] = React.useState<string | null>(null)
@@ -58,7 +60,7 @@ export default function Login() {
   const displayError = validationError || error
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
@@ -87,7 +89,7 @@ export default function Login() {
                 secureTextEntry
               />
               {displayError && (
-                <Text className="text-destructive text-sm mt-2">{displayError}</Text>
+                <Text className="text-sm mt-2" style={{ color: colors.destructive }}>{displayError}</Text>
               )}
             </View>
 
@@ -102,7 +104,7 @@ export default function Login() {
               Don't have an API token?
             </Muted>
             <Button variant="link" onPress={openWaniKaniTokensPage}>
-              <Text className="text-primary">Get your token from WaniKani</Text>
+              <Text style={{ color: colors.primary }}>Get your token from WaniKani</Text>
             </Button>
           </View>
 

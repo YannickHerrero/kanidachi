@@ -17,7 +17,7 @@ import {
   type MnemonicFormat,
 } from "@/lib/mnemonic-parser"
 import { MNEMONIC_COLORS, type MnemonicColorKey } from "@/lib/constants"
-import { useColorScheme } from "@/lib/useColorScheme"
+import { useThemeColors } from "@/hooks/useThemeColors"
 
 interface FormattedTextProps {
   /** The text to parse and render with formatting */
@@ -52,8 +52,8 @@ export function FormattedText({
   expandable = false,
   collapsedLines = 3,
 }: FormattedTextProps) {
-  const { colorScheme } = useColorScheme()
-  const isDark = colorScheme === "dark"
+  const colors = useThemeColors()
+  const isDark = colors.background === '#0a0a0b'
 
   const [expanded, setExpanded] = React.useState(false)
   const [isTruncated, setIsTruncated] = React.useState(false)
@@ -71,8 +71,8 @@ export function FormattedText({
 
   if (segments.length === 0) return null
 
-  const textColor = isDark ? "#e4e4e7" : "#27272a"
-  const iconColor = isDark ? "#9ca3af" : "#6b7280"
+  const textColor = colors.foreground
+  const iconColor = colors.mutedForeground
 
   // Determine effective number of lines
   const effectiveLines = expandable && !expanded ? collapsedLines : numberOfLines
@@ -144,12 +144,12 @@ export function FormattedText({
           {expanded ? (
             <>
               <ChevronUp size={16} color={iconColor} />
-              <Text className="text-sm text-muted-foreground">Show less</Text>
+              <Text className="text-sm" style={{color: colors.mutedForeground}}>Show less</Text>
             </>
           ) : (
             <>
               <ChevronDown size={16} color={iconColor} />
-              <Text className="text-sm text-muted-foreground">Show more</Text>
+              <Text className="text-sm" style={{color: colors.mutedForeground}}>Show more</Text>
             </>
           )}
         </Pressable>

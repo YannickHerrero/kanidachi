@@ -12,11 +12,11 @@ import {
   selectCurrentPracticeItem,
   selectPracticeProgress,
 } from "@/stores/practice"
-import { useColorScheme } from "@/lib/useColorScheme"
+import { useThemeColors } from "@/hooks/useThemeColors"
 
 export default function PracticeSessionScreen() {
   const router = useRouter()
-  const { colorScheme } = useColorScheme()
+  const colors = useThemeColors()
 
   const {
     isActive,
@@ -52,33 +52,33 @@ export default function PracticeSessionScreen() {
     if (progress.total > 0) {
       const accuracy = Math.round((correctCount / progress.total) * 100)
       return (
-        <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+        <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }} edges={["top"]}>
           <Stack.Screen options={{ headerShown: false }} />
           <View className="flex-1 items-center justify-center p-6 gap-6">
             <Text className="text-2xl font-bold">Practice Complete!</Text>
-            <View className="bg-card rounded-xl p-6 w-full gap-4">
+            <View className="rounded-xl p-6 w-full gap-4" style={{ backgroundColor: colors.card }}>
               <View className="flex-row justify-between">
-                <Text className="text-muted-foreground">Items Practiced</Text>
+                <Text style={{ color: colors.mutedForeground }}>Items Practiced</Text>
                 <Text className="font-semibold">{progress.total}</Text>
               </View>
               <View className="flex-row justify-between">
-                <Text className="text-muted-foreground">Correct</Text>
+                <Text style={{ color: colors.mutedForeground }}>Correct</Text>
                 <Text className="font-semibold text-green-500">{correctCount}</Text>
               </View>
               <View className="flex-row justify-between">
-                <Text className="text-muted-foreground">Incorrect</Text>
+                <Text style={{ color: colors.mutedForeground }}>Incorrect</Text>
                 <Text className="font-semibold text-red-500">{incorrectCount}</Text>
               </View>
-              <View className="flex-row justify-between pt-2 border-t border-border">
-                <Text className="text-muted-foreground">Accuracy</Text>
+              <View className="flex-row justify-between pt-2 border-t" style={{ borderColor: colors.border }}>
+                <Text style={{ color: colors.mutedForeground }}>Accuracy</Text>
                 <Text className="font-semibold">{accuracy}%</Text>
               </View>
             </View>
-            <Text className="text-sm text-muted-foreground text-center">
+            <Text className="text-sm text-center" style={{ color: colors.mutedForeground }}>
               Practice mode - results not sent to WaniKani
             </Text>
             <Button onPress={handleEndSession} className="w-full">
-              <Text className="text-primary-foreground font-semibold">Done</Text>
+              <Text className="font-semibold" style={{ color: colors.primaryForeground }}>Done</Text>
             </Button>
           </View>
         </SafeAreaView>
@@ -87,10 +87,10 @@ export default function PracticeSessionScreen() {
 
     // No items
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
         <Stack.Screen options={{ headerShown: false }} />
         <View className="flex-1 items-center justify-center p-4">
-          <Text className="text-muted-foreground">No items to practice</Text>
+          <Text style={{ color: colors.mutedForeground }}>No items to practice</Text>
           <Button onPress={handleEndSession} className="mt-4">
             <Text>Go Back</Text>
           </Button>
@@ -100,13 +100,13 @@ export default function PracticeSessionScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }} edges={["top"]}>
       <Stack.Screen options={{ headerShown: false }} />
 
       {/* Header */}
       <View className="flex-row items-center justify-between px-4 py-3">
         <Button variant="ghost" size="icon" onPress={handleEndSession}>
-          <X size={24} color={colorScheme === "dark" ? "#fff" : "#000"} />
+          <X size={24} color={colors.foreground} />
         </Button>
 
         <View className="flex-1 mx-2">
@@ -118,7 +118,10 @@ export default function PracticeSessionScreen() {
         </View>
 
         <View className="bg-amber-500/20 px-2 py-1 rounded">
-          <Text className="text-xs text-amber-600 dark:text-amber-400">
+          <Text
+            className="text-xs"
+            style={{ color: colors.background === '#0a0a0b' ? '#fbbf24' : '#d97706' }}
+          >
             Practice
           </Text>
         </View>

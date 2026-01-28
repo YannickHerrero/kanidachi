@@ -4,6 +4,7 @@ import Animated, {FadeIn, FadeOut} from "react-native-reanimated";
 import {X} from "@/components/Icons";
 import * as DialogPrimitive from "@/components/primitives/dialog";
 import {cn} from "@/lib/utils";
+import {useThemeColors} from "@/hooks/useThemeColors";
 
 const Dialog = DialogPrimitive.Root;
 
@@ -72,20 +73,22 @@ const DialogContent = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
     portalHost?: string;
   }
->(({className, children, portalHost, ...props}, ref) => {
+>(({className, children, portalHost, style, ...props}, ref) => {
   const {open} = DialogPrimitive.useRootContext();
+  const colors = useThemeColors();
   return (
     <DialogPortal hostName={portalHost}>
       <DialogOverlay>
         <DialogPrimitive.Content
           ref={ref}
           className={cn(
-            "z-50 max-w-lg gap-4 border border-border web:cursor-default bg-background p-6 shadow-lg web:duration-200 rounded-lg",
+            "z-50 max-w-lg gap-4 border web:cursor-default p-6 shadow-lg web:duration-200 rounded-lg",
             open
               ? "web:animate-in web:fade-in-0 web:zoom-in-95"
               : "web:animate-out web:fade-out-0 web:zoom-out-95",
             className,
           )}
+          style={[{backgroundColor: colors.background, borderColor: colors.border}, style]}
           {...props}
         >
           {children}
@@ -96,10 +99,7 @@ const DialogContent = React.forwardRef<
           >
             <X
               size={Platform.OS === "web" ? 16 : 18}
-              className={cn(
-                "text-muted-foreground",
-                open && "text-accent-foreground",
-              )}
+              color={open ? colors.accentForeground : colors.mutedForeground}
             />
           </DialogPrimitive.Close>
         </DialogPrimitive.Content>
@@ -137,28 +137,36 @@ DialogFooter.displayName = "DialogFooter";
 const DialogTitle = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Title>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>
->(({className, ...props}, ref) => (
-  <DialogPrimitive.Title
-    ref={ref}
-    className={cn(
-      "text-lg native:text-xl text-foreground font-semibold leading-none tracking-tight",
-      className,
-    )}
-    {...props}
-  />
-));
+>(({className, style, ...props}, ref) => {
+  const colors = useThemeColors();
+  return (
+    <DialogPrimitive.Title
+      ref={ref}
+      className={cn(
+        "text-lg native:text-xl font-semibold leading-none tracking-tight",
+        className,
+      )}
+      style={[{color: colors.foreground}, style]}
+      {...props}
+    />
+  );
+});
 DialogTitle.displayName = DialogPrimitive.Title.displayName;
 
 const DialogDescription = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Description>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Description>
->(({className, ...props}, ref) => (
-  <DialogPrimitive.Description
-    ref={ref}
-    className={cn("text-sm native:text-base text-muted-foreground", className)}
-    {...props}
-  />
-));
+>(({className, style, ...props}, ref) => {
+  const colors = useThemeColors();
+  return (
+    <DialogPrimitive.Description
+      ref={ref}
+      className={cn("text-sm native:text-base", className)}
+      style={[{color: colors.mutedForeground}, style]}
+      {...props}
+    />
+  );
+});
 DialogDescription.displayName = DialogPrimitive.Description.displayName;
 
 export {

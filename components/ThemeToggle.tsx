@@ -1,31 +1,17 @@
-import {storage} from "@/lib/storage";
 import {Pressable, View} from "react-native";
 import {MoonStar, Sun} from "@/components/Icons";
-import {setAndroidNavigationBar} from "@/lib/android-navigation-bar";
-import {useColorScheme} from "@/lib/useColorScheme";
 import {cn} from "@/lib/utils";
-import {useTheme} from "next-themes";
-import {Platform} from "react-native";
+import {useThemeStore} from "@/stores/theme";
+import {useThemeColors} from "@/hooks/useThemeColors";
 
 export function ThemeToggle() {
-  const {isDarkColorScheme, setColorScheme} = useColorScheme();
-  const {theme, setTheme} = useTheme()
+  const colors = useThemeColors();
+  const isDark = colors.background === '#0a0a0b';
+  const toggleMode = useThemeStore((s) => s.toggleMode);
 
-  const handleToggleTheme = () => {
-    const newTheme = isDarkColorScheme ? "light" : "dark";
-
-    if (Platform.OS === "web") {
-      setTheme(theme === "dark" ? "light" : "dark")
-    } else {
-      setColorScheme(newTheme);
-      setAndroidNavigationBar(newTheme);
-      storage.set("theme", newTheme);
-    }
-
-  }
   return (
     <Pressable
-      onPress={() => handleToggleTheme()}
+      onPress={() => toggleMode()}
       className="web:ring-offset-background web:transition-colors web:focus-visible:outline-none web:focus-visible:ring-2 web:focus-visible:ring-ring web:focus-visible:ring-offset-2"
     >
       {({pressed}) => (
@@ -35,14 +21,14 @@ export function ThemeToggle() {
             pressed && "opacity-70",
           )}
         >
-          {isDarkColorScheme ? (
+          {isDark ? (
             <MoonStar
-              className="text-foreground"
+              color={colors.foreground}
               size={23}
               strokeWidth={1.25}
             />
           ) : (
-            <Sun className="text-foreground" size={24} strokeWidth={1.25} />
+            <Sun color={colors.foreground} size={24} strokeWidth={1.25} />
           )}
         </View>
       )}

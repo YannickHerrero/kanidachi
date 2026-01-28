@@ -5,11 +5,12 @@ import { BarChart3 } from "lucide-react-native"
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Text } from "@/components/ui/text"
-import { useColorScheme } from "@/lib/useColorScheme"
+import { useThemeColors } from "@/hooks/useThemeColors"
 
 export function StatsCard() {
   const router = useRouter()
-  const { colorScheme } = useColorScheme()
+  const colors = useThemeColors()
+  const isDark = colors.background === '#0a0a0b'
 
   const handlePress = () => {
     router.push("/stats")
@@ -26,22 +27,21 @@ export function StatsCard() {
             <View
               className="w-10 h-10 rounded-full items-center justify-center"
               style={{
-                backgroundColor:
-                  colorScheme === "dark"
-                    ? "rgba(167, 139, 250, 0.18)"
-                    : "rgba(124, 58, 237, 0.12)",
+                backgroundColor: isDark
+                  ? "rgba(167, 139, 250, 0.18)"
+                  : "rgba(124, 58, 237, 0.12)",
               }}
             >
               <BarChart3
                 size={20}
-                color={colorScheme === "dark" ? "#a78bfa" : "#7c3aed"}
+                color={isDark ? "#a78bfa" : "#7c3aed"}
               />
             </View>
             <View className="flex-1">
-              <Text className="text-base font-medium text-foreground">
+              <Text className="text-base font-medium" style={{ color: colors.foreground }}>
                 Statistics
               </Text>
-              <Text className="text-sm text-muted-foreground">
+              <Text className="text-sm" style={{ color: colors.mutedForeground }}>
                 View your progress and accuracy
               </Text>
             </View>

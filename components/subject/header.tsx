@@ -4,6 +4,7 @@ import { View } from "react-native"
 import { Text } from "@/components/ui/text"
 import { Badge } from "@/components/ui/badge"
 import { RadicalImage, parseCharacterImages } from "@/components/subject/radical-image"
+import { useThemeColors } from "@/hooks/useThemeColors"
 import { cn } from "@/lib/utils"
 import type { subjects, assignments } from "@/db/schema"
 
@@ -45,9 +46,10 @@ interface SubjectHeaderProps {
 }
 
 export function SubjectHeader({ subject, assignment }: SubjectHeaderProps) {
+  const colors = useThemeColors()
   const typeColor = TYPE_COLORS[subject.type as keyof typeof TYPE_COLORS] ?? TYPE_COLORS.vocabulary
   const typeLabel = TYPE_LABELS[subject.type as keyof typeof TYPE_LABELS] ?? "Item"
-  
+
   // Get SRS info
   const srsStage = assignment?.srsStage ?? 0
   const srsInfo = SRS_INFO[srsStage as keyof typeof SRS_INFO] ?? SRS_INFO[0]
@@ -56,6 +58,10 @@ export function SubjectHeader({ subject, assignment }: SubjectHeaderProps) {
   // Parse character images for radicals without Unicode characters
   const characterImages = parseCharacterImages(subject.characterImages)
   const isImageOnlyRadical = subject.type === "radical" && !subject.characters && characterImages.length > 0
+
+  // For locked state, use muted color from theme
+  const srsColor = srsStage === 0 ? undefined : srsInfo.color
+  const srsBgStyle = srsStage === 0 ? { backgroundColor: colors.muted } : undefined
 
   return (
     <View className={cn("items-center py-8 px-4", typeColor)}>
@@ -87,7 +93,7 @@ export function SubjectHeader({ subject, assignment }: SubjectHeaderProps) {
 
       {/* SRS Stage */}
       {isStarted && (
-        <Badge className={cn(srsInfo.color, "mt-1")}>
+        <Badge className={cn(srsColor, "mt-1")} style={srsBgStyle}>
           <Text className="text-white text-xs">{srsInfo.label}</Text>
         </Badge>
       )}

@@ -14,7 +14,7 @@ import { parseMeanings, parseReadings, parseContextSentences, parseStringArray, 
 import { useDatabase } from "@/db/provider"
 import { useSettingsStore } from "@/stores/settings"
 import { useStudyMaterial, parseMeaningSynonyms } from "@/hooks/useStudyMaterial"
-import { useColorScheme } from "@/lib/useColorScheme"
+import { useThemeColors } from "@/hooks/useThemeColors"
 import type { Subject } from "@/stores/reviews"
 
 // Subject type colors
@@ -31,7 +31,7 @@ interface CardBackProps {
 
 export function CardBack({ subject }: CardBackProps) {
   const { db } = useDatabase()
-  const { colorScheme } = useColorScheme()
+  const colors = useThemeColors()
   const autoPlayAudio = useSettingsStore((s) => s.autoPlayAudioReviews)
   const meanings = parseMeanings(subject.meanings)
   const readings = parseReadings(subject.readings)
@@ -42,7 +42,7 @@ export function CardBack({ subject }: CardBackProps) {
   const { studyMaterial, refetch: refetchStudyMaterial } = useStudyMaterial(subject.id)
   const userSynonyms = parseMeaningSynonyms(studyMaterial?.meaningSynonyms)
 
-  const editIconColor = colorScheme === "dark" ? "#9ca3af" : "#6b7280"
+  const editIconColor = colors.mutedForeground
 
   // Parse related subject IDs
   const componentSubjectIds = parseNumberArray(subject.componentSubjectIds)
@@ -172,7 +172,12 @@ export function CardBack({ subject }: CardBackProps) {
             <View className="flex-row flex-wrap justify-center items-center gap-1 mt-2">
               {userSynonyms.map((synonym, index) => (
                 <View key={index} className="bg-blue-500/20 px-2 py-0.5 rounded">
-                  <Text className="text-sm text-blue-600 dark:text-blue-400">{synonym}</Text>
+                  <Text
+                    className="text-sm"
+                    style={{ color: colors.background === '#0a0a0b' ? '#60a5fa' : '#2563eb' }}
+                  >
+                    {synonym}
+                  </Text>
                 </View>
               ))}
               <Pressable
@@ -289,8 +294,8 @@ export function CardBack({ subject }: CardBackProps) {
             <View className="w-full mb-4">
               <View className="flex-row flex-wrap gap-2">
                 {partsOfSpeech.map((pos, index) => (
-                  <View key={index} className="bg-muted px-2 py-1 rounded">
-                    <Text className="text-xs text-muted-foreground">{pos}</Text>
+                  <View key={index} className="px-2 py-1 rounded" style={{ backgroundColor: colors.muted }}>
+                    <Text className="text-xs" style={{ color: colors.mutedForeground }}>{pos}</Text>
                   </View>
                 ))}
               </View>
@@ -307,7 +312,7 @@ export function CardBack({ subject }: CardBackProps) {
                 collapsedLines={3}
               />
               {subject.meaningHint && (
-                <View className="mt-3 p-3 bg-muted rounded-lg">
+                <View className="mt-3 p-3 rounded-lg" style={{ backgroundColor: colors.muted }}>
                   <Muted className="text-xs mb-1">Hint</Muted>
                   <FormattedText
                     text={subject.meaningHint}
@@ -328,7 +333,7 @@ export function CardBack({ subject }: CardBackProps) {
                 collapsedLines={3}
               />
               {subject.readingHint && (
-                <View className="mt-3 p-3 bg-muted rounded-lg">
+                <View className="mt-3 p-3 rounded-lg" style={{ backgroundColor: colors.muted }}>
                   <Muted className="text-xs mb-1">Hint</Muted>
                   <FormattedText
                     text={subject.readingHint}

@@ -5,6 +5,7 @@ import * as ToggleGroupPrimitive from "@/components/primitives/toggle-group";
 import {TextClassContext} from "@/components/ui/text";
 import {toggleTextVariants, toggleVariants} from "@/components/ui/toggle";
 import {cn} from "@/lib/utils";
+import {useThemeColors} from "@/hooks/useThemeColors";
 
 const ToggleGroupContext = React.createContext<VariantProps<
   typeof toggleVariants
@@ -42,15 +43,17 @@ const ToggleGroupItem = React.forwardRef<
   React.ElementRef<typeof ToggleGroupPrimitive.Item>,
   React.ComponentPropsWithoutRef<typeof ToggleGroupPrimitive.Item> &
   VariantProps<typeof toggleVariants>
->(({className, children, variant, size, ...props}, ref) => {
+>(({className, children, variant, size, style, ...props}, ref) => {
   const context = useToggleGroupContext();
   const {value} = ToggleGroupPrimitive.useRootContext();
+  const colors = useThemeColors();
+  const isSelected = ToggleGroupPrimitive.utils.getIsSelected(value, props.value);
 
   return (
     <TextClassContext.Provider
       value={cn(
         toggleTextVariants({variant, size}),
-        ToggleGroupPrimitive.utils.getIsSelected(value, props.value)
+        isSelected
           ? "text-accent-foreground"
           : "web:group-hover:text-muted-foreground",
       )}
@@ -63,10 +66,12 @@ const ToggleGroupItem = React.forwardRef<
             size: context.size || size,
           }),
           props.disabled && "web:pointer-events-none opacity-50",
-          ToggleGroupPrimitive.utils.getIsSelected(value, props.value) &&
-          "bg-accent",
           className,
         )}
+        style={[
+          isSelected ? {backgroundColor: colors.accent} : undefined,
+          style,
+        ]}
         {...props}
       >
         {children}
@@ -85,7 +90,8 @@ function ToggleGroupIcon({
   icon: LucideIcon;
 }) {
   const textClass = React.useContext(TextClassContext);
-  return <Icon className={cn(textClass, className)} {...props} />;
+  const colors = useThemeColors();
+  return <Icon className={cn(textClass, className)} color={colors.foreground} {...props} />;
 }
 
 export {ToggleGroup, ToggleGroupIcon, ToggleGroupItem};

@@ -5,28 +5,26 @@ import { Search } from "lucide-react-native"
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Text } from "@/components/ui/text"
-import { useColorScheme } from "@/lib/useColorScheme"
+import { useThemeColors } from "@/hooks/useThemeColors"
 
 export function BrowseCard() {
   const router = useRouter()
-  const { colorScheme } = useColorScheme()
+  const colors = useThemeColors()
 
   const handlePress = () => {
     router.push("/browse")
   }
 
-  const iconColor = colorScheme === "dark" ? "#fff" : "#000"
-
   return (
     <Pressable onPress={handlePress}>
-      <Card className="bg-card border-border">
+      <Card style={{ backgroundColor: colors.card, borderColor: colors.border }}>
         <CardContent className="p-4 flex-row items-center gap-3">
-          <View className="w-10 h-10 rounded-lg bg-muted items-center justify-center">
-            <Search size={20} color={iconColor} />
+          <View className="w-10 h-10 rounded-lg items-center justify-center" style={{ backgroundColor: colors.muted }}>
+            <Search size={20} color={colors.foreground} />
           </View>
           <View className="flex-1">
-            <Text className="text-base font-medium">Browse Subjects</Text>
-            <Text className="text-sm text-muted-foreground">
+            <Text className="text-base font-medium" style={{ color: colors.foreground }}>Browse Subjects</Text>
+            <Text className="text-sm" style={{ color: colors.mutedForeground }}>
               Explore all radicals, kanji, and vocabulary
             </Text>
           </View>

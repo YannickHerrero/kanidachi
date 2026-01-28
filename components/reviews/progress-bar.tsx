@@ -3,6 +3,7 @@ import { View } from "react-native"
 
 import { Progress } from "@/components/ui/progress"
 import { Text } from "@/components/ui/text"
+import { useThemeColors } from "@/hooks/useThemeColors"
 
 interface ReviewProgressBarProps {
   current: number
@@ -11,6 +12,7 @@ interface ReviewProgressBarProps {
 }
 
 export function ReviewProgressBar({ current, total, completed }: ReviewProgressBarProps) {
+  const colors = useThemeColors()
   const percentage = total > 0 ? Math.round((current / total) * 100) : 0
 
   return (
@@ -18,7 +20,7 @@ export function ReviewProgressBar({ current, total, completed }: ReviewProgressB
       <View className="flex-1">
         <Progress value={percentage} className="h-2" />
       </View>
-      <Text className="text-sm text-muted-foreground min-w-[60px] text-right">
+      <Text className="text-sm min-w-[60px] text-right" style={{ color: colors.mutedForeground }}>
         {current}/{total}
       </Text>
     </View>

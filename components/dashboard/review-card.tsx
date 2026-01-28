@@ -5,7 +5,7 @@ import { BookOpen } from "lucide-react-native"
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Text } from "@/components/ui/text"
-import { useColorScheme } from "@/lib/useColorScheme"
+import { useThemeColors } from "@/hooks/useThemeColors"
 
 interface ReviewCardProps {
   count: number
@@ -16,7 +16,7 @@ interface ReviewCardProps {
 // See AGENTS.md for details
 export function ReviewCard({ count }: ReviewCardProps) {
   const router = useRouter()
-  const { colorScheme } = useColorScheme()
+  const colors = useThemeColors()
   const hasReviews = count > 0
 
   const handlePress = () => {
@@ -37,7 +37,7 @@ export function ReviewCard({ count }: ReviewCardProps) {
           <CardContent className="p-4 items-center justify-center gap-2">
             <BookOpen
               size={24}
-              color={hasReviews ? "#fff" : colorScheme === "dark" ? "#a1a1aa" : "#71717a"}
+              color={hasReviews ? "#fff" : colors.mutedForeground}
             />
             <Text
               style={hasReviews ? styles.countActive : styles.countInactive}

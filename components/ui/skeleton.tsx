@@ -7,13 +7,18 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import {cn} from "@/lib/utils";
+import {useThemeColors} from "@/hooks/useThemeColors";
 
 const duration = 1000;
 
 function Skeleton({
   className,
+  style,
   ...props
-}: Omit<React.ComponentPropsWithoutRef<typeof Animated.View>, "style">) {
+}: Omit<React.ComponentPropsWithoutRef<typeof Animated.View>, "style"> & {
+  style?: React.ComponentProps<typeof Animated.View>["style"];
+}) {
+  const colors = useThemeColors();
   const sv = useSharedValue(1);
 
   React.useEffect(() => {
@@ -23,14 +28,14 @@ function Skeleton({
     );
   }, []);
 
-  const style = useAnimatedStyle(() => ({
+  const animatedStyle = useAnimatedStyle(() => ({
     opacity: sv.value,
   }));
 
   return (
     <Animated.View
-      style={style}
-      className={cn("rounded-md bg-secondary dark:bg-muted", className)}
+      style={[animatedStyle, {backgroundColor: colors.muted}, style]}
+      className={cn("rounded-md", className)}
       {...props}
     />
   );

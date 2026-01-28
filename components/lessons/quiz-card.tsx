@@ -7,6 +7,7 @@ import { Muted } from "@/components/ui/typography"
 import { Button } from "@/components/ui/button"
 import { RadicalImage, parseCharacterImages } from "@/components/subject/radical-image"
 import { parseMeanings, parseReadings } from "@/db/queries"
+import { useThemeColors } from "@/hooks/useThemeColors"
 import type { Subject } from "@/stores/lessons"
 
 // Subject type colors
@@ -25,6 +26,7 @@ interface QuizCardProps {
 }
 
 export function QuizCard({ subject, isFlipped, onFlip, onGrade }: QuizCardProps) {
+  const colors = useThemeColors()
   const meanings = parseMeanings(subject.meanings)
   const readings = parseReadings(subject.readings)
 
@@ -65,7 +67,7 @@ export function QuizCard({ subject, isFlipped, onFlip, onGrade }: QuizCardProps)
             {!isFlipped ? (
               /* Front of card - prompt to flip */
               <View className="items-center">
-                <Text className="text-lg text-muted-foreground mb-2">
+                <Text className="text-lg mb-2" style={{ color: colors.mutedForeground }}>
                   Do you know this {subject.type === "radical" ? "radical" : "item"}?
                 </Text>
                 <Muted>Tap to reveal</Muted>
@@ -93,7 +95,7 @@ export function QuizCard({ subject, isFlipped, onFlip, onGrade }: QuizCardProps)
 
                 {/* Mnemonic hint */}
                 {subject.meaningMnemonic && (
-                  <View className="mt-2 p-3 bg-muted rounded-lg w-full">
+                  <View className="mt-2 p-3 rounded-lg w-full" style={{ backgroundColor: colors.muted }}>
                     <Text className="text-sm text-center" numberOfLines={3}>
                       {subject.meaningMnemonic}
                     </Text>
@@ -113,7 +115,7 @@ export function QuizCard({ subject, isFlipped, onFlip, onGrade }: QuizCardProps)
             className="flex-1 h-14"
             onPress={() => onGrade(false)}
           >
-            <Text className="text-destructive-foreground text-lg font-semibold">
+            <Text className="text-lg font-semibold" style={{ color: colors.destructiveForeground }}>
               Incorrect
             </Text>
           </Button>

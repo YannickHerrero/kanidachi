@@ -22,11 +22,11 @@ import { WeeklyForecast } from "@/components/dashboard/weekly-forecast"
 import { useDashboardData } from "@/hooks/useDashboardData"
 import { useDashboardFocusSync } from "@/hooks/useDashboardFocusSync"
 import { useHourlySync } from "@/hooks/useHourlySync"
-import { useColorScheme } from "@/lib/useColorScheme"
+import { useThemeColors } from "@/hooks/useThemeColors"
 
 export default function Dashboard() {
   const router = useRouter()
-  const { colorScheme } = useColorScheme()
+  const colors = useThemeColors()
   const {
     reviewCount,
     lessonCount,
@@ -52,7 +52,7 @@ export default function Dashboard() {
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
         <View className="flex-1 p-4 gap-4">
           {/* Header skeleton */}
           <View className="flex-row items-center justify-between mb-2">
@@ -80,9 +80,9 @@ export default function Dashboard() {
 
   if (error) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
         <View className="flex-1 items-center justify-center p-4 gap-4">
-          <Text className="text-destructive text-center">{error}</Text>
+          <Text className="text-center" style={{ color: colors.destructive }}>{error}</Text>
           <Button onPress={refetch}>
             <Text>Try Again</Text>
           </Button>
@@ -92,7 +92,7 @@ export default function Dashboard() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }} edges={["top"]}>
       {/* Sync Progress Bar - positioned at top of screen */}
       <SyncProgressBar />
       
@@ -126,7 +126,7 @@ export default function Dashboard() {
             >
               <Settings
                 size={24}
-                color={colorScheme === "dark" ? "#a1a1aa" : "#71717a"}
+                color={colors.mutedForeground}
               />
             </Button>
           </View>

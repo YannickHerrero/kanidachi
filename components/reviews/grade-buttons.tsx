@@ -5,6 +5,7 @@ import * as Haptics from "expo-haptics"
 
 import { Button } from "@/components/ui/button"
 import { Text } from "@/components/ui/text"
+import { useThemeColors } from "@/hooks/useThemeColors"
 
 interface GradeButtonsProps {
   onGrade: (correct: boolean) => void
@@ -12,6 +13,7 @@ interface GradeButtonsProps {
 }
 
 export function GradeButtons({ onGrade, disabled = false }: GradeButtonsProps) {
+  const colors = useThemeColors()
   const handleGrade = React.useCallback((correct: boolean) => {
     // Trigger haptic feedback (different feedback for correct vs incorrect)
     if (Platform.OS !== "web") {
@@ -33,7 +35,7 @@ export function GradeButtons({ onGrade, disabled = false }: GradeButtonsProps) {
         disabled={disabled}
       >
         <X size={24} color="#fff" />
-        <Text className="text-destructive-foreground text-lg font-semibold">
+        <Text className="text-lg font-semibold" style={{ color: colors.destructiveForeground }}>
           Incorrect
         </Text>
       </Button>

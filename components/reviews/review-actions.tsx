@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
-import { useColorScheme } from "@/lib/useColorScheme"
+import { useThemeColors } from "@/hooks/useThemeColors"
 
 interface ReviewActionsProps {
   canUndo: boolean
@@ -33,9 +33,9 @@ export function ReviewActions({
   onMarkCorrect,
   onWrapUp,
 }: ReviewActionsProps) {
-  const { colorScheme } = useColorScheme()
+  const colors = useThemeColors()
   const [open, setOpen] = React.useState(false)
-  const iconColor = colorScheme === "dark" ? "#fff" : "#000"
+  const iconColor = colors.foreground
 
   const handleUndo = () => {
     setOpen(false)

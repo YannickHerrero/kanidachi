@@ -4,19 +4,21 @@ import * as Slot from "@/components/primitives/slot";
 import type {SlottableViewProps} from "@/components/primitives/types";
 import {TextClassContext} from "@/components/ui/text";
 import {cn} from "@/lib/utils";
+import {useThemeColors} from "@/hooks/useThemeColors";
+import type {ThemeColors} from "@/lib/colors";
 
 const badgeVariants = cva(
-  "web:inline-flex items-center rounded-full border border-border px-2.5 py-0.5 web:transition-colors web:focus:outline-none web:focus:ring-2 web:focus:ring-ring web:focus:ring-offset-2",
+  "web:inline-flex items-center rounded-full border px-2.5 py-0.5 web:transition-colors web:focus:outline-none web:focus:ring-2 web:focus:ring-ring web:focus:ring-offset-2",
   {
     variants: {
       variant: {
         default:
-          "border-transparent bg-primary web:hover:opacity-80 active:opacity-80",
+          "border-transparent web:hover:opacity-80 active:opacity-80",
         secondary:
-          "border-transparent bg-secondary web:hover:opacity-80 active:opacity-80",
+          "border-transparent web:hover:opacity-80 active:opacity-80",
         destructive:
-          "border-transparent bg-destructive web:hover:opacity-80 active:opacity-80",
-        outline: "text-foreground",
+          "border-transparent web:hover:opacity-80 active:opacity-80",
+        outline: "",
       },
     },
     defaultVariants: {
@@ -28,10 +30,10 @@ const badgeVariants = cva(
 const badgeTextVariants = cva("text-xs font-semibold ", {
   variants: {
     variant: {
-      default: "text-primary-foreground",
-      secondary: "text-secondary-foreground",
-      destructive: "text-destructive-foreground",
-      outline: "text-foreground",
+      default: "",
+      secondary: "",
+      destructive: "",
+      outline: "",
     },
   },
   defaultVariants: {
@@ -39,19 +41,62 @@ const badgeTextVariants = cva("text-xs font-semibold ", {
   },
 });
 
+const getBadgeBackgroundColor = (variant: string | undefined | null, colors: ThemeColors): string => {
+  switch (variant) {
+    case "default":
+      return colors.primary;
+    case "secondary":
+      return colors.secondary;
+    case "destructive":
+      return colors.destructive;
+    case "outline":
+      return "transparent";
+    default:
+      return colors.primary;
+  }
+};
+
+const getBadgeBorderColor = (variant: string | undefined | null, colors: ThemeColors): string => {
+  if (variant === "outline") {
+    return colors.border;
+  }
+  return "transparent";
+};
+
+const getBadgeTextColor = (variant: string | undefined | null, colors: ThemeColors): string => {
+  switch (variant) {
+    case "default":
+      return colors.primaryForeground;
+    case "secondary":
+      return colors.secondaryForeground;
+    case "destructive":
+      return colors.destructiveForeground;
+    case "outline":
+      return colors.foreground;
+    default:
+      return colors.primaryForeground;
+  }
+};
+
 type BadgeProps = SlottableViewProps & VariantProps<typeof badgeVariants>;
 
-function Badge({className, variant, asChild, ...props}: BadgeProps) {
+function Badge({className, variant, asChild, style, ...props}: BadgeProps) {
   const Component = asChild ? Slot.View : View;
+  const colors = useThemeColors();
+  const backgroundColor = getBadgeBackgroundColor(variant, colors);
+  const borderColor = getBadgeBorderColor(variant, colors);
+  const textColor = getBadgeTextColor(variant, colors);
+
   return (
     <TextClassContext.Provider value={badgeTextVariants({variant})}>
       <Component
         className={cn(badgeVariants({variant}), className)}
+        style={[{backgroundColor, borderColor}, style]}
         {...props}
       />
     </TextClassContext.Provider>
   );
 }
 
-export {Badge, badgeTextVariants, badgeVariants};
+export {Badge, badgeTextVariants, badgeVariants, getBadgeTextColor};
 export type {BadgeProps};

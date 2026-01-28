@@ -10,9 +10,6 @@ export type ReviewOrdering = "random" | "srs_stage" | "level"
 // Lesson ordering options
 export type LessonOrdering = "ascending_level" | "shuffled" | "current_level_first"
 
-// Theme options
-export type ThemePreference = "light" | "dark" | "system"
-
 interface Settings {
   // Audio settings
   preferredVoiceActorId: number | null
@@ -29,9 +26,6 @@ interface Settings {
   wrapUpBatchSize: number
   minimizeReviewPenalty: boolean // Reduce wrong count to 1 if multiple mistakes
   reviewItemLimit: number | null // Max items per session (null = unlimited)
-
-  // Theme
-  theme: ThemePreference
 
   // Notification settings
   notificationsEnabled: boolean
@@ -50,7 +44,6 @@ interface SettingsState extends Settings {
   setWrapUpBatchSize: (size: number) => void
   setMinimizeReviewPenalty: (enabled: boolean) => void
   setReviewItemLimit: (limit: number | null) => void
-  setTheme: (theme: ThemePreference) => void
   setNotificationsEnabled: (enabled: boolean) => void
   setNotificationTime: (time: string) => void
 
@@ -71,7 +64,6 @@ const DEFAULT_SETTINGS: Settings = {
   wrapUpBatchSize: 10,
   minimizeReviewPenalty: true, // Default to minimizing penalty
   reviewItemLimit: null, // Unlimited by default
-  theme: "system",
   notificationsEnabled: false,
   notificationTime: "09:00",
 }
@@ -138,12 +130,6 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   setReviewItemLimit: (limit) => {
     set({ reviewItemLimit: limit })
     persistSettings({ reviewItemLimit: limit })
-  },
-
-  // Theme
-  setTheme: (theme) => {
-    set({ theme: theme })
-    persistSettings({ theme: theme })
   },
 
   // Notifications

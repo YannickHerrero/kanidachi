@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Text } from "@/components/ui/text"
 import { Muted } from "@/components/ui/typography"
-import { useColorScheme } from "@/lib/useColorScheme"
+import { useThemeColors } from "@/hooks/useThemeColors"
 
 interface LevelDetailItem {
   total: number
@@ -30,10 +30,8 @@ interface LevelProgressProps {
 
 export function LevelProgress({ level, total, passed, percentage, detail }: LevelProgressProps) {
   const router = useRouter()
-  const { colorScheme } = useColorScheme()
+  const colors = useThemeColors()
   const [showDetail, setShowDetail] = React.useState(false)
-
-  const chevronColor = colorScheme === "dark" ? "#9ca3af" : "#6b7280"
 
   const handleLevelPress = () => {
     router.push(`/browse/level/${level}`)
@@ -48,15 +46,15 @@ export function LevelProgress({ level, total, passed, percentage, detail }: Leve
     return (
       <View className="flex-row items-center py-1.5">
         <View className="w-3 h-3 rounded mr-2" style={{ backgroundColor: color }} />
-        <Text className="text-sm flex-1">{label}</Text>
+        <Text className="text-sm flex-1" style={{ color: colors.foreground }}>{label}</Text>
         <View className="flex-row items-center gap-3">
-          <Text className="text-xs text-muted-foreground">
-            {item.lessons > 0 && <Text className="text-gray-500">{item.lessons} lessons</Text>}
+          <Text className="text-xs" style={{ color: colors.mutedForeground }}>
+            {item.lessons > 0 && <Text style={{ color: '#6b7280' }}>{item.lessons} lessons</Text>}
           </Text>
-          <Text className="text-xs text-muted-foreground">
-            {item.inProgress > 0 && <Text className="text-pink-500">{item.inProgress} learning</Text>}
+          <Text className="text-xs" style={{ color: colors.mutedForeground }}>
+            {item.inProgress > 0 && <Text style={{ color: '#ec4899' }}>{item.inProgress} learning</Text>}
           </Text>
-          <Text className="text-sm font-medium">
+          <Text className="text-sm font-medium" style={{ color: colors.foreground }}>
             {item.passed}/{item.total}
           </Text>
         </View>
@@ -91,15 +89,16 @@ export function LevelProgress({ level, total, passed, percentage, detail }: Leve
           <>
             <Pressable
               onPress={() => setShowDetail(!showDetail)}
-              className="flex-row items-center justify-center pt-2 border-t border-border"
+              className="flex-row items-center justify-center pt-2"
+              style={{ borderTopWidth: 1, borderTopColor: colors.border }}
             >
-              <Text className="text-sm text-muted-foreground mr-1">
+              <Text className="text-sm mr-1" style={{ color: colors.mutedForeground }}>
                 {showDetail ? "Hide" : "Show"} breakdown
               </Text>
               {showDetail ? (
-                <ChevronUp size={16} color={chevronColor} />
+                <ChevronUp size={16} color={colors.mutedForeground} />
               ) : (
-                <ChevronDown size={16} color={chevronColor} />
+                <ChevronDown size={16} color={colors.mutedForeground} />
               )}
             </Pressable>
 

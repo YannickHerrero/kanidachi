@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Text } from "@/components/ui/text"
 import { Muted } from "@/components/ui/typography"
 import { FormattedText } from "@/components/ui/formatted-text"
-import { useColorScheme } from "@/lib/useColorScheme"
+import { useThemeColors } from "@/hooks/useThemeColors"
 import type { subjects, studyMaterials } from "@/db/schema"
 
 type Subject = typeof subjects.$inferSelect
@@ -20,14 +20,14 @@ interface MnemonicProps {
 }
 
 export function Mnemonic({ title, mnemonic, hint, userNote }: MnemonicProps) {
-  const { colorScheme } = useColorScheme()
+  const colors = useThemeColors()
   const [showHint, setShowHint] = React.useState(false)
 
   if (!mnemonic) {
     return null
   }
 
-  const iconColor = colorScheme === "dark" ? "#a1a1aa" : "#71717a"
+  const iconColor = colors.mutedForeground
 
   return (
     <Card>
@@ -56,7 +56,7 @@ export function Mnemonic({ title, mnemonic, hint, userNote }: MnemonicProps) {
         )}
 
         {showHint && hint && (
-          <View className="p-3 bg-muted rounded-lg">
+          <View className="p-3 rounded-lg" style={{ backgroundColor: colors.muted }}>
             <FormattedText text={hint} style={{ fontSize: 14, lineHeight: 20 }} />
           </View>
         )}

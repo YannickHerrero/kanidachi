@@ -3,6 +3,7 @@ import { View } from "react-native"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Text } from "@/components/ui/text"
+import { useThemeColors } from "@/hooks/useThemeColors"
 import type { LevelProgressionData } from "@/hooks/useStatistics"
 
 interface LevelTimelineProps {
@@ -11,6 +12,7 @@ interface LevelTimelineProps {
 }
 
 export function LevelTimeline({ levelTimeline, currentLevel }: LevelTimelineProps) {
+  const colors = useThemeColors()
   const nowSeconds = Math.floor(Date.now() / 1000)
 
   const timelineEntries = React.useMemo(() => {
@@ -141,40 +143,40 @@ export function LevelTimeline({ levelTimeline, currentLevel }: LevelTimelineProp
         {hasData && (
           <View className="flex-row flex-wrap gap-4 pb-2">
             <View className="flex-1 min-w-[100px]">
-              <Text className="text-2xl font-bold text-foreground">
+              <Text className="text-2xl font-bold" style={{ color: colors.foreground }}>
                 {currentLevel}
               </Text>
-              <Text className="text-xs text-muted-foreground">Current Level</Text>
+              <Text className="text-xs" style={{ color: colors.mutedForeground }}>Current Level</Text>
             </View>
             {averageTime !== null && (
               <View className="flex-1 min-w-[100px]">
-                <Text className="text-2xl font-bold text-foreground">
+                <Text className="text-2xl font-bold" style={{ color: colors.foreground }}>
                   {averageTime}
                 </Text>
-                <Text className="text-xs text-muted-foreground">Avg. Days/Level</Text>
+                <Text className="text-xs" style={{ color: colors.mutedForeground }}>Avg. Days/Level</Text>
               </View>
             )}
             <View className="flex-1 min-w-[100px]">
-              <Text className="text-2xl font-bold text-foreground">
+              <Text className="text-2xl font-bold" style={{ color: colors.foreground }}>
                 {completedLevels.length}
               </Text>
-              <Text className="text-xs text-muted-foreground">Levels Passed</Text>
+              <Text className="text-xs" style={{ color: colors.mutedForeground }}>Levels Passed</Text>
             </View>
           </View>
         )}
 
         {/* Fastest/Slowest */}
         {fastest && slowest && fastest.level !== slowest.level && (
-          <View className="flex-row gap-4 py-2 border-t border-border">
+          <View className="flex-row gap-4 py-2 border-t" style={{ borderColor: colors.border }}>
             <View className="flex-1">
-              <Text className="text-sm text-muted-foreground">Fastest</Text>
-              <Text className="text-sm font-medium text-foreground">
+              <Text className="text-sm" style={{ color: colors.mutedForeground }}>Fastest</Text>
+              <Text className="text-sm font-medium" style={{ color: colors.foreground }}>
                 Level {fastest.level} ({formatDuration(fastest.timeSpentDays)})
               </Text>
             </View>
             <View className="flex-1">
-              <Text className="text-sm text-muted-foreground">Slowest</Text>
-              <Text className="text-sm font-medium text-foreground">
+              <Text className="text-sm" style={{ color: colors.mutedForeground }}>Slowest</Text>
+              <Text className="text-sm font-medium" style={{ color: colors.foreground }}>
                 Level {slowest.level} ({formatDuration(slowest.timeSpentDays)})
               </Text>
             </View>
@@ -183,8 +185,8 @@ export function LevelTimeline({ levelTimeline, currentLevel }: LevelTimelineProp
 
         {/* Timeline visualization */}
         {hasData && (
-          <View className="gap-2 pt-2 border-t border-border">
-            <Text className="text-sm font-medium text-muted-foreground">
+          <View className="gap-2 pt-2 border-t" style={{ borderColor: colors.border }}>
+            <Text className="text-sm font-medium" style={{ color: colors.mutedForeground }}>
               Timeline
             </Text>
             <View className="gap-1">
@@ -199,18 +201,20 @@ export function LevelTimeline({ levelTimeline, currentLevel }: LevelTimelineProp
                   >
                     {/* Level badge */}
                     <View
-                      className={`w-8 h-8 rounded-full items-center justify-center ${
-                        isCurrent
-                          ? "bg-primary"
+                      className="w-8 h-8 rounded-full items-center justify-center"
+                      style={{
+                        backgroundColor: isCurrent
+                          ? colors.primary
                           : isCompleted
-                            ? "bg-muted"
-                            : "bg-muted/50"
-                      }`}
+                            ? colors.muted
+                            : colors.muted + '80',
+                      }}
                     >
                       <Text
-                        className={`text-sm font-medium ${
-                          isCurrent ? "text-primary-foreground" : "text-foreground"
-                        }`}
+                        className="text-sm font-medium"
+                        style={{
+                          color: isCurrent ? colors.primaryForeground : colors.foreground,
+                        }}
                       >
                         {level.level}
                       </Text>
@@ -219,16 +223,16 @@ export function LevelTimeline({ levelTimeline, currentLevel }: LevelTimelineProp
                     {/* Progress bar for time spent */}
                     <View className="flex-1 gap-0.5">
                       <View className="flex-row justify-between">
-                        <Text className="text-xs text-muted-foreground">
+                        <Text className="text-xs" style={{ color: colors.mutedForeground }}>
                           {formatDate(level.startedAt)}
                         </Text>
-                        <Text className="text-xs font-medium text-foreground">
+                        <Text className="text-xs font-medium" style={{ color: colors.foreground }}>
                           {formatDuration(level.timeSpentDays)}
                         </Text>
                       </View>
                       {/* Visual bar based on relative time */}
                       {averageTime && level.timeSpentDays !== null && (
-                        <View className="h-1.5 rounded-full bg-muted overflow-hidden">
+                        <View className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: colors.muted }}>
                           <View
                             className={`h-full rounded-full ${
                               level.timeSpentDays <= averageTime
@@ -258,7 +262,7 @@ export function LevelTimeline({ levelTimeline, currentLevel }: LevelTimelineProp
             </View>
 
             {timelineEntries.length > 10 && (
-              <Text className="text-xs text-muted-foreground text-center pt-2">
+              <Text className="text-xs text-center pt-2" style={{ color: colors.mutedForeground }}>
                 Showing last 10 levels
               </Text>
             )}
@@ -268,7 +272,7 @@ export function LevelTimeline({ levelTimeline, currentLevel }: LevelTimelineProp
         {/* Empty state */}
         {!hasData && (
           <View className="items-center py-4">
-            <Text className="text-sm text-muted-foreground text-center">
+            <Text className="text-sm text-center" style={{ color: colors.mutedForeground }}>
               Start learning to see your level progress timeline
             </Text>
           </View>

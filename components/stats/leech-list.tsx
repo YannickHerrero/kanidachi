@@ -5,6 +5,7 @@ import { useRouter } from "expo-router"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Text } from "@/components/ui/text"
 import { InlineRadicalImage, parseCharacterImages } from "@/components/subject/radical-image"
+import { useThemeColors } from "@/hooks/useThemeColors"
 import { cn } from "@/lib/utils"
 import { parseMeanings, parseReadings } from "@/db/queries"
 import type { Leech } from "@/hooks/useStatistics"
@@ -35,6 +36,7 @@ interface LeechListProps {
 }
 
 export function LeechList({ leeches, maxItems = 10 }: LeechListProps) {
+  const colors = useThemeColors()
   const router = useRouter()
   const hasLeeches = leeches.length > 0
   const displayedLeeches = leeches.slice(0, maxItems)
@@ -49,7 +51,7 @@ export function LeechList({ leeches, maxItems = 10 }: LeechListProps) {
         <View className="flex-row items-center justify-between">
           <CardTitle className="text-lg">Leeches</CardTitle>
           {hasLeeches && (
-            <Text className="text-sm text-muted-foreground">
+            <Text className="text-sm" style={{ color: colors.mutedForeground }}>
               {leeches.length} item{leeches.length !== 1 ? "s" : ""}
             </Text>
           )}
@@ -57,7 +59,7 @@ export function LeechList({ leeches, maxItems = 10 }: LeechListProps) {
       </CardHeader>
       <CardContent className="gap-1 px-0">
         {/* Description */}
-        <Text className="text-xs text-muted-foreground px-4 pb-2">
+        <Text className="text-xs px-4 pb-2" style={{ color: colors.mutedForeground }}>
           Items you struggle with (accuracy below 75%)
         </Text>
 
@@ -72,14 +74,14 @@ export function LeechList({ leeches, maxItems = 10 }: LeechListProps) {
               />
             ))}
             {leeches.length > maxItems && (
-              <Text className="text-sm text-muted-foreground text-center py-3 border-t border-border">
+              <Text className="text-sm text-center py-3 border-t" style={{ color: colors.mutedForeground, borderColor: colors.border }}>
                 +{leeches.length - maxItems} more leeches
               </Text>
             )}
           </View>
         ) : (
           <View className="items-center py-6 px-4">
-            <Text className="text-sm text-muted-foreground text-center">
+            <Text className="text-sm text-center" style={{ color: colors.mutedForeground }}>
               No leeches detected! Keep up the good work!
             </Text>
           </View>
@@ -95,6 +97,7 @@ interface LeechItemProps {
 }
 
 function LeechItem({ leech, onPress }: LeechItemProps) {
+  const colors = useThemeColors()
   const typeColors =
     TYPE_COLORS[leech.subjectType as keyof typeof TYPE_COLORS] ?? TYPE_COLORS.vocabulary
 
@@ -122,7 +125,8 @@ function LeechItem({ leech, onPress }: LeechItemProps) {
   return (
     <Pressable
       onPress={onPress}
-      className="flex-row items-center px-4 py-3 border-t border-border active:bg-muted/50"
+      className="flex-row items-center px-4 py-3 border-t active:opacity-70"
+      style={{ borderColor: colors.border }}
     >
       {/* Character badge */}
       <View
@@ -147,11 +151,11 @@ function LeechItem({ leech, onPress }: LeechItemProps) {
 
       {/* Content */}
       <View className="flex-1">
-        <Text className="text-base font-medium text-foreground" numberOfLines={1}>
+        <Text className="text-base font-medium" style={{ color: colors.foreground }} numberOfLines={1}>
           {primaryMeaning}
         </Text>
         {primaryReading && (
-          <Text className="text-sm text-muted-foreground" numberOfLines={1}>
+          <Text className="text-sm" style={{ color: colors.mutedForeground }} numberOfLines={1}>
             {primaryReading}
           </Text>
         )}
@@ -160,14 +164,14 @@ function LeechItem({ leech, onPress }: LeechItemProps) {
       {/* Accuracy stats */}
       <View className="items-end ml-2">
         <Text
-          className={cn(
-            "text-base font-bold",
-            leech.percentageCorrect < 50 ? "text-destructive" : "text-orange-500"
-          )}
+          className="text-base font-bold"
+          style={{
+            color: leech.percentageCorrect < 50 ? colors.destructive : "#f97316",
+          }}
         >
           {leech.percentageCorrect}%
         </Text>
-        <Text className="text-xs text-muted-foreground">
+        <Text className="text-xs" style={{ color: colors.mutedForeground }}>
           {totalCorrect}/{totalCorrect + totalIncorrect}
         </Text>
       </View>

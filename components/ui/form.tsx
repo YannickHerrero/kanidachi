@@ -15,6 +15,7 @@ import {
 import {Platform, View} from "react-native";
 import Animated, {FadeInDown, FadeOut} from "react-native-reanimated";
 import {cn} from "../../lib/utils";
+import {useThemeColors} from "@/hooks/useThemeColors";
 import {Checkbox} from "./checkbox";
 import {Combobox, type ComboboxOption} from "./combobox";
 import {Input} from "./input";
@@ -109,7 +110,8 @@ const FormLabel = React.forwardRef<
   Omit<React.ComponentPropsWithoutRef<typeof Label>, "children"> & {
     children: string;
   }
->(({className, nativeID: _nativeID, ...props}, ref) => {
+>(({className, nativeID: _nativeID, style, ...props}, ref) => {
+  const colors = useThemeColors();
   const {error, formItemNativeID} = useFormField();
 
   return (
@@ -117,9 +119,9 @@ const FormLabel = React.forwardRef<
       ref={ref}
       className={cn(
         "pb-1 native:pb-2 px-px",
-        error && "text-destructive",
         className,
       )}
+      style={[error ? {color: colors.destructive} : undefined, style]}
       nativeID={formItemNativeID}
       {...props}
     />
@@ -130,14 +132,16 @@ FormLabel.displayName = "FormLabel";
 const FormDescription = React.forwardRef<
   React.ElementRef<typeof Text>,
   React.ComponentPropsWithoutRef<typeof Text>
->(({className, ...props}, ref) => {
+>(({className, style, ...props}, ref) => {
+  const colors = useThemeColors();
   const {formDescriptionNativeID} = useFormField();
 
   return (
     <Text
       ref={ref}
       nativeID={formDescriptionNativeID}
-      className={cn("text-sm text-muted-foreground pt-1", className)}
+      className={cn("text-sm pt-1", className)}
+      style={[{color: colors.mutedForeground}, style]}
       {...props}
     />
   );
@@ -147,7 +151,8 @@ FormDescription.displayName = "FormDescription";
 const FormMessage = React.forwardRef<
   React.ElementRef<typeof Animated.Text>,
   React.ComponentPropsWithoutRef<typeof Animated.Text>
->(({className, children, ...props}, ref) => {
+>(({className, children, style, ...props}, ref) => {
+  const colors = useThemeColors();
   const {error, formMessageNativeID} = useFormField();
   const body = error ? String(error?.message) : children;
 
@@ -161,7 +166,8 @@ const FormMessage = React.forwardRef<
       exiting={FadeOut.duration(275)}
       ref={ref}
       nativeID={formMessageNativeID}
-      className={cn("text-sm font-medium text-destructive", className)}
+      className={cn("text-sm font-medium", className)}
+      style={[{color: colors.destructive}, style]}
       {...props}
     >
       {body}

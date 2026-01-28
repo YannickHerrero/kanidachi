@@ -3,18 +3,21 @@ import {Platform, Text as RNText} from "react-native";
 import * as Slot from "@/components/primitives/slot";
 import type {SlottableTextProps, TextRef} from "@/components/primitives/types";
 import {cn} from "@/lib/utils";
+import {useThemeColors} from "@/hooks/useThemeColors";
 
 const H1 = React.forwardRef<TextRef, SlottableTextProps>(
-  ({className, asChild = false, ...props}, ref) => {
+  ({className, asChild = false, style, ...props}, ref) => {
     const Component = asChild ? Slot.Text : RNText;
+    const colors = useThemeColors();
     return (
       <Component
         role="heading"
         aria-level="1"
         className={cn(
-          "web:scroll-m-20 text-4xl text-foreground font-extrabold tracking-tight lg:text-5xl web:select-text",
+          "web:scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl web:select-text",
           className,
         )}
+        style={[{color: colors.foreground}, style]}
         ref={ref}
         {...props}
       />
@@ -25,16 +28,18 @@ const H1 = React.forwardRef<TextRef, SlottableTextProps>(
 H1.displayName = "H1";
 
 const H2 = React.forwardRef<TextRef, SlottableTextProps>(
-  ({className, asChild = false, ...props}, ref) => {
+  ({className, asChild = false, style, ...props}, ref) => {
     const Component = asChild ? Slot.Text : RNText;
+    const colors = useThemeColors();
     return (
       <Component
         role="heading"
         aria-level="2"
         className={cn(
-          "web:scroll-m-20 border-b border-border pb-2 text-3xl text-foreground font-semibold tracking-tight first:mt-0 web:select-text",
+          "web:scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0 web:select-text",
           className,
         )}
+        style={[{color: colors.foreground, borderColor: colors.border}, style]}
         ref={ref}
         {...props}
       />
@@ -45,16 +50,18 @@ const H2 = React.forwardRef<TextRef, SlottableTextProps>(
 H2.displayName = "H2";
 
 const H3 = React.forwardRef<TextRef, SlottableTextProps>(
-  ({className, asChild = false, ...props}, ref) => {
+  ({className, asChild = false, style, ...props}, ref) => {
     const Component = asChild ? Slot.Text : RNText;
+    const colors = useThemeColors();
     return (
       <Component
         role="heading"
         aria-level="3"
         className={cn(
-          "web:scroll-m-20 text-2xl text-foreground font-semibold tracking-tight web:select-text",
+          "web:scroll-m-20 text-2xl font-semibold tracking-tight web:select-text",
           className,
         )}
+        style={[{color: colors.foreground}, style]}
         ref={ref}
         {...props}
       />
@@ -65,16 +72,18 @@ const H3 = React.forwardRef<TextRef, SlottableTextProps>(
 H3.displayName = "H3";
 
 const H4 = React.forwardRef<TextRef, SlottableTextProps>(
-  ({className, asChild = false, ...props}, ref) => {
+  ({className, asChild = false, style, ...props}, ref) => {
     const Component = asChild ? Slot.Text : RNText;
+    const colors = useThemeColors();
     return (
       <Component
         role="heading"
         aria-level="4"
         className={cn(
-          "web:scroll-m-20 text-xl text-foreground font-semibold tracking-tight web:select-text",
+          "web:scroll-m-20 text-xl font-semibold tracking-tight web:select-text",
           className,
         )}
+        style={[{color: colors.foreground}, style]}
         ref={ref}
         {...props}
       />
@@ -85,11 +94,13 @@ const H4 = React.forwardRef<TextRef, SlottableTextProps>(
 H4.displayName = "H4";
 
 const P = React.forwardRef<TextRef, SlottableTextProps>(
-  ({className, asChild = false, ...props}, ref) => {
+  ({className, asChild = false, style, ...props}, ref) => {
     const Component = asChild ? Slot.Text : RNText;
+    const colors = useThemeColors();
     return (
       <Component
-        className={cn("text-base text-foreground web:select-text", className)}
+        className={cn("text-base web:select-text", className)}
+        style={[{color: colors.foreground}, style]}
         ref={ref}
         {...props}
       />
@@ -99,16 +110,18 @@ const P = React.forwardRef<TextRef, SlottableTextProps>(
 P.displayName = "P";
 
 const BlockQuote = React.forwardRef<TextRef, SlottableTextProps>(
-  ({className, asChild = false, ...props}, ref) => {
+  ({className, asChild = false, style, ...props}, ref) => {
     const Component = asChild ? Slot.Text : RNText;
+    const colors = useThemeColors();
     return (
       <Component
         // @ts-ignore - role of blockquote renders blockquote element on the web
         role={Platform.OS === "web" ? "blockquote" : undefined}
         className={cn(
-          "mt-6 native:mt-4 border-l-2 border-border pl-6 native:pl-3 text-base text-foreground italic web:select-text",
+          "mt-6 native:mt-4 border-l-2 pl-6 native:pl-3 text-base italic web:select-text",
           className,
         )}
+        style={[{color: colors.foreground, borderColor: colors.border}, style]}
         ref={ref}
         {...props}
       />
@@ -119,16 +132,18 @@ const BlockQuote = React.forwardRef<TextRef, SlottableTextProps>(
 BlockQuote.displayName = "BlockQuote";
 
 const Code = React.forwardRef<TextRef, SlottableTextProps>(
-  ({className, asChild = false, ...props}, ref) => {
+  ({className, asChild = false, style, ...props}, ref) => {
     const Component = asChild ? Slot.Text : RNText;
+    const colors = useThemeColors();
     return (
       <Component
         // @ts-ignore - role of code renders code element on the web
         role={Platform.OS === "web" ? "code" : undefined}
         className={cn(
-          "relative rounded-md bg-muted px-[0.3rem] py-[0.2rem] text-sm text-foreground font-semibold web:select-text",
+          "relative rounded-md px-[0.3rem] py-[0.2rem] text-sm font-semibold web:select-text",
           className,
         )}
+        style={[{color: colors.foreground, backgroundColor: colors.muted}, style]}
         ref={ref}
         {...props}
       />
@@ -139,14 +154,16 @@ const Code = React.forwardRef<TextRef, SlottableTextProps>(
 Code.displayName = "Code";
 
 const Lead = React.forwardRef<TextRef, SlottableTextProps>(
-  ({className, asChild = false, ...props}, ref) => {
+  ({className, asChild = false, style, ...props}, ref) => {
     const Component = asChild ? Slot.Text : RNText;
+    const colors = useThemeColors();
     return (
       <Component
         className={cn(
-          "text-xl text-muted-foreground web:select-text",
+          "text-xl web:select-text",
           className,
         )}
+        style={[{color: colors.mutedForeground}, style]}
         ref={ref}
         {...props}
       />
@@ -157,14 +174,16 @@ const Lead = React.forwardRef<TextRef, SlottableTextProps>(
 Lead.displayName = "Lead";
 
 const Large = React.forwardRef<TextRef, SlottableTextProps>(
-  ({className, asChild = false, ...props}, ref) => {
+  ({className, asChild = false, style, ...props}, ref) => {
     const Component = asChild ? Slot.Text : RNText;
+    const colors = useThemeColors();
     return (
       <Component
         className={cn(
-          "text-xl text-foreground font-semibold web:select-text",
+          "text-xl font-semibold web:select-text",
           className,
         )}
+        style={[{color: colors.foreground}, style]}
         ref={ref}
         {...props}
       />
@@ -175,14 +194,16 @@ const Large = React.forwardRef<TextRef, SlottableTextProps>(
 Large.displayName = "Large";
 
 const Small = React.forwardRef<TextRef, SlottableTextProps>(
-  ({className, asChild = false, ...props}, ref) => {
+  ({className, asChild = false, style, ...props}, ref) => {
     const Component = asChild ? Slot.Text : RNText;
+    const colors = useThemeColors();
     return (
       <Component
         className={cn(
-          "text-sm text-foreground font-medium leading-none web:select-text",
+          "text-sm font-medium leading-none web:select-text",
           className,
         )}
+        style={[{color: colors.foreground}, style]}
         ref={ref}
         {...props}
       />
@@ -193,14 +214,16 @@ const Small = React.forwardRef<TextRef, SlottableTextProps>(
 Small.displayName = "Small";
 
 const Muted = React.forwardRef<TextRef, SlottableTextProps>(
-  ({className, asChild = false, ...props}, ref) => {
+  ({className, asChild = false, style, ...props}, ref) => {
     const Component = asChild ? Slot.Text : RNText;
+    const colors = useThemeColors();
     return (
       <Component
         className={cn(
-          "text-sm text-muted-foreground web:select-text",
+          "text-sm web:select-text",
           className,
         )}
+        style={[{color: colors.mutedForeground}, style]}
         ref={ref}
         {...props}
       />

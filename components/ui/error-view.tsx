@@ -5,7 +5,7 @@ import { AlertCircle, WifiOff, ServerCrash, RefreshCw } from "lucide-react-nativ
 import { Button } from "@/components/ui/button"
 import { Text } from "@/components/ui/text"
 import { cn } from "@/lib/utils"
-import { useColorScheme } from "@/lib/useColorScheme"
+import { useThemeColors } from "@/hooks/useThemeColors"
 
 export type ErrorType = "network" | "server" | "auth" | "generic"
 
@@ -55,10 +55,10 @@ export function ErrorView({
   className,
   compact = false,
 }: ErrorViewProps) {
-  const { colorScheme } = useColorScheme()
+  const colors = useThemeColors()
   const config = ERROR_CONFIG[type]
   const Icon = config.icon
-  const iconColor = colorScheme === "dark" ? "#f87171" : "#dc2626"
+  const iconColor = colors.destructive
 
   if (compact) {
     return (
@@ -69,7 +69,7 @@ export function ErrorView({
         )}
       >
         <Icon size={20} color={iconColor} />
-        <Text className="flex-1 text-sm text-destructive" numberOfLines={2}>
+        <Text className="flex-1 text-sm" style={{color: colors.destructive}} numberOfLines={2}>
           {message ?? config.defaultMessage}
         </Text>
         {onRetry && (
@@ -100,8 +100,8 @@ export function ErrorView({
       <View className="w-16 h-16 rounded-full bg-destructive/10 items-center justify-center">
         <Icon size={32} color={iconColor} />
       </View>
-      <Text className="text-xl font-semibold text-foreground">{config.title}</Text>
-      <Text className="text-sm text-muted-foreground text-center max-w-xs">
+      <Text className="text-xl font-semibold">{config.title}</Text>
+      <Text className="text-sm text-center max-w-xs" style={{color: colors.mutedForeground}}>
         {message ?? config.defaultMessage}
       </Text>
       {onRetry && (
@@ -113,7 +113,7 @@ export function ErrorView({
         >
           <RefreshCw
             size={16}
-            color={colorScheme === "dark" ? "#ffffff" : "#000000"}
+            color={colors.foreground}
             className={isRetrying ? "animate-spin" : ""}
           />
           <Text className="ml-2">{isRetrying ? "Retrying..." : "Try Again"}</Text>

@@ -4,14 +4,14 @@ import { ThemeProvider } from "@react-navigation/native";
 import { SplashScreen, Slot, Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as React from "react";
-import { Platform } from "react-native";
+import { Platform, useColorScheme } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { PortalHost } from "@/components/primitives/portal";
 import { DatabaseProvider, useDatabase } from "@/db/provider";
 import { setAndroidNavigationBar } from "@/lib/android-navigation-bar";
 import { DARK_THEME, LIGHT_THEME } from "@/lib/constants";
-import { useColorScheme } from "@/lib/useColorScheme";
-import { getItem, setItem } from "@/lib/storage";
+import { storage } from "@/lib/storage";
+import { useThemeStore } from "@/stores/theme";
 import { useFrameworkReady } from "@/hooks/useFrameworkReady";
 import { Inter_400Regular, Inter_600SemiBold, useFonts } from '@expo-google-fonts/inter';
 import { useEffect } from "react";
@@ -100,8 +100,14 @@ function AuthNavigator({ fontsLoaded }: { fontsLoaded: boolean }) {
 }
 
 export default function RootLayout() {
-  const { colorScheme, setColorScheme } = useColorScheme();
+  const systemColorScheme = useColorScheme();
   const { initialize } = useAuthStore();
+  const themeMode = useThemeStore((s) => s.mode);
+
+  // Resolve "system" to actual device preference
+  const resolvedColorScheme = themeMode === 'system'
+    ? (systemColorScheme ?? 'light')
+    : themeMode;
 
   const [loaded, error] = useFonts({
     Inter_400Regular,
@@ -115,19 +121,15 @@ export default function RootLayout() {
     initialize();
   }, []);
 
+  // Clean up old storage key on first launch
   useEffect(() => {
-    const theme = getItem("theme");
-    if (!theme) {
-      setAndroidNavigationBar(colorScheme);
-      setItem("theme", colorScheme);
-      return;
-    }
-    const colorTheme = theme === "dark" ? "dark" : "light";
-    setAndroidNavigationBar(colorTheme);
-    if (colorTheme !== colorScheme) {
-      setColorScheme(colorTheme);
-    }
+    storage.delete("theme");
   }, []);
+
+  // Update Android navigation bar when theme changes
+  useEffect(() => {
+    setAndroidNavigationBar(resolvedColorScheme === "dark" ? "dark" : "light");
+  }, [resolvedColorScheme]);
 
   useEffect(() => {
     if (loaded) {
@@ -142,8 +144,8 @@ export default function RootLayout() {
 
   return (
     <DatabaseProvider>
-      <ThemeProvider value={colorScheme === "dark" ? DARK_THEME : LIGHT_THEME}>
-        <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
+      <ThemeProvider value={resolvedColorScheme === "dark" ? DARK_THEME : LIGHT_THEME}>
+        <StatusBar style={resolvedColorScheme === "dark" ? "light" : "dark"} />
         <GestureHandlerRootView style={{ flex: 1 }}>
           <BottomSheetModalProvider>
             <Stack>
