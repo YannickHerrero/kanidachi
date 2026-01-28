@@ -289,7 +289,7 @@ export const selectContentProgress = (state: LessonState) => ({
 })
 
 export const selectQuizProgress = (state: LessonState) => ({
-  current: state.quizIndex + 1,
+  current: Array.from(state.quizResults.values()).filter(r => r.correct).length,
   total: state.quizQueue.length,
   completed: state.quizResults.size,
 })

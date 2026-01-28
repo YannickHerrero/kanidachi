@@ -476,7 +476,7 @@ export const selectCurrentItem = (state: ReviewState) =>
   state.queue[state.currentIndex] ?? null
 
 export const selectProgress = (state: ReviewState) => ({
-  current: state.currentIndex + 1,
+  current: Array.from(state.results.values()).filter(r => r.correct).length,
   total: state.queue.length,
   completed: state.results.size,
 })
