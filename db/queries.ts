@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, inArray, isNotNull, isNull, lte, or, sql } from "drizzle-orm"
+import { and, desc, eq, gte, inArray, isNotNull, isNull, lt, lte, or, sql } from "drizzle-orm"
 import type { ExpoSQLiteDatabase } from "drizzle-orm/expo-sqlite"
 import type { SQLJsDatabase } from "drizzle-orm/sql-js"
 import {
@@ -13,6 +13,8 @@ import {
   reviewStatistics,
   levelProgressions,
   errorLog,
+  dailyActivity,
+  type DailyActivityType,
   type Meaning,
   type Reading,
   type ContextSentence,
@@ -1069,6 +1071,95 @@ export async function getItemsByStageAndType(db: Database) {
     subjectType: string
     cnt: number
   }>
+}
+
+// ============================================================================
+// DAILY ACTIVITY
+// ============================================================================
+
+export interface DailyActivityTotals {
+  reviews: number
+  lessons: number
+  lessonsQuiz: number
+}
+
+export async function incrementDailyActivitySeconds(
+  db: Database,
+  date: string,
+  activity: DailyActivityType,
+  seconds: number
+): Promise<void> {
+  if (!db || seconds <= 0) return
+
+  const now = Math.floor(Date.now() / 1000)
+
+  await db
+    .insert(dailyActivity)
+    .values({
+      date,
+      activity,
+      seconds,
+      updatedAt: now,
+    })
+    .onConflictDoUpdate({
+      target: [dailyActivity.date, dailyActivity.activity],
+      set: {
+        seconds: sql`${dailyActivity.seconds} + ${seconds}`,
+        updatedAt: now,
+      },
+    })
+}
+
+export async function getDailyActivityTotals(
+  db: Database,
+  date: string
+): Promise<DailyActivityTotals> {
+  if (!db) {
+    return { reviews: 0, lessons: 0, lessonsQuiz: 0 }
+  }
+
+  const rows = await db
+    .select({
+      activity: dailyActivity.activity,
+      seconds: dailyActivity.seconds,
+    })
+    .from(dailyActivity)
+    .where(eq(dailyActivity.date, date))
+
+  const totals: DailyActivityTotals = { reviews: 0, lessons: 0, lessonsQuiz: 0 }
+
+  for (const row of rows as Array<{ activity: string; seconds: number }>) {
+    if (row.activity === "reviews") {
+      totals.reviews = row.seconds
+    } else if (row.activity === "lessons") {
+      totals.lessons = row.seconds
+    } else if (row.activity === "lessons_quiz") {
+      totals.lessonsQuiz = row.seconds
+    }
+  }
+
+  return totals
+}
+
+export async function getLessonsCompletedCountForRange(
+  db: Database,
+  startSeconds: number,
+  endSeconds: number
+): Promise<number> {
+  if (!db) return 0
+
+  const result = await (db as ExpoSQLiteDatabase)
+    .select({ cnt: sql<number>`count(*)` })
+    .from(assignments)
+    .where(
+      and(
+        isNotNull(assignments.startedAt),
+        gte(assignments.startedAt, startSeconds),
+        lt(assignments.startedAt, endSeconds)
+      )
+    )
+
+  return (result[0] as { cnt: number })?.cnt ?? 0
 }
 
 // ============================================================================

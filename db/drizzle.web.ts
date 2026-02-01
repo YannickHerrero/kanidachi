@@ -18,6 +18,19 @@ DELETE FROM "pending_progress";
 DELETE FROM "sync_metadata";
 DELETE FROM "audio_cache";
 DELETE FROM "error_log";
+DELETE FROM "daily_activity";
+`
+
+const ENSURE_DAILY_ACTIVITY_SQL = `
+CREATE TABLE IF NOT EXISTS "daily_activity" (
+  "id" text PRIMARY KEY NOT NULL,
+  "date" text NOT NULL,
+  "activity" text NOT NULL,
+  "seconds" integer NOT NULL DEFAULT 0,
+  "updated_at" integer NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "daily_activity_date_activity_idx"
+  ON "daily_activity" ("date", "activity");
 `
 
 
@@ -30,6 +43,7 @@ export const initialize = async (): Promise<SQLJsDatabase> => {
   );
   const [SQL, buf] = await Promise.all([sqlPromise, dataPromise]);
   const sqldb = new SQL.Database(new Uint8Array(buf))
+  sqldb.exec(ENSURE_DAILY_ACTIVITY_SQL)
   sqlDb = sqldb
   const db = drizzle(sqldb)
   return db

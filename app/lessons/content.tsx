@@ -14,6 +14,7 @@ import {
   selectAllViewed,
 } from "@/stores/lessons"
 import { useThemeColors } from "@/hooks/useThemeColors"
+import { useActivityTimer } from "@/hooks/useActivityTimer"
 
 export default function LessonContentScreen() {
   const router = useRouter()
@@ -30,6 +31,8 @@ export default function LessonContentScreen() {
   const currentItem = useLessonStore(selectCurrentContentItem)
   const progress = useLessonStore(selectContentProgress)
   const allViewed = useLessonStore(selectAllViewed)
+
+  useActivityTimer("lessons", phase === "content")
 
   // Mark current item as viewed
   React.useEffect(() => {

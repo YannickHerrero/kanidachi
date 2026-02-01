@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core"
+import { sqliteTable, text, integer, real, uniqueIndex } from "drizzle-orm/sqlite-core"
 import { createId } from "@paralleldrive/cuid2"
 
 // ============================================================================
@@ -186,6 +186,29 @@ export const audioCache = sqliteTable("audio_cache", {
   fileSize: integer("file_size"),
   cachedAt: integer("cached_at").notNull(),
 })
+
+// ============================================================================
+// DAILY ACTIVITY - Time spent per day and activity
+// ============================================================================
+
+export type DailyActivityType = "reviews" | "lessons" | "lessons_quiz"
+
+export const dailyActivity = sqliteTable(
+  "daily_activity",
+  {
+    id: text("id").primaryKey().$defaultFn(() => createId()),
+    date: text("date").notNull(), // Local date key: YYYY-MM-DD
+    activity: text("activity").notNull(),
+    seconds: integer("seconds").notNull().default(0),
+    updatedAt: integer("updated_at").notNull(),
+  },
+  (table) => ({
+    dateActivityIdx: uniqueIndex("daily_activity_date_activity_idx").on(
+      table.date,
+      table.activity
+    ),
+  })
+)
 
 // ============================================================================
 // TYPE DEFINITIONS (for JSON fields)

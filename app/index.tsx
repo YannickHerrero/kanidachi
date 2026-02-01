@@ -15,6 +15,7 @@ import { SrsBreakdown } from "@/components/dashboard/srs-breakdown"
 import { ForecastChart } from "@/components/dashboard/forecast-chart"
 import { BrowseCard } from "@/components/dashboard/browse-card"
 import { StatsCard } from "@/components/dashboard/stats-card"
+import { ActivityCard } from "@/components/dashboard/activity-card"
 import { SyncProgressBar } from "@/components/dashboard/sync-progress-bar"
 import { FullRefreshOverlay } from "@/components/dashboard/full-refresh-overlay"
 import { VacationBanner } from "@/components/dashboard/vacation-banner"
@@ -146,6 +147,9 @@ export default function Dashboard() {
 
         {/* Stats Card */}
         <StatsCard />
+
+        {/* Activity Card */}
+        <ActivityCard />
 
         {/* Level Progress */}
         <LevelProgress

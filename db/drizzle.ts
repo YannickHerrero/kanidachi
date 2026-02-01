@@ -20,11 +20,25 @@ DELETE FROM "pending_progress";
 DELETE FROM "sync_metadata";
 DELETE FROM "audio_cache";
 DELETE FROM "error_log";
+DELETE FROM "daily_activity";
 PRAGMA foreign_keys = ON;
+`
+
+const ENSURE_DAILY_ACTIVITY_SQL = `
+CREATE TABLE IF NOT EXISTS "daily_activity" (
+  "id" text PRIMARY KEY NOT NULL,
+  "date" text NOT NULL,
+  "activity" text NOT NULL,
+  "seconds" integer NOT NULL DEFAULT 0,
+  "updated_at" integer NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "daily_activity_date_activity_idx"
+  ON "daily_activity" ("date", "activity");
 `
 
 export const initialize = async (): Promise<ExpoSQLiteDatabase> => {
   await migrate(db, migrations);
+  await expoDb.execAsync(ENSURE_DAILY_ACTIVITY_SQL)
   return db;
 };
 

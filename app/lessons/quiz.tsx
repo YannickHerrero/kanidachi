@@ -18,6 +18,7 @@ import {
 import { useThemeColors } from "@/hooks/useThemeColors"
 import { useDatabase } from "@/db/provider"
 import { addPendingProgress, markLessonsCompleted } from "@/db/queries"
+import { useActivityTimer } from "@/hooks/useActivityTimer"
 
 export default function LessonQuizScreen() {
   const router = useRouter()
@@ -32,6 +33,8 @@ export default function LessonQuizScreen() {
   const [isFlipped, setIsFlipped] = React.useState(false)
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const isCompletingRef = React.useRef(false)
+
+  useActivityTimer("lessons_quiz", phase === "quiz")
 
   // Redirect if in select phase (user navigated here without going through the flow)
   // We allow "content" phase briefly during the transition from content -> quiz

@@ -22,6 +22,7 @@ import { useThemeColors } from "@/hooks/useThemeColors"
 import { useSettingsStore } from "@/stores/settings"
 import { preloadAudio } from "@/lib/audio/cache"
 import { parsePronunciationAudios } from "@/db/queries"
+import { useActivityTimer } from "@/hooks/useActivityTimer"
 
 export default function ReviewSessionScreen() {
   const router = useRouter()
@@ -53,6 +54,8 @@ export default function ReviewSessionScreen() {
   const reviewOrdering = useSettingsStore((s) => s.reviewOrdering)
   const wrapUpBatchSize = useSettingsStore((s) => s.wrapUpBatchSize)
   const preferredVoiceActorId = useSettingsStore((s) => s.preferredVoiceActorId)
+
+  useActivityTimer("reviews", isActive)
 
   // Start session when items are loaded
   React.useEffect(() => {
