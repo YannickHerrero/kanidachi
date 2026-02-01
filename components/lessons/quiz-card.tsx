@@ -3,6 +3,7 @@ import { Pressable, View } from "react-native"
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Text } from "@/components/ui/text"
+import { FormattedText } from "@/components/ui/formatted-text"
 import { Muted } from "@/components/ui/typography"
 import { Button } from "@/components/ui/button"
 import { RadicalImage, parseCharacterImages } from "@/components/subject/radical-image"
@@ -97,9 +98,11 @@ export function QuizCard({ subject, isFlipped, onFlip, onGrade }: QuizCardProps)
                 {/* Mnemonic hint */}
                 {subject.meaningMnemonic && (
                   <View className="mt-2 p-3 rounded-lg w-full" style={{ backgroundColor: colors.muted }}>
-                    <Text className="text-sm text-center" numberOfLines={3}>
-                      {subject.meaningMnemonic}
-                    </Text>
+                    <FormattedText
+                      text={subject.meaningMnemonic}
+                      numberOfLines={3}
+                      style={{ fontSize: 14, lineHeight: 20, textAlign: "center" }}
+                    />
                   </View>
                 )}
               </View>
