@@ -15,6 +15,7 @@ interface UseAvailableReviewsResult {
 export function useAvailableReviews(): UseAvailableReviewsResult {
   const { db } = useDatabase()
   const reviewItemLimit = useSettingsStore((s) => s.reviewItemLimit)
+  const reviewOrdering = useSettingsStore((s) => s.reviewOrdering)
   const [items, setItems] = React.useState<ReviewItem[]>([])
   const [totalAvailable, setTotalAvailable] = React.useState(0)
   const [isLoading, setIsLoading] = React.useState(true)
@@ -39,10 +40,33 @@ export function useAvailableReviews(): UseAvailableReviewsResult {
         return
       }
 
+      // Apply ordering before limiting (so limits honor the chosen order)
+      const orderedAssignments = (() => {
+        switch (reviewOrdering) {
+          case "srs_stage":
+            return [...allAssignments].sort((a, b) =>
+              (a.srsStage - b.srsStage) || (a.level - b.level) || (a.id - b.id)
+            )
+          case "level":
+            return [...allAssignments].sort((a, b) =>
+              (a.level - b.level) || (a.srsStage - b.srsStage) || (a.id - b.id)
+            )
+          case "random":
+          default: {
+            const shuffled = [...allAssignments]
+            for (let i = shuffled.length - 1; i > 0; i--) {
+              const j = Math.floor(Math.random() * (i + 1))
+              ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+            }
+            return shuffled
+          }
+        }
+      })()
+
       // Apply item limit if set
       const assignments = reviewItemLimit && reviewItemLimit > 0
-        ? allAssignments.slice(0, reviewItemLimit)
-        : allAssignments
+        ? orderedAssignments.slice(0, reviewItemLimit)
+        : orderedAssignments
 
       // Get subject IDs from assignments
       const subjectIds = assignments.map((a) => a.subjectId)
@@ -69,7 +93,7 @@ export function useAvailableReviews(): UseAvailableReviewsResult {
     } finally {
       setIsLoading(false)
     }
-  }, [db])
+  }, [db, reviewItemLimit, reviewOrdering])
 
   // Initial fetch
   React.useEffect(() => {
