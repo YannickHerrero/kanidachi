@@ -27,6 +27,7 @@ interface QuizCardProps {
 
 export function QuizCard({ subject, isFlipped, onFlip, onGrade }: QuizCardProps) {
   const colors = useThemeColors()
+  const passColor = "#22c55e"
   const meanings = parseMeanings(subject.meanings)
   const readings = parseReadings(subject.readings)
 
@@ -120,7 +121,8 @@ export function QuizCard({ subject, isFlipped, onFlip, onGrade }: QuizCardProps)
             </Text>
           </Button>
           <Button
-            className="flex-1 h-14 bg-green-600"
+            className="flex-1 h-14"
+            style={{ backgroundColor: passColor }}
             onPress={() => onGrade(true)}
           >
             <Text className="text-white text-lg font-semibold">
