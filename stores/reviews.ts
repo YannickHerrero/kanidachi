@@ -247,6 +247,15 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
     const nextIndex = currentIndex + 1
     const newItemsProcessed = itemsProcessed + 1
 
+    // If we're at the end but still have wrong items pending, append them
+    let pendingWrongItems = remainingWrongItems
+    if (!isWrapUp && nextIndex >= newQueue.length && pendingWrongItems.length > 0) {
+      for (const pending of pendingWrongItems) {
+        newQueue.push(pending.item)
+      }
+      pendingWrongItems = []
+    }
+
     // Check if session is complete
     const isComplete = nextIndex >= newQueue.length
 
@@ -264,7 +273,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
         results: newResults,
         queue: newQueue,
         currentIndex: nextIndex,
-        wrongItemsToReturn: remainingWrongItems,
+        wrongItemsToReturn: pendingWrongItems,
         itemsProcessed: newItemsProcessed,
         wrapUpCount: newWrapUpCount,
         isFlipped: false,
@@ -277,7 +286,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
         results: newResults,
         queue: newQueue,
         currentIndex: nextIndex,
-        wrongItemsToReturn: remainingWrongItems,
+        wrongItemsToReturn: pendingWrongItems,
         itemsProcessed: newItemsProcessed,
         wrapUpCount: newWrapUpCount,
         isFlipped: false,
@@ -477,7 +486,7 @@ export const selectCurrentItem = (state: ReviewState) =>
 
 export const selectProgress = (state: ReviewState) => ({
   current: Array.from(state.results.values()).filter(r => r.correct).length,
-  total: state.queue.length,
+  total: state.items.length,
   completed: state.results.size,
 })
 
