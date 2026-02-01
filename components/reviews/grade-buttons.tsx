@@ -14,6 +14,7 @@ interface GradeButtonsProps {
 
 export function GradeButtons({ onGrade, disabled = false }: GradeButtonsProps) {
   const colors = useThemeColors()
+  const passColor = "#22c55e"
   const handleGrade = React.useCallback((correct: boolean) => {
     // Trigger haptic feedback (different feedback for correct vs incorrect)
     if (Platform.OS !== "web") {
@@ -41,7 +42,8 @@ export function GradeButtons({ onGrade, disabled = false }: GradeButtonsProps) {
       </Button>
 
       <Button
-        className="flex-1 h-16 bg-green-600 flex-row items-center justify-center gap-2"
+        className="flex-1 h-16 flex-row items-center justify-center gap-2"
+        style={{ backgroundColor: passColor }}
         onPress={() => handleGrade(true)}
         disabled={disabled}
       >
