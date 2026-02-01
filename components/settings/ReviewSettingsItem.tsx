@@ -27,6 +27,8 @@ const WRAPUP_BATCH_OPTIONS = [5, 10, 15, 20, 25] as const
 // Session item limit options
 const SESSION_LIMIT_OPTIONS = [
   { value: null, label: "Unlimited" },
+  { value: 10, label: "10" },
+  { value: 15, label: "15" },
   { value: 25, label: "25" },
   { value: 50, label: "50" },
   { value: 75, label: "75" },
