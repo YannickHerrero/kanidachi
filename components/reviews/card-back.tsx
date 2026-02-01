@@ -2,6 +2,7 @@ import * as React from "react"
 import { ScrollView, View, Pressable } from "react-native"
 import { Pencil, Plus } from "lucide-react-native"
 
+import { Badge } from "@/components/ui/badge"
 import { Text } from "@/components/ui/text"
 import { Muted } from "@/components/ui/typography"
 import { Separator } from "@/components/ui/separator"
@@ -15,7 +16,7 @@ import { useDatabase } from "@/db/provider"
 import { useSettingsStore } from "@/stores/settings"
 import { useStudyMaterial, parseMeaningSynonyms } from "@/hooks/useStudyMaterial"
 import { useThemeColors } from "@/hooks/useThemeColors"
-import type { Subject } from "@/stores/reviews"
+import type { Assignment, Subject } from "@/stores/reviews"
 
 // Subject type colors
 const TYPE_COLORS = {
@@ -25,11 +26,25 @@ const TYPE_COLORS = {
   kana_vocabulary: "bg-purple-500",
 } as const
 
+const SRS_INFO = {
+  0: { label: "Locked", color: null },
+  1: { label: "Apprentice I", color: "#DD0093" },
+  2: { label: "Apprentice II", color: "#DD0093" },
+  3: { label: "Apprentice III", color: "#DD0093" },
+  4: { label: "Apprentice IV", color: "#DD0093" },
+  5: { label: "Guru I", color: "#882D9E" },
+  6: { label: "Guru II", color: "#882D9E" },
+  7: { label: "Master", color: "#294DDB" },
+  8: { label: "Enlightened", color: "#0093DD" },
+  9: { label: "Burned", color: "#434343" },
+} as const
+
 interface CardBackProps {
   subject: Subject
+  assignment: Assignment
 }
 
-export function CardBack({ subject }: CardBackProps) {
+export function CardBack({ subject, assignment }: CardBackProps) {
   const { db } = useDatabase()
   const colors = useThemeColors()
   const autoPlayAudio = useSettingsStore((s) => s.autoPlayAudioReviews)
@@ -98,6 +113,18 @@ export function CardBack({ subject }: CardBackProps) {
 
   const typeColor = TYPE_COLORS[subject.type as keyof typeof TYPE_COLORS] ?? TYPE_COLORS.vocabulary
 
+  const srsStage = assignment?.srsStage ?? 0
+  const srsInfo = SRS_INFO[srsStage as keyof typeof SRS_INFO] ?? SRS_INFO[0]
+  const nextSrsInfo = SRS_INFO[(srsStage + 1) as keyof typeof SRS_INFO]
+  const isStarted = assignment?.startedAt !== null
+  const srsBackgroundColor = srsStage === 0 ? colors.muted : srsInfo.color ?? colors.muted
+  const srsTextStyle = srsStage === 0 ? { color: colors.mutedForeground } : { color: "#ffffff" }
+  const srsPassesText = srsStage === 0
+    ? "Lesson required"
+    : srsStage >= 9
+      ? "Max stage"
+      : `1 pass to ${nextSrsInfo?.label ?? "next stage"}`
+
   // Determine section titles based on subject type
   const componentTitle = subject.type === "kanji"
     ? "Radicals Used"
@@ -156,6 +183,18 @@ export function CardBack({ subject }: CardBackProps) {
               </View>
             )}
           </View>
+
+          {isStarted && (
+            <View className="items-center mb-4">
+              <Muted className="text-xs mb-1">SRS Stage</Muted>
+              <Badge variant="outline" style={{ backgroundColor: srsBackgroundColor, borderColor: "transparent" }}>
+                <Text className="text-xs" style={srsTextStyle}>
+                  {srsInfo.label}
+                </Text>
+              </Badge>
+              <Muted className="text-xs mt-1">{srsPassesText}</Muted>
+            </View>
+          )}
 
           {/* Meanings */}
           <View className="w-full mb-4">

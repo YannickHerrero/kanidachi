@@ -211,6 +211,7 @@ export default function ReviewSessionScreen() {
       <View className="flex-1 py-4">
         <AnkiCard
           subject={currentItem.subject}
+          assignment={currentItem.assignment}
           isFlipped={isFlipped}
           onFlip={flipCard}
         />
