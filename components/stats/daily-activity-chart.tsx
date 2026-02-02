@@ -26,9 +26,10 @@ function formatDateLabel(dateKey: string): string {
 export function DailyActivityChart({ days }: DailyActivityChartProps) {
   const colors = useThemeColors()
   const isDark = colors.background === "#0a0a0b"
-  const reviewColor = isDark ? "#f472b6" : "#ec4899"
-  const lessonColor = isDark ? "#4ade80" : "#22c55e"
+  const reviewColor = isDark ? "#a1a1aa" : "#71717a"
+  const lessonColor = isDark ? "#e4e4e7" : "#a1a1aa"
   const chartHeight = 140
+  const scrollRef = React.useRef<ScrollView | null>(null)
 
   const normalizedDays = React.useMemo(() => {
     return days.map((day) => {
@@ -71,9 +72,13 @@ export function DailyActivityChart({ days }: DailyActivityChartProps) {
 
         {hasData ? (
           <ScrollView
+            ref={scrollRef}
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerClassName="gap-3 px-1 pb-2"
+            onContentSizeChange={() => {
+              scrollRef.current?.scrollToEnd({ animated: false })
+            }}
           >
             {normalizedDays.map((day) => {
               const totalHeight = Math.max(6, Math.round((day.totalSeconds / maxSeconds) * chartHeight))
@@ -91,6 +96,8 @@ export function DailyActivityChart({ days }: DailyActivityChartProps) {
                         {
                           height: lessonHeight,
                           backgroundColor: lessonColor,
+                          borderBottomLeftRadius: 0,
+                          borderBottomRightRadius: 0,
                         },
                       ]}
                     />
@@ -100,6 +107,8 @@ export function DailyActivityChart({ days }: DailyActivityChartProps) {
                         {
                           height: reviewHeight,
                           backgroundColor: reviewColor,
+                          borderTopLeftRadius: 0,
+                          borderTopRightRadius: 0,
                         },
                       ]}
                     />
@@ -139,5 +148,6 @@ const styles = StyleSheet.create({
   },
   barSegment: {
     width: "100%",
+    borderRadius: 8,
   },
 })
