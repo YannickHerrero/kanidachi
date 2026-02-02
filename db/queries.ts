@@ -1083,6 +1083,13 @@ export interface DailyActivityTotals {
   lessonsQuiz: number
 }
 
+export interface DailyActivityByDate {
+  date: string
+  reviewsSeconds: number
+  lessonsSeconds: number
+  lessonsQuizSeconds: number
+}
+
 export async function incrementDailyActivitySeconds(
   db: Database,
   date: string,
@@ -1139,6 +1146,47 @@ export async function getDailyActivityTotals(
   }
 
   return totals
+}
+
+export async function getDailyActivityByDate(
+  db: Database,
+  dateKeys: string[]
+): Promise<DailyActivityByDate[]> {
+  if (!db || dateKeys.length === 0) return []
+
+  const rows = await db
+    .select({
+      date: dailyActivity.date,
+      activity: dailyActivity.activity,
+      seconds: dailyActivity.seconds,
+    })
+    .from(dailyActivity)
+    .where(inArray(dailyActivity.date, dateKeys))
+
+  const totals = new Map<string, DailyActivityByDate>()
+  for (const dateKey of dateKeys) {
+    totals.set(dateKey, {
+      date: dateKey,
+      reviewsSeconds: 0,
+      lessonsSeconds: 0,
+      lessonsQuizSeconds: 0,
+    })
+  }
+
+  for (const row of rows as Array<{ date: string; activity: string; seconds: number }>) {
+    const entry = totals.get(row.date)
+    if (!entry) continue
+
+    if (row.activity === "reviews") {
+      entry.reviewsSeconds = row.seconds
+    } else if (row.activity === "lessons") {
+      entry.lessonsSeconds = row.seconds
+    } else if (row.activity === "lessons_quiz") {
+      entry.lessonsQuizSeconds = row.seconds
+    }
+  }
+
+  return dateKeys.map((key) => totals.get(key)!).filter(Boolean)
 }
 
 export async function getLessonsCompletedCountForRange(

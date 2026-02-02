@@ -9,6 +9,7 @@ import { Text } from "@/components/ui/text"
 import { H1, Muted } from "@/components/ui/typography"
 import { Skeleton } from "@/components/ui/skeleton"
 import { AccuracyChart } from "@/components/stats/accuracy-chart"
+import { DailyActivityChart } from "@/components/stats/daily-activity-chart"
 import { LevelTimeChart } from "@/components/stats/level-time-chart"
 import { LevelTimeline } from "@/components/stats/level-timeline"
 import { LeechList } from "@/components/stats/leech-list"
@@ -29,6 +30,7 @@ export default function StatsScreen() {
     levelTimeline,
     totalStats,
     srsBreakdown,
+    dailyActivity,
     isLoading,
     isRefreshing,
     error,
@@ -145,6 +147,9 @@ export default function StatsScreen() {
           accuracyByType={accuracyByType}
           totalReviews={totalStats.totalReviews}
         />
+
+        {/* Daily Study Time */}
+        <DailyActivityChart days={dailyActivity} />
 
         {/* Time per Level */}
         <LevelTimeChart levelTimeline={levelTimeline} currentLevel={currentLevel} />

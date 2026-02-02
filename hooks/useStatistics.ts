@@ -7,9 +7,11 @@ import {
   getLevelTimeline,
   getTotalReviewStats,
   getSrsBreakdown,
+  getDailyActivityByDate,
 } from "@/db/queries"
 import type { subjects } from "@/db/schema"
 import { useSettingsStore } from "@/stores/settings"
+import { getLocalDateKeysForPastDays } from "@/lib/date-utils"
 
 export interface AccuracyStats {
   totalCorrect: number
@@ -71,6 +73,13 @@ export interface StatisticsData {
   }
   /** SRS stage breakdown */
   srsBreakdown: SrsBreakdown
+  /** Daily activity for last 30 days */
+  dailyActivity: Array<{
+    date: string
+    reviewsSeconds: number
+    lessonsSeconds: number
+    lessonsQuizSeconds: number
+  }>
 }
 
 const initialData: StatisticsData = {
@@ -80,6 +89,7 @@ const initialData: StatisticsData = {
   levelTimeline: [],
   totalStats: { totalReviews: 0, totalLessons: 0 },
   srsBreakdown: { apprentice: 0, guru: 0, master: 0, enlightened: 0, burned: 0 },
+  dailyActivity: [],
 }
 
 export function useStatistics() {
@@ -109,6 +119,7 @@ export function useStatistics() {
         levelTimeline,
         totalStats,
         srsBreakdown,
+        dailyActivity,
       ] = await Promise.all([
         getOverallAccuracy(db, hideKanaVocabulary),
         getAccuracyByType(db, hideKanaVocabulary),
@@ -116,6 +127,7 @@ export function useStatistics() {
         getLevelTimeline(db),
         getTotalReviewStats(db, hideKanaVocabulary),
         getSrsBreakdown(db, hideKanaVocabulary),
+        getDailyActivityByDate(db, getLocalDateKeysForPastDays(30)),
       ])
 
       setData({
@@ -125,6 +137,7 @@ export function useStatistics() {
         levelTimeline,
         totalStats,
         srsBreakdown,
+        dailyActivity,
       })
     } catch (err) {
       console.error("[useStatistics] Error fetching data:", err)

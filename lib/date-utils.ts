@@ -19,3 +19,18 @@ export function getLocalDayRangeSeconds(date: Date = new Date()): {
     endSeconds: Math.floor(end.getTime() / 1000),
   }
 }
+
+export function getLocalDateKeysForPastDays(count: number, endDate: Date = new Date()): string[] {
+  const days = Math.max(1, count)
+  const dates: string[] = []
+  const cursor = new Date(endDate)
+  cursor.setHours(0, 0, 0, 0)
+
+  for (let i = days - 1; i >= 0; i -= 1) {
+    const day = new Date(cursor)
+    day.setDate(cursor.getDate() - i)
+    dates.push(getLocalDateKey(day))
+  }
+
+  return dates
+}
