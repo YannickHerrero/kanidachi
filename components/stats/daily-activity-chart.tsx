@@ -1,5 +1,5 @@
 import * as React from "react"
-import { ScrollView, StyleSheet, View } from "react-native"
+import { Pressable, ScrollView, StyleSheet, View } from "react-native"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Text } from "@/components/ui/text"
@@ -30,6 +30,12 @@ export function DailyActivityChart({ days }: DailyActivityChartProps) {
   const lessonColor = isDark ? "#e4e4e7" : "#a1a1aa"
   const chartHeight = 140
   const scrollRef = React.useRef<ScrollView | null>(null)
+  const [activeDay, setActiveDay] = React.useState<null | {
+    date: string
+    lessonSeconds: number
+    reviewSeconds: number
+    totalSeconds: number
+  }>(null)
 
   const normalizedDays = React.useMemo(() => {
     return days.map((day) => {
@@ -48,6 +54,26 @@ export function DailyActivityChart({ days }: DailyActivityChartProps) {
   const maxSeconds = hasData
     ? Math.max(...normalizedDays.map((day) => day.totalSeconds), 1)
     : 1
+
+  React.useEffect(() => {
+    if (activeDay || normalizedDays.length === 0) return
+    const latest = normalizedDays[normalizedDays.length - 1]
+    setActiveDay({
+      date: latest.date,
+      lessonSeconds: latest.lessonSeconds,
+      reviewSeconds: latest.reviewSeconds,
+      totalSeconds: latest.totalSeconds,
+    })
+  }, [activeDay, normalizedDays])
+
+  const formatDuration = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60)
+    if (minutes < 1) return `${seconds}s`
+    const hours = Math.floor(minutes / 60)
+    const remainder = minutes % 60
+    if (hours > 0) return `${hours}h ${remainder}m`
+    return `${minutes}m`
+  }
 
   return (
     <Card>
@@ -86,10 +112,52 @@ export function DailyActivityChart({ days }: DailyActivityChartProps) {
                 ? Math.round((day.reviewSeconds / day.totalSeconds) * totalHeight)
                 : 0
               const lessonHeight = Math.max(0, totalHeight - reviewHeight)
+              const isActive = activeDay?.date === day.date
 
               return (
                 <View key={day.date} className="items-center">
-                  <View style={[styles.barContainer, { height: chartHeight }]} className="justify-end">
+                  <Pressable
+                    style={[
+                      styles.barContainer,
+                      { height: chartHeight },
+                      isActive && {
+                        borderColor: colors.primary,
+                        borderWidth: 1,
+                      },
+                    ]}
+                    onPress={() => {
+                      setActiveDay((prev) => (prev?.date === day.date ? null : {
+                        date: day.date,
+                        lessonSeconds: day.lessonSeconds,
+                        reviewSeconds: day.reviewSeconds,
+                        totalSeconds: day.totalSeconds,
+                      }))
+                    }}
+                    onHoverIn={() => {
+                      setActiveDay({
+                        date: day.date,
+                        lessonSeconds: day.lessonSeconds,
+                        reviewSeconds: day.reviewSeconds,
+                        totalSeconds: day.totalSeconds,
+                      })
+                    }}
+                    onHoverOut={() => {
+                      setActiveDay((prev) => (prev?.date === day.date ? null : prev))
+                    }}
+                    onFocus={() => {
+                      setActiveDay({
+                        date: day.date,
+                        lessonSeconds: day.lessonSeconds,
+                        reviewSeconds: day.reviewSeconds,
+                        totalSeconds: day.totalSeconds,
+                      })
+                    }}
+                    onBlur={() => {
+                      setActiveDay((prev) => (prev?.date === day.date ? null : prev))
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Study time for ${day.date}`}
+                  >
                     <View
                       style={[
                         styles.barSegment,
@@ -112,7 +180,7 @@ export function DailyActivityChart({ days }: DailyActivityChartProps) {
                         },
                       ]}
                     />
-                  </View>
+                  </Pressable>
                   <Text className="text-[10px]" style={{ color: colors.mutedForeground }}>
                     {formatDateLabel(day.date)}
                   </Text>
@@ -124,6 +192,23 @@ export function DailyActivityChart({ days }: DailyActivityChartProps) {
           <View className="items-center py-4">
             <Text className="text-sm text-center" style={{ color: colors.mutedForeground }}>
               Study sessions will appear here once you start reviewing or lessons
+            </Text>
+          </View>
+        )}
+
+        {activeDay && (
+          <View className="flex-row flex-wrap items-center gap-3 pt-2 border-t" style={{ borderColor: colors.border }}>
+            <Text className="text-xs" style={{ color: colors.mutedForeground }}>
+              {activeDay.date}
+            </Text>
+            <Text className="text-xs" style={{ color: colors.foreground }}>
+              Total: {formatDuration(activeDay.totalSeconds)}
+            </Text>
+            <Text className="text-xs" style={{ color: colors.foreground }}>
+              Lessons: {formatDuration(activeDay.lessonSeconds)}
+            </Text>
+            <Text className="text-xs" style={{ color: colors.foreground }}>
+              Reviews: {formatDuration(activeDay.reviewSeconds)}
             </Text>
           </View>
         )}
