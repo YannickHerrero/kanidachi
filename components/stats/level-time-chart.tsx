@@ -11,6 +11,19 @@ interface LevelTimeChartProps {
   currentLevel: number
 }
 
+function getPercentile(values: number[], percentile: number): number {
+  if (values.length === 0) return 0
+  const sorted = [...values].sort((a, b) => a - b)
+  if (sorted.length === 1) return sorted[0]
+  const clampedPercentile = Math.min(1, Math.max(0, percentile))
+  const index = (sorted.length - 1) * clampedPercentile
+  const lower = Math.floor(index)
+  const upper = Math.ceil(index)
+  if (lower === upper) return sorted[lower]
+  const weight = index - lower
+  return sorted[lower] * (1 - weight) + sorted[upper] * weight
+}
+
 export function LevelTimeChart({ levelTimeline, currentLevel }: LevelTimeChartProps) {
   const colors = useThemeColors()
   const scrollRef = React.useRef<ScrollView | null>(null)
@@ -98,6 +111,15 @@ export function LevelTimeChart({ levelTimeline, currentLevel }: LevelTimeChartPr
   const maxDays = hasChartData
     ? Math.max(...chartLevels.map((level) => level.timeSpentDays ?? 0), 1)
     : 1
+  const scaleDays = hasChartData
+    ? Math.max(
+        getPercentile(
+          chartLevels.map((level) => level.timeSpentDays ?? 0),
+          0.95
+        ),
+        1
+      )
+    : 1
   const averageDays = hasSummaryData
     ? Math.round(
         completedLevels.reduce((sum, level) => sum + (level.timeSpentDays ?? 0), 0) /
@@ -151,13 +173,25 @@ export function LevelTimeChart({ levelTimeline, currentLevel }: LevelTimeChartPr
             >
               {chartLevels.map((level) => {
                 const timeSpent = level.timeSpentDays ?? 0
-                const barHeight = Math.max(6, Math.round((timeSpent / maxDays) * chartHeight))
+                const displayValue = Math.min(timeSpent, scaleDays)
+                const barHeight = Math.max(6, Math.round((displayValue / scaleDays) * chartHeight))
+                const isCapped = timeSpent > scaleDays
 
                 return (
                   <View key={level.id} className="items-center">
                     <View style={[styles.barContainer, { height: chartHeight }]}
                       className="justify-end"
                     >
+                      {isCapped && (
+                        <View
+                          style={[
+                            styles.cap,
+                            {
+                              backgroundColor: barColor,
+                            },
+                          ]}
+                        />
+                      )}
                       <View
                         style={[
                           styles.bar,
@@ -202,5 +236,13 @@ const styles = StyleSheet.create({
   bar: {
     width: "100%",
     borderRadius: 8,
+  },
+  cap: {
+    position: "absolute",
+    left: 4,
+    right: 4,
+    top: 4,
+    height: 2,
+    borderRadius: 4,
   },
 })
