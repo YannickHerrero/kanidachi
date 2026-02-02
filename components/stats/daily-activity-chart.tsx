@@ -117,21 +117,14 @@ export function DailyActivityChart({ days }: DailyActivityChartProps) {
               return (
                 <View key={day.date} className="items-center">
                   <Pressable
-                    style={[
-                      styles.barContainer,
-                      { height: chartHeight },
-                      isActive && {
-                        borderColor: colors.primary,
-                        borderWidth: 1,
-                      },
-                    ]}
+                    style={[styles.barContainer, { height: chartHeight }]}
                     onPress={() => {
-                      setActiveDay((prev) => (prev?.date === day.date ? null : {
+                      setActiveDay({
                         date: day.date,
                         lessonSeconds: day.lessonSeconds,
                         reviewSeconds: day.reviewSeconds,
                         totalSeconds: day.totalSeconds,
-                      }))
+                      })
                     }}
                     onHoverIn={() => {
                       setActiveDay({
@@ -141,9 +134,6 @@ export function DailyActivityChart({ days }: DailyActivityChartProps) {
                         totalSeconds: day.totalSeconds,
                       })
                     }}
-                    onHoverOut={() => {
-                      setActiveDay((prev) => (prev?.date === day.date ? null : prev))
-                    }}
                     onFocus={() => {
                       setActiveDay({
                         date: day.date,
@@ -152,12 +142,18 @@ export function DailyActivityChart({ days }: DailyActivityChartProps) {
                         totalSeconds: day.totalSeconds,
                       })
                     }}
-                    onBlur={() => {
-                      setActiveDay((prev) => (prev?.date === day.date ? null : prev))
-                    }}
                     accessibilityRole="button"
                     accessibilityLabel={`Study time for ${day.date}`}
                   >
+                    {isActive && (
+                      <View
+                        pointerEvents="none"
+                        style={[
+                          styles.activeOutline,
+                          { borderColor: colors.primary },
+                        ]}
+                      />
+                    )}
                     <View
                       style={[
                         styles.barSegment,
@@ -230,9 +226,19 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     paddingTop: 6,
     justifyContent: "flex-end",
+    position: "relative",
   },
   barSegment: {
     width: "100%",
     borderRadius: 8,
+  },
+  activeOutline: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    borderRadius: 8,
+    borderWidth: 1,
   },
 })
