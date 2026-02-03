@@ -3,7 +3,7 @@ import { View } from "react-native"
 
 import { Text } from "@/components/ui/text"
 import { Badge } from "@/components/ui/badge"
-import { RadicalImage, parseCharacterImages } from "@/components/subject/radical-image"
+import { SubjectCharacters } from "@/components/subject/subject-characters"
 import { useThemeColors } from "@/hooks/useThemeColors"
 import { cn } from "@/lib/utils"
 import type { subjects, assignments } from "@/db/schema"
@@ -55,10 +55,6 @@ export function SubjectHeader({ subject, assignment }: SubjectHeaderProps) {
   const srsInfo = SRS_INFO[srsStage as keyof typeof SRS_INFO] ?? SRS_INFO[0]
   const isStarted = assignment?.startedAt !== null
 
-  // Parse character images for radicals without Unicode characters
-  const characterImages = parseCharacterImages(subject.characterImages)
-  const isImageOnlyRadical = subject.type === "radical" && !subject.characters && characterImages.length > 0
-
   // For locked state, use muted color from theme
   const srsColor = srsStage === 0 ? undefined : srsInfo.color
   const srsBgStyle = srsStage === 0 ? { backgroundColor: colors.muted } : undefined
@@ -66,20 +62,9 @@ export function SubjectHeader({ subject, assignment }: SubjectHeaderProps) {
   return (
     <View className={cn("items-center py-8 px-4", typeColor)}>
       {/* Character or Radical Image */}
-      {isImageOnlyRadical ? (
-        <View className="mb-3">
-          <RadicalImage
-            characterImages={characterImages}
-            characters={subject.characters}
-            size="xl"
-            textClassName="text-white"
-          />
-        </View>
-      ) : (
-        <Text className="text-6xl text-white font-semibold mb-3">
-          {subject.characters ?? "?"}
-        </Text>
-      )}
+      <View className="mb-3">
+        <SubjectCharacters subject={subject} size="xl" textClassName="text-white" />
+      </View>
 
       {/* Type and Level badges */}
       <View className="flex-row items-center gap-2 mb-2">

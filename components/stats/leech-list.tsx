@@ -4,7 +4,7 @@ import { useRouter } from "expo-router"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Text } from "@/components/ui/text"
-import { InlineRadicalImage, parseCharacterImages } from "@/components/subject/radical-image"
+import { SubjectCharacters } from "@/components/subject/subject-characters"
 import { useThemeColors } from "@/hooks/useThemeColors"
 import { cn } from "@/lib/utils"
 import { parseMeanings, parseReadings } from "@/db/queries"
@@ -101,13 +101,6 @@ function LeechItem({ leech, onPress }: LeechItemProps) {
   const typeColors =
     TYPE_COLORS[leech.subjectType as keyof typeof TYPE_COLORS] ?? TYPE_COLORS.vocabulary
 
-  // Parse character images for radicals without Unicode characters
-  const characterImages = parseCharacterImages(leech.subject.characterImages)
-  const isImageOnlyRadical =
-    leech.subjectType === "radical" &&
-    !leech.subject.characters &&
-    characterImages.length > 0
-
   // Get primary meaning
   const meanings = parseMeanings(leech.subject.meanings)
   const primaryMeaning =
@@ -135,18 +128,14 @@ function LeechItem({ leech, onPress }: LeechItemProps) {
           typeColors.bg
         )}
       >
-        {isImageOnlyRadical ? (
-          <InlineRadicalImage
-            characterImages={characterImages}
-            characters={leech.subject.characters}
-            size={20}
-            className={typeColors.text}
-          />
-        ) : (
-          <Text className={cn("text-lg font-semibold", typeColors.text)}>
-            {leech.subject.characters ?? "?"}
-          </Text>
-        )}
+        <SubjectCharacters
+          subject={leech.subject}
+          variant="inline"
+          inlineSize={18}
+          inlineLineHeight={24}
+          imageSize={20}
+          textClassName={typeColors.text}
+        />
       </View>
 
       {/* Content */}

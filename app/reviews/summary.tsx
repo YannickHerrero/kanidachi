@@ -6,6 +6,7 @@ import { CheckCircle, XCircle } from "lucide-react-native"
 
 import { Button } from "@/components/ui/button"
 import { Text } from "@/components/ui/text"
+import { SubjectCharacters } from "@/components/subject/subject-characters"
 import { Muted } from "@/components/ui/typography"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
@@ -197,15 +198,14 @@ export default function ReviewSummaryScreen() {
                     style={{ backgroundColor: colors.muted }}
                   >
                     <View className="w-12 h-12 rounded-lg bg-pink-500 items-center justify-center">
-                      <Text
-                        className="text-xl text-white font-semibold"
-                        numberOfLines={1}
-                        ellipsizeMode="tail"
-                        adjustsFontSizeToFit
-                        minimumFontScale={0.6}
-                      >
-                        {item.subject.characters ?? "?"}
-                      </Text>
+                      <SubjectCharacters
+                        subject={item.subject}
+                        variant="inline"
+                        inlineSize={20}
+                        inlineLineHeight={28}
+                        imageSize={24}
+                        textClassName="text-white"
+                      />
                     </View>
                     <View className="flex-1">
                       <Text

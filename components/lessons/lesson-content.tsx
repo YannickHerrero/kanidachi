@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { FormattedText } from "@/components/ui/formatted-text"
 import { AudioPlayer } from "@/components/subject/audio-player"
-import { RadicalImage, parseCharacterImages } from "@/components/subject/radical-image"
+import { SubjectCharacters } from "@/components/subject/subject-characters"
 import { SubjectChip } from "@/components/subject/subject-chip"
 import { parseMeanings, parseReadings, parseContextSentences, parseNumberArray, getSubjectsByIds } from "@/db/queries"
 import { useSettingsStore } from "@/stores/settings"
@@ -54,10 +54,6 @@ export function LessonContent({ subject }: LessonContentProps) {
   const kunyomiReadings = readings.filter((r) => r.type === "kunyomi")
   const vocabReadings = readings.filter((r) => !r.type) // Vocabulary readings have no type
 
-  // Parse character images for radicals without Unicode characters
-  const characterImages = parseCharacterImages(subject.characterImages)
-  const isImageOnlyRadical = subject.type === "radical" && !subject.characters && characterImages.length > 0
-
   // Fetch component subjects (radicals for kanji, kanji for vocab)
   const componentSubjectIds = parseNumberArray(subject.componentSubjectIds)
   const [componentSubjects, setComponentSubjects] = React.useState<Subject[]>([])
@@ -98,20 +94,9 @@ export function LessonContent({ subject }: LessonContentProps) {
     >
       {/* Character Header */}
       <View className={`items-center py-8 rounded-xl ${typeColor}`}>
-        {isImageOnlyRadical ? (
-          <View className="mb-2">
-            <RadicalImage
-              characterImages={characterImages}
-              characters={subject.characters}
-              size="xl"
-              textClassName="text-white"
-            />
-          </View>
-        ) : (
-          <Text className="text-6xl text-white font-semibold mb-2">
-            {subject.characters ?? "?"}
-          </Text>
-        )}
+        <View className="mb-2">
+          <SubjectCharacters subject={subject} size="xl" textClassName="text-white" />
+        </View>
         <Badge variant="secondary" className="bg-white/20">
           <Text className="text-white text-xs">
             {typeLabel} - Level {subject.level}

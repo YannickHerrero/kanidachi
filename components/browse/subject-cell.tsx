@@ -3,7 +3,7 @@ import { Pressable, View } from "react-native"
 
 import { Text } from "@/components/ui/text"
 import { Badge } from "@/components/ui/badge"
-import { InlineRadicalImage, parseCharacterImages } from "@/components/subject/radical-image"
+import { SubjectCharacters } from "@/components/subject/subject-characters"
 import { cn } from "@/lib/utils"
 import { parseMeanings, parseReadings } from "@/db/queries"
 import type { subjects, assignments } from "@/db/schema"
@@ -86,10 +86,6 @@ export function SubjectCell({
   const srsCategory = getSrsCategory(assignment)
   const isLocked = srsCategory === "locked"
 
-  // Parse character images for radicals without Unicode characters
-  const characterImages = parseCharacterImages(subject.characterImages)
-  const isImageOnlyRadical = subject.type === "radical" && !subject.characters && characterImages.length > 0
-
   // Get primary meaning
   const meanings = parseMeanings(subject.meanings)
   const primaryMeaning = meanings.find((m) => m.primary)?.meaning ?? meanings[0]?.meaning ?? ""
@@ -115,24 +111,15 @@ export function SubjectCell({
         )}
         style={isLocked ? { backgroundColor: colors.muted } : undefined}
       >
-        {isImageOnlyRadical ? (
-          <InlineRadicalImage
-            characterImages={characterImages}
-            characters={subject.characters}
-            size={24}
-            className={typeColors.text}
-          />
-        ) : (
-          <Text
-            className={cn(
-              "text-xl font-semibold",
-              !isLocked && typeColors.text
-            )}
-            style={isLocked ? { color: colors.mutedForeground } : undefined}
-          >
-            {subject.characters ?? "?"}
-          </Text>
-        )}
+        <SubjectCharacters
+          subject={subject}
+          variant="inline"
+          inlineSize={20}
+          inlineLineHeight={28}
+          imageSize={24}
+          textClassName={!isLocked ? typeColors.text : undefined}
+          textStyle={isLocked ? { color: colors.mutedForeground } : undefined}
+        />
       </View>
 
       {/* Content */}

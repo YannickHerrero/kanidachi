@@ -3,7 +3,7 @@ import { Pressable, View, StyleSheet } from "react-native"
 import { Check } from "lucide-react-native"
 
 import { Text } from "@/components/ui/text"
-import { InlineRadicalImage, parseCharacterImages } from "@/components/subject/radical-image"
+import { SubjectCharacters } from "@/components/subject/subject-characters"
 import { parseMeanings } from "@/db/queries"
 import type { Subject } from "@/stores/lessons"
 
@@ -39,10 +39,6 @@ interface SubjectCellProps {
 export function SubjectCell({ subject, isSelected, onToggle }: SubjectCellProps) {
   const typeStyle = TYPE_STYLES[subject.type as keyof typeof TYPE_STYLES] ?? TYPE_STYLES.vocabulary
 
-  // Parse character images for radicals without Unicode characters
-  const characterImages = parseCharacterImages(subject.characterImages)
-  const isImageOnlyRadical = subject.type === "radical" && !subject.characters && characterImages.length > 0
-
   // Get primary meaning
   const meanings = parseMeanings(subject.meanings)
   const primaryMeaning = meanings.find((m) => m.primary)?.meaning ?? meanings[0]?.meaning ?? ""
@@ -70,22 +66,17 @@ export function SubjectCell({ subject, isSelected, onToggle }: SubjectCellProps)
           )}
 
           {/* Character or Radical Image */}
-          {isImageOnlyRadical ? (
-            <View style={styles.characterContainer}>
-              <InlineRadicalImage
-                characterImages={characterImages}
-                characters={subject.characters}
-                size={28}
-              />
-            </View>
-          ) : (
-            <Text
-              style={styles.characterText}
-              numberOfLines={1}
-            >
-              {subject.characters ?? "?"}
-            </Text>
-          )}
+          <View style={styles.characterContainer}>
+            <SubjectCharacters
+              subject={subject}
+              variant="inline"
+              inlineSize={24}
+              inlineLineHeight={28}
+              imageSize={28}
+              textClassName="text-white"
+              textStyle={{ textAlignVertical: "center" }}
+            />
+          </View>
 
           {/* Meaning */}
           <Text
@@ -135,13 +126,6 @@ const styles = StyleSheet.create({
   },
   characterContainer: {
     // Container for radical image - provides white tint context
-  },
-  characterText: {
-    color: "#fff",
-    fontSize: 24,
-    lineHeight: 28,
-    fontWeight: "600",
-    textAlignVertical: "center",
   },
   meaningText: {
     color: "rgba(255, 255, 255, 0.8)", // text-white/80 equivalent

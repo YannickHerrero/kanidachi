@@ -8,7 +8,7 @@ import { Muted } from "@/components/ui/typography"
 import { Separator } from "@/components/ui/separator"
 import { FormattedText } from "@/components/ui/formatted-text"
 import { AudioButton } from "@/components/subject/audio-player"
-import { RadicalImage, parseCharacterImages } from "@/components/subject/radical-image"
+import { SubjectCharacters } from "@/components/subject/subject-characters"
 import { StudyMaterialEditor } from "@/components/subject/study-material-editor"
 import { SubjectChip } from "@/components/subject/subject-chip"
 import { parseMeanings, parseReadings, parseContextSentences, parseStringArray, parseNumberArray, getSubjectsByIds } from "@/db/queries"
@@ -99,10 +99,6 @@ export function CardBack({ subject, assignment }: CardBackProps) {
   // Check if this subject has audio (vocabulary or kana_vocabulary)
   const hasAudio = subject.type === "vocabulary" || subject.type === "kana_vocabulary"
 
-  // Parse character images for radicals without Unicode characters
-  const characterImages = parseCharacterImages(subject.characterImages)
-  const isImageOnlyRadical = subject.type === "radical" && !subject.characters && characterImages.length > 0
-
   const primaryMeanings = meanings.filter((m) => m.primary).map((m) => m.meaning)
   const secondaryMeanings = meanings.filter((m) => !m.primary && m.acceptedAnswer).map((m) => m.meaning)
 
@@ -158,18 +154,7 @@ export function CardBack({ subject, assignment }: CardBackProps) {
           {/* Character with audio button */}
           <View className="relative mb-6">
             <View className={`px-8 py-6 rounded-2xl ${typeColor}`}>
-              {isImageOnlyRadical ? (
-                <RadicalImage
-                  characterImages={characterImages}
-                  characters={subject.characters}
-                  size="lg"
-                  textClassName="text-white"
-                />
-              ) : (
-                <Text className="text-5xl text-white font-semibold">
-                  {subject.characters ?? "?"}
-                </Text>
-              )}
+              <SubjectCharacters subject={subject} size="lg" textClassName="text-white" />
             </View>
             {/* Audio button positioned at bottom-right of character */}
             {hasAudio && (

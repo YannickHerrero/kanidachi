@@ -3,7 +3,7 @@ import { Pressable, View } from "react-native"
 import { useRouter } from "expo-router"
 
 import { Text } from "@/components/ui/text"
-import { InlineRadicalImage, parseCharacterImages } from "@/components/subject/radical-image"
+import { SubjectCharacters } from "@/components/subject/subject-characters"
 import { cn } from "@/lib/utils"
 import type { subjects } from "@/db/schema"
 
@@ -41,10 +41,6 @@ export function SubjectChip({
     }
   }
 
-  // Parse character images for radicals without Unicode characters
-  const characterImages = parseCharacterImages(subject.characterImages)
-  const isImageOnlyRadical = subject.type === "radical" && !subject.characters && characterImages.length > 0
-
   // Size classes
   const sizeClasses = {
     sm: "px-2 py-1",
@@ -52,16 +48,10 @@ export function SubjectChip({
     lg: "px-4 py-2",
   }
 
-  const textSizeClasses = {
-    sm: "text-base",
-    md: "text-lg",
-    lg: "text-xl",
-  }
-
-  const imageSizes = {
-    sm: 18,
-    md: 22,
-    lg: 26,
+  const inlineSizes = {
+    sm: { text: 16, lineHeight: 20, image: 18 },
+    md: { text: 18, lineHeight: 24, image: 22 },
+    lg: { text: 20, lineHeight: 28, image: 26 },
   }
 
   // Get primary meaning for display
@@ -84,18 +74,14 @@ export function SubjectChip({
         sizeClasses[size]
       )}
     >
-      {isImageOnlyRadical ? (
-        <InlineRadicalImage
-          characterImages={characterImages}
-          characters={subject.characters}
-          size={imageSizes[size]}
-          className="text-white"
-        />
-      ) : (
-        <Text className={cn("text-white font-semibold", textSizeClasses[size])}>
-          {subject.characters ?? "?"}
-        </Text>
-      )}
+      <SubjectCharacters
+        subject={subject}
+        variant="inline"
+        inlineSize={inlineSizes[size].text}
+        inlineLineHeight={inlineSizes[size].lineHeight}
+        imageSize={inlineSizes[size].image}
+        textClassName="text-white"
+      />
       {showMeaning && primaryMeaning && (
         <Text className="text-white/80 text-xs mt-0.5" numberOfLines={1}>
           {primaryMeaning}

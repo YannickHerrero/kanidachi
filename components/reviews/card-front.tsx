@@ -3,7 +3,7 @@ import { View } from "react-native"
 
 import { Text } from "@/components/ui/text"
 import { Muted } from "@/components/ui/typography"
-import { RadicalImage, parseCharacterImages } from "@/components/subject/radical-image"
+import { SubjectCharacters } from "@/components/subject/subject-characters"
 import { useThemeColors } from "@/hooks/useThemeColors"
 import type { Subject } from "@/stores/reviews"
 
@@ -31,26 +31,11 @@ export function CardFront({ subject }: CardFrontProps) {
   const typeColor = TYPE_COLORS[subject.type as keyof typeof TYPE_COLORS] ?? TYPE_COLORS.vocabulary
   const typeLabel = TYPE_LABELS[subject.type as keyof typeof TYPE_LABELS] ?? "Item"
 
-  // Parse character images for radicals without Unicode characters
-  const characterImages = parseCharacterImages(subject.characterImages)
-  const isImageOnlyRadical = subject.type === "radical" && !subject.characters && characterImages.length > 0
-
   return (
     <View className="flex-1 items-center justify-center">
       {/* Character with type-colored background */}
       <View className={`px-12 py-10 rounded-3xl ${typeColor} mb-8`}>
-        {isImageOnlyRadical ? (
-          <RadicalImage
-            characterImages={characterImages}
-            characters={subject.characters}
-            size="xl"
-            textClassName="text-white"
-          />
-        ) : (
-          <Text className="text-7xl text-white font-semibold">
-            {subject.characters ?? "?"}
-          </Text>
-        )}
+        <SubjectCharacters subject={subject} size="2xl" textClassName="text-white" />
       </View>
 
       {/* Type label */}
