@@ -110,7 +110,6 @@ const styles = StyleSheet.create({
   },
   selected: {
     // Selection indicator via border instead of ring (ring doesn't work on RN)
-    borderWidth: 3,
     borderColor: "#fff",
   },
   checkIndicator: {
