@@ -197,12 +197,26 @@ export default function ReviewSummaryScreen() {
                     style={{ backgroundColor: colors.muted }}
                   >
                     <View className="w-12 h-12 rounded-lg bg-pink-500 items-center justify-center">
-                      <Text className="text-xl text-white font-semibold">
+                      <Text
+                        className="text-xl text-white font-semibold"
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                        adjustsFontSizeToFit
+                        minimumFontScale={0.6}
+                      >
                         {item.subject.characters ?? "?"}
                       </Text>
                     </View>
                     <View className="flex-1">
-                      <Text className="font-medium">{primaryMeaning}</Text>
+                      <Text
+                        className="font-medium"
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                        adjustsFontSizeToFit
+                        minimumFontScale={0.85}
+                      >
+                        {primaryMeaning}
+                      </Text>
                       <Muted className="text-xs capitalize">
                         {item.subject.type.replace("_", " ")}
                       </Muted>
