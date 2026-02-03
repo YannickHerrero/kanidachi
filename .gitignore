@@ -45,3 +45,6 @@ app-example
 opencode.json
 opencode.jsonc
 AGENTS.md
+
+# Claude local settings
+.claude/

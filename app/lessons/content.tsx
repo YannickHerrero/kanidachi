@@ -147,7 +147,7 @@ export default function LessonContentScreen() {
             className="flex-row items-center gap-1"
           >
             <Text style={{ color: colors.primaryForeground }}>Next</Text>
-            <ChevronRight size={18} color="#fff" />
+            <ChevronRight size={18} color={colors.primaryForeground} />
           </Button>
         )}
       </View>
