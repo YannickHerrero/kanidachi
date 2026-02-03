@@ -124,7 +124,7 @@ function LeechItem({ leech, onPress }: LeechItemProps) {
       {/* Character badge */}
       <View
         className={cn(
-          "w-10 h-10 rounded-lg items-center justify-center mr-3",
+          "rounded-lg items-center justify-center mr-3 px-2.5 py-1.5",
           typeColors.bg
         )}
       >
