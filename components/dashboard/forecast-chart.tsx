@@ -13,6 +13,14 @@ interface ForecastChartProps {
 
 export function ForecastChart({ forecast }: ForecastChartProps) {
   const colors = useThemeColors()
+  const hourFormatter = React.useMemo(
+    () =>
+      new Intl.DateTimeFormat(undefined, {
+        hour: "numeric",
+        hour12: true,
+      }),
+    []
+  )
 
   // Build cumulative forecast data
   // hour 0 = now, hour 1 = +1h, etc.
@@ -27,32 +35,27 @@ export function ForecastChart({ forecast }: ForecastChartProps) {
     // or show next day if nothing in first 12 hours
     const slots: Array<{ label: string; count: number }> = []
 
+    const now = new Date()
+
     for (let h = 0; h < 12; h++) {
       const count = forecastMap.get(h) ?? 0
-      const label = `+${h + 1}h`
+      const slotTime = new Date(now.getTime() + (h + 1) * 60 * 60 * 1000)
+      const label = hourFormatter
+        .format(slotTime)
+        .replace(/\s+/g, "")
+        .replace(/\./g, "")
+        .toLowerCase()
       slots.push({ label, count })
     }
 
     return slots
-  }, [forecast])
+  }, [forecast, hourFormatter])
 
   // Find max for scaling
   const maxCount = Math.max(...hours.map((h) => h.count), 1)
 
-  // Filter to only show hours with reviews or significant time markers
+  // Show only hours with new reviews
   const displayHours = React.useMemo(() => {
-    // Always show "Now" if there are current reviews
-    // Then show hours that have new reviews coming
-    const result: typeof hours = []
-
-    for (let i = 0; i < hours.length; i++) {
-      const hour = hours[i]
-      // Show if: it's "Now", or there are reviews at this hour, or it's every 3rd hour
-      if (i === 0 || hour.count > 0 || i % 3 === 0) {
-        result.push(hour)
-      }
-    }
-
     const totalCount = hours.reduce((sum, hour) => sum + hour.count, 0)
 
     // If no reviews at all in next 12 hours, show a message
@@ -60,7 +63,7 @@ export function ForecastChart({ forecast }: ForecastChartProps) {
       return []
     }
 
-    return result.slice(0, 8) // Max 8 rows to keep it compact
+    return hours.filter((hour) => hour.count > 0)
   }, [hours])
 
   const totalUpcoming = hours.reduce((sum, hour) => sum + hour.count, 0)
@@ -77,7 +80,13 @@ export function ForecastChart({ forecast }: ForecastChartProps) {
           <>
             {displayHours.map((hour, index) => (
               <View key={hour.label} className="flex-row items-center gap-3">
-                <Text className="w-10 text-sm" style={{ color: colors.mutedForeground }}>{hour.label}</Text>
+                <Text
+                  className="w-12 text-sm"
+                  numberOfLines={1}
+                  style={{ color: colors.mutedForeground }}
+                >
+                  {hour.label}
+                </Text>
                 <View className="flex-1 h-5 rounded-full overflow-hidden" style={{ backgroundColor: colors.muted }}>
                   <View
                     className="h-full rounded-full"
