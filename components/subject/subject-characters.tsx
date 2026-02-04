@@ -96,6 +96,9 @@ export function SubjectCharacters({
     <Text
       className={cn(sizeConfig.text, "font-semibold", textClassName)}
       style={[{ lineHeight: lineHeight ?? sizeConfig.lineHeight }, textStyle]}
+      numberOfLines={1}
+      adjustsFontSizeToFit
+      minimumFontScale={0.6}
     >
       {subject.characters ?? "?"}
     </Text>
