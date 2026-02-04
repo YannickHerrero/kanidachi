@@ -170,7 +170,7 @@ export default function Dashboard() {
         />
 
         {/* Review Forecast */}
-        <ForecastChart forecast={forecast} currentReviews={reviewCount} />
+        <ForecastChart forecast={forecast} />
 
         {/* Weekly Forecast */}
         <WeeklyForecast dailyForecast={weeklyForecast} />

@@ -9,11 +9,9 @@ import { useThemeColors } from "@/hooks/useThemeColors"
 interface ForecastChartProps {
   /** Array of { hour: number, count: number } for next 24 hours */
   forecast: Array<{ hour: number; count: number }>
-  /** Number of reviews available now */
-  currentReviews: number
 }
 
-export function ForecastChart({ forecast, currentReviews }: ForecastChartProps) {
+export function ForecastChart({ forecast }: ForecastChartProps) {
   const colors = useThemeColors()
 
   // Build cumulative forecast data
@@ -27,22 +25,19 @@ export function ForecastChart({ forecast, currentReviews }: ForecastChartProps) 
 
     // Generate 12 time slots (now, +1h, +2h, ..., +11h)
     // or show next day if nothing in first 12 hours
-    const slots: Array<{ label: string; count: number; cumulative: number }> = []
-    let cumulative = currentReviews
+    const slots: Array<{ label: string; count: number }> = []
 
     for (let h = 0; h < 12; h++) {
       const count = forecastMap.get(h) ?? 0
-      cumulative += count
-
-      const label = h === 0 ? "Now" : `+${h}h`
-      slots.push({ label, count: h === 0 ? currentReviews : count, cumulative })
+      const label = `+${h + 1}h`
+      slots.push({ label, count })
     }
 
     return slots
-  }, [forecast, currentReviews])
+  }, [forecast])
 
   // Find max for scaling
-  const maxCount = Math.max(...hours.map((h) => h.cumulative), 1)
+  const maxCount = Math.max(...hours.map((h) => h.count), 1)
 
   // Filter to only show hours with reviews or significant time markers
   const displayHours = React.useMemo(() => {
@@ -58,15 +53,17 @@ export function ForecastChart({ forecast, currentReviews }: ForecastChartProps) 
       }
     }
 
+    const totalCount = hours.reduce((sum, hour) => sum + hour.count, 0)
+
     // If no reviews at all in next 12 hours, show a message
-    if (result.length === 1 && result[0].cumulative === 0) {
+    if (totalCount === 0) {
       return []
     }
 
     return result.slice(0, 8) // Max 8 rows to keep it compact
   }, [hours])
 
-  const totalUpcoming = hours[hours.length - 1]?.cumulative ?? 0
+  const totalUpcoming = hours.reduce((sum, hour) => sum + hour.count, 0)
 
   return (
     <Card>
@@ -85,18 +82,18 @@ export function ForecastChart({ forecast, currentReviews }: ForecastChartProps) 
                   <View
                     className="h-full rounded-full"
                     style={{
-                      width: `${(hour.cumulative / maxCount) * 100}%`,
+                      width: `${(hour.count / maxCount) * 100}%`,
                       backgroundColor: colors.primary,
                     }}
                   />
                 </View>
                 <Text className="w-10 text-sm font-medium text-right">
-                  {hour.cumulative}
-                </Text>
-              </View>
+                    {`+${hour.count}`}
+                  </Text>
+                </View>
             ))}
             <Muted className="mt-1">
-              {totalUpcoming} reviews in the next 12 hours
+              {totalUpcoming} new reviews in the next 12 hours
             </Muted>
           </>
         )}
