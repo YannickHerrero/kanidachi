@@ -1,7 +1,9 @@
 import * as React from "react"
 import { Pressable, ScrollView, StyleSheet, View } from "react-native"
+import { useRouter } from "expo-router"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { Text } from "@/components/ui/text"
 import { useThemeColors } from "@/hooks/useThemeColors"
 
@@ -24,6 +26,7 @@ function formatDateLabel(dateKey: string): string {
 }
 
 export function DailyActivityChart({ days }: DailyActivityChartProps) {
+  const router = useRouter()
   const colors = useThemeColors()
   const isDark = colors.background === "#0a0a0b"
   const reviewColor = isDark ? "#a1a1aa" : "#71717a"
@@ -78,7 +81,18 @@ export function DailyActivityChart({ days }: DailyActivityChartProps) {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg">Study Time (Last 30 Days)</CardTitle>
+        <View className="flex-row items-center justify-between gap-3">
+          <CardTitle className="text-lg">Study Time (Last 30 Days)</CardTitle>
+          <Button
+            variant="ghost"
+            size="sm"
+            onPress={() => {
+              router.push("/stats-study-details")
+            }}
+          >
+            <Text className="text-xs">More detail</Text>
+          </Button>
+        </View>
       </CardHeader>
       <CardContent className="gap-4">
         <View className="flex-row items-center gap-4">

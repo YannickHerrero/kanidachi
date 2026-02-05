@@ -1,6 +1,7 @@
 import { and, desc, eq, gte, inArray, isNotNull, isNull, lt, lte, or, sql } from "drizzle-orm"
 import type { ExpoSQLiteDatabase } from "drizzle-orm/expo-sqlite"
 import type { SQLJsDatabase } from "drizzle-orm/sql-js"
+import { getLocalDayRangeSeconds } from "@/lib/date-utils"
 import {
   assignments,
   subjects,
@@ -1090,6 +1091,16 @@ export interface DailyActivityByDate {
   lessonsQuizSeconds: number
 }
 
+export interface StudyDayDetail {
+  date: string
+  reviewsSeconds: number
+  lessonsSeconds: number
+  lessonsQuizSeconds: number
+  newRadicals: number
+  newKanji: number
+  newVocabulary: number
+}
+
 export async function incrementDailyActivitySeconds(
   db: Database,
   date: string,
@@ -1187,6 +1198,82 @@ export async function getDailyActivityByDate(
   }
 
   return dateKeys.map((key) => totals.get(key)!).filter(Boolean)
+}
+
+function parseDateKey(dateKey: string): Date | null {
+  const [year, month, day] = dateKey.split("-").map(Number)
+  if (!year || !month || !day) return null
+  return new Date(year, month - 1, day)
+}
+
+export async function getStudyDayDetails(
+  db: Database,
+  dateKeys: string[],
+  hideKanaVocabulary = false
+): Promise<StudyDayDetail[]> {
+  if (!db || dateKeys.length === 0) return []
+
+  const activity = await getDailyActivityByDate(db, dateKeys)
+  const activityMap = new Map(activity.map((entry) => [entry.date, entry]))
+  const results: StudyDayDetail[] = []
+
+  for (const dateKey of dateKeys) {
+    const date = parseDateKey(dateKey)
+    if (!date) continue
+
+    const { startSeconds, endSeconds } = getLocalDayRangeSeconds(date)
+    const conditions = [
+      isNotNull(assignments.startedAt),
+      gte(assignments.startedAt, startSeconds),
+      lt(assignments.startedAt, endSeconds),
+    ]
+
+    if (hideKanaVocabulary) {
+      conditions.push(sql`${assignments.subjectType} != 'kana_vocabulary'`)
+    }
+
+    const rows = await (db as ExpoSQLiteDatabase)
+      .select({
+        subjectType: assignments.subjectType,
+        cnt: sql<number>`count(*)`,
+      })
+      .from(assignments)
+      .where(and(...conditions))
+      .groupBy(assignments.subjectType)
+
+    let newRadicals = 0
+    let newKanji = 0
+    let newVocabulary = 0
+
+    for (const row of rows as Array<{ subjectType: string; cnt: number }>) {
+      if (row.subjectType === "radical") {
+        newRadicals += row.cnt
+      } else if (row.subjectType === "kanji") {
+        newKanji += row.cnt
+      } else if (row.subjectType === "vocabulary" || row.subjectType === "kana_vocabulary") {
+        newVocabulary += row.cnt
+      }
+    }
+
+    const activityEntry = activityMap.get(dateKey) ?? {
+      date: dateKey,
+      reviewsSeconds: 0,
+      lessonsSeconds: 0,
+      lessonsQuizSeconds: 0,
+    }
+
+    results.push({
+      date: dateKey,
+      reviewsSeconds: activityEntry.reviewsSeconds,
+      lessonsSeconds: activityEntry.lessonsSeconds,
+      lessonsQuizSeconds: activityEntry.lessonsQuizSeconds,
+      newRadicals,
+      newKanji,
+      newVocabulary,
+    })
+  }
+
+  return results
 }
 
 export async function getLessonsCompletedCountForRange(
