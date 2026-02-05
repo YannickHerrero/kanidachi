@@ -159,7 +159,7 @@ export default function StatsStudyDetailsScreen() {
             <CardTitle className="text-base">Recap (Last 30 Days)</CardTitle>
             <Muted className="text-xs">Totals from all study days shown below</Muted>
           </CardHeader>
-          <CardContent className="gap-2">
+          <CardContent className="gap-3">
             <View className="flex-row flex-wrap gap-3">
               <View className="flex-1 min-w-[140px]">
                 <Muted className="text-xs">Time spent</Muted>
@@ -176,6 +176,35 @@ export default function StatsStudyDetailsScreen() {
                     return sum + entry.newRadicals + entry.newKanji + entry.newVocabulary
                   }, 0)}
                 </Text>
+              </View>
+            </View>
+            <View className="gap-2">
+              <Muted className="text-xs">By type</Muted>
+              <View className="flex-row flex-wrap gap-2">
+                <View
+                  className="px-2 py-1 rounded-full border"
+                  style={getCardVariantStyles(colors).chipStyle}
+                >
+                  <Text className="text-[10px]" style={{ color: colors.foreground }}>
+                    Radicals {details.reduce((sum, entry) => sum + entry.newRadicals, 0)}
+                  </Text>
+                </View>
+                <View
+                  className="px-2 py-1 rounded-full border"
+                  style={getCardVariantStyles(colors).chipStyle}
+                >
+                  <Text className="text-[10px]" style={{ color: colors.foreground }}>
+                    Kanji {details.reduce((sum, entry) => sum + entry.newKanji, 0)}
+                  </Text>
+                </View>
+                <View
+                  className="px-2 py-1 rounded-full border"
+                  style={getCardVariantStyles(colors).chipStyle}
+                >
+                  <Text className="text-[10px]" style={{ color: colors.foreground }}>
+                    Vocab {details.reduce((sum, entry) => sum + entry.newVocabulary, 0)}
+                  </Text>
+                </View>
               </View>
             </View>
           </CardContent>
