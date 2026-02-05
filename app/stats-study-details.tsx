@@ -154,6 +154,33 @@ export default function StatsStudyDetailsScreen() {
           <H1 className="text-2xl">Study Details</H1>
         </View>
 
+        <Card style={getCardVariantStyles(colors).containerStyle}>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Recap (Last 30 Days)</CardTitle>
+            <Muted className="text-xs">Totals from all study days shown below</Muted>
+          </CardHeader>
+          <CardContent className="gap-2">
+            <View className="flex-row flex-wrap gap-3">
+              <View className="flex-1 min-w-[140px]">
+                <Muted className="text-xs">Time spent</Muted>
+                <Text className="text-lg" style={{ color: colors.foreground }}>
+                  {formatDuration(details.reduce((sum, entry) => {
+                    return sum + entry.reviewsSeconds + entry.lessonsSeconds + entry.lessonsQuizSeconds
+                  }, 0))}
+                </Text>
+              </View>
+              <View className="flex-1 min-w-[140px]">
+                <Muted className="text-xs">New cards learned</Muted>
+                <Text className="text-lg" style={{ color: colors.foreground }}>
+                  {details.reduce((sum, entry) => {
+                    return sum + entry.newRadicals + entry.newKanji + entry.newVocabulary
+                  }, 0)}
+                </Text>
+              </View>
+            </View>
+          </CardContent>
+        </Card>
+
         {details.length === 0 ? (
           <View className="items-center py-12">
             <Muted className="text-center">
