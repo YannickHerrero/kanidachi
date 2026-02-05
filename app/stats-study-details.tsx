@@ -85,7 +85,7 @@ export default function StatsStudyDetailsScreen() {
           entry.reviewsSeconds + entry.lessonsSeconds + entry.lessonsQuizSeconds
         const totalNew = entry.newRadicals + entry.newKanji + entry.newVocabulary
         return totalSeconds > 0 || totalNew > 0
-      })
+      }).sort((a, b) => b.date.localeCompare(a.date))
       setDetails(filtered)
     } catch (err) {
       console.error("[StatsStudyDetails] Error fetching data:", err)
