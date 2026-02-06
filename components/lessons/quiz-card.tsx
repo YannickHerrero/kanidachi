@@ -7,8 +7,10 @@ import { FormattedText } from "@/components/ui/formatted-text"
 import { Muted } from "@/components/ui/typography"
 import { Button } from "@/components/ui/button"
 import { SubjectCharacters } from "@/components/subject/subject-characters"
+import { AudioButton } from "@/components/subject/audio-player"
 import { parseMeanings, parseReadings } from "@/db/queries"
 import { useThemeColors } from "@/hooks/useThemeColors"
+import { useSettingsStore } from "@/stores/settings"
 import type { Subject } from "@/stores/lessons"
 
 // Subject type colors
@@ -29,12 +31,14 @@ interface QuizCardProps {
 export function QuizCard({ subject, isFlipped, onFlip, onGrade }: QuizCardProps) {
   const colors = useThemeColors()
   const passColor = "#22c55e"
+  const autoPlayAudio = useSettingsStore((s) => s.autoPlayAudioLessons)
   const meanings = parseMeanings(subject.meanings)
   const readings = parseReadings(subject.readings)
 
   const primaryMeanings = meanings.filter((m) => m.primary).map((m) => m.meaning)
   const primaryReadings = readings.filter((r) => r.primary).map((r) => r.reading)
 
+  const hasAudio = subject.type === "vocabulary" || subject.type === "kana_vocabulary"
   const typeColor = TYPE_COLORS[subject.type as keyof typeof TYPE_COLORS] ?? TYPE_COLORS.vocabulary
 
   return (
@@ -47,8 +51,20 @@ export function QuizCard({ subject, isFlipped, onFlip, onGrade }: QuizCardProps)
         <Card className="flex-1">
           <CardContent className="flex-1 items-center justify-center p-6">
             {/* Character with type-colored background */}
-            <View className={`px-8 py-6 rounded-2xl ${typeColor} mb-6`}>
-              <SubjectCharacters subject={subject} size="xl" textClassName="text-white" />
+            <View className="relative mb-6">
+              <View className={`px-8 py-6 rounded-2xl ${typeColor}`}>
+                <SubjectCharacters subject={subject} size="xl" textClassName="text-white" />
+              </View>
+              {isFlipped && hasAudio && (
+                <View className="absolute -bottom-2 -right-2">
+                  <AudioButton
+                    subject={subject}
+                    size="md"
+                    autoPlay={autoPlayAudio}
+                    className="bg-white shadow-md"
+                  />
+                </View>
+              )}
             </View>
 
             {!isFlipped ? (
