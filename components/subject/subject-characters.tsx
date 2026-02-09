@@ -18,11 +18,20 @@ type SubjectLike = {
 type SubjectCharacterSize = "md" | "lg" | "xl" | "2xl"
 type SubjectCharacterVariant = "display" | "inline"
 
-const SIZE_CONFIG: Record<SubjectCharacterSize, { text: string; lineHeight: number; image: "lg" | "xl" }> = {
-  md: { text: "text-4xl", lineHeight: 48, image: "lg" },
-  lg: { text: "text-5xl", lineHeight: 60, image: "lg" },
-  xl: { text: "text-6xl", lineHeight: 72, image: "xl" },
-  "2xl": { text: "text-7xl", lineHeight: 84, image: "xl" },
+function normalizeCharacters(characters: string | null): string {
+  const raw = characters ?? "?"
+  const cleaned = raw.replace(/[\u0000-\u001F\u007F]/g, "")
+  return cleaned.length > 0 ? cleaned : raw
+}
+
+const SIZE_CONFIG: Record<
+  SubjectCharacterSize,
+  { fontSize: number; lineHeight: number; image: "lg" | "xl" }
+> = {
+  md: { fontSize: 36, lineHeight: 48, image: "lg" },
+  lg: { fontSize: 48, lineHeight: 60, image: "lg" },
+  xl: { fontSize: 60, lineHeight: 72, image: "xl" },
+  "2xl": { fontSize: 72, lineHeight: 84, image: "xl" },
 }
 
 interface SubjectCharactersProps {
@@ -68,7 +77,7 @@ export function SubjectCharacters({
       )
     }
 
-    const characters = subject.characters ?? "?"
+    const characters = normalizeCharacters(subject.characters)
     const characterCount = Array.from(characters).length
     const inlineScale = characterCount > 1 ? 0.8 : 1
     const resolvedFontSize = Math.round(inlineFontSize * inlineScale)
@@ -103,15 +112,31 @@ export function SubjectCharacters({
     )
   }
 
+  const characters = normalizeCharacters(subject.characters)
+  const characterCount = Array.from(characters).length
+  const displayScale = characterCount > 1
+    ? Math.max(0.6, 1 - (characterCount - 1) * 0.15)
+    : 1
+  const baseLineHeight = lineHeight ?? sizeConfig.lineHeight
+  const resolvedFontSize = Math.round(sizeConfig.fontSize * displayScale)
+  const resolvedLineHeight = Math.round(baseLineHeight * displayScale)
+
   return (
     <Text
-      className={cn(sizeConfig.text, "font-semibold", textClassName)}
+      className={cn("font-semibold", textClassName)}
       style={[
-        { lineHeight: lineHeight ?? sizeConfig.lineHeight, textAlign: "center" },
+        {
+          fontSize: resolvedFontSize,
+          lineHeight: resolvedLineHeight,
+          textAlign: "center",
+        },
         textStyle,
       ]}
+      numberOfLines={1}
+      adjustsFontSizeToFit
+      minimumFontScale={0.6}
     >
-      {subject.characters ?? "?"}
+      {characters}
     </Text>
   )
 }
