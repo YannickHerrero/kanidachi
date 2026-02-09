@@ -68,15 +68,26 @@ export function SubjectCharacters({
       )
     }
 
+    const characters = subject.characters ?? "?"
+    const characterCount = Array.from(characters).length
+    const inlineScale = characterCount > 1 ? 0.8 : 1
+    const resolvedFontSize = Math.round(inlineFontSize * inlineScale)
+    const resolvedInlineLineHeight = Math.round(resolvedLineHeight * inlineScale)
+
     return (
       <Text
         className={cn("font-semibold", textClassName)}
         style={[
-          { fontSize: inlineFontSize, lineHeight: resolvedLineHeight },
+          {
+            fontSize: resolvedFontSize,
+            lineHeight: resolvedInlineLineHeight,
+            textAlign: "center",
+          },
           textStyle,
         ]}
+        numberOfLines={1}
       >
-        {subject.characters ?? "?"}
+        {characters}
       </Text>
     )
   }
@@ -95,10 +106,10 @@ export function SubjectCharacters({
   return (
     <Text
       className={cn(sizeConfig.text, "font-semibold", textClassName)}
-      style={[{ lineHeight: lineHeight ?? sizeConfig.lineHeight }, textStyle]}
-      numberOfLines={1}
-      adjustsFontSizeToFit
-      minimumFontScale={0.6}
+      style={[
+        { lineHeight: lineHeight ?? sizeConfig.lineHeight, textAlign: "center" },
+        textStyle,
+      ]}
     >
       {subject.characters ?? "?"}
     </Text>
