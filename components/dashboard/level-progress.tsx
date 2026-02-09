@@ -32,6 +32,10 @@ export function LevelProgress({ level, total, passed, percentage, detail }: Leve
   const router = useRouter()
   const colors = useThemeColors()
   const [showDetail, setShowDetail] = React.useState(false)
+  const kanjiTotal = detail?.kanji.total ?? total
+  const kanjiPassed = detail?.kanji.passed ?? passed
+  const guruTarget = Math.ceil(kanjiTotal * 0.9)
+  const guruRemaining = Math.max(guruTarget - kanjiPassed, 0)
 
   const handleLevelPress = () => {
     router.push(`/browse/level/${level}`)
@@ -81,7 +85,10 @@ export function LevelProgress({ level, total, passed, percentage, detail }: Leve
           <Text className="text-sm font-medium w-12 text-right">{percentage}%</Text>
         </View>
         <Muted>
-          {passed} of {total} kanji passed to level up
+          {kanjiPassed} of {kanjiTotal} kanji guru'd
+        </Muted>
+        <Muted>
+          Need {guruTarget} (90%) to level up{guruRemaining > 0 ? ` • ${guruRemaining} to go` : " • ready"}
         </Muted>
 
         {/* Expandable detail section */}
