@@ -132,7 +132,9 @@ export function CardBack({ subject, assignment }: CardBackProps) {
     ? "Lesson required"
     : srsStage >= 9 && !hasIncorrect
       ? "Max stage"
-      : `1 pass to ${nextSrsInfo?.label ?? "next stage"}`
+      : hasIncorrect
+        ? `Next: down to ${nextSrsInfo?.label ?? "lower stage"}`
+        : `1 pass to ${nextSrsInfo?.label ?? "next stage"}`
 
   // Determine section titles based on subject type
   const componentTitle = subject.type === "kanji"
