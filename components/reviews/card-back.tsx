@@ -14,6 +14,7 @@ import { SubjectChip } from "@/components/subject/subject-chip"
 import { parseMeanings, parseReadings, parseContextSentences, parseStringArray, parseNumberArray, getSubjectsByIds } from "@/db/queries"
 import { useDatabase } from "@/db/provider"
 import { useSettingsStore } from "@/stores/settings"
+import { useReviewStore } from "@/stores/reviews"
 import { useStudyMaterial, parseMeaningSynonyms } from "@/hooks/useStudyMaterial"
 import { useThemeColors } from "@/hooks/useThemeColors"
 import type { Assignment, Subject } from "@/stores/reviews"
@@ -38,6 +39,15 @@ const SRS_INFO = {
   8: { label: "Enlightened", color: "#0093DD" },
   9: { label: "Burned", color: "#434343" },
 } as const
+
+const getSrsStageAfterIncorrect = (stage: number): number => {
+  if (stage <= 1) return 1
+  if (stage <= 4) return stage - 1
+  if (stage <= 6) return 4
+  if (stage === 7) return 5
+  if (stage === 8) return 6
+  return 8
+}
 
 interface CardBackProps {
   subject: Subject
@@ -111,13 +121,16 @@ export function CardBack({ subject, assignment }: CardBackProps) {
 
   const srsStage = assignment?.srsStage ?? 0
   const srsInfo = SRS_INFO[srsStage as keyof typeof SRS_INFO] ?? SRS_INFO[0]
-  const nextSrsInfo = SRS_INFO[(srsStage + 1) as keyof typeof SRS_INFO]
+  const reviewResult = useReviewStore((s) => s.results.get(assignment.id))
+  const hasIncorrect = ((reviewResult?.meaningWrongCount ?? 0) + (reviewResult?.readingWrongCount ?? 0)) > 0
+  const nextSrsStage = hasIncorrect ? getSrsStageAfterIncorrect(srsStage) : srsStage + 1
+  const nextSrsInfo = SRS_INFO[nextSrsStage as keyof typeof SRS_INFO]
   const isStarted = assignment?.startedAt !== null
   const srsBackgroundColor = srsStage === 0 ? colors.muted : srsInfo.color ?? colors.muted
   const srsTextStyle = srsStage === 0 ? { color: colors.mutedForeground } : { color: "#ffffff" }
   const srsPassesText = srsStage === 0
     ? "Lesson required"
-    : srsStage >= 9
+    : srsStage >= 9 && !hasIncorrect
       ? "Max stage"
       : `1 pass to ${nextSrsInfo?.label ?? "next stage"}`
 
