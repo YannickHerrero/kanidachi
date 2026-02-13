@@ -34,12 +34,12 @@ const TYPE_COLORS = {
 
 // SRS stage colors - static colors, don't need theme switching
 const SRS_COLORS = {
-  lesson: "bg-gray-400 text-white",
-  apprentice: "bg-pink-500 text-white",
-  guru: "bg-purple-500 text-white",
-  master: "bg-blue-500 text-white",
-  enlightened: "bg-cyan-500 text-white",
-  burned: "bg-gray-700 text-white",
+  lesson: "#9ca3af",
+  apprentice: "#ec4899",
+  guru: "#a855f7",
+  master: "#3b82f6",
+  enlightened: "#06b6d4",
+  burned: "#374151",
 } as const
 
 const SRS_LABELS = {
@@ -137,12 +137,16 @@ export function SubjectCell({
       {/* SRS Badge */}
       {showSrsStage && (
         <Badge
-          className={cn("ml-2", srsCategory !== "locked" && SRS_COLORS[srsCategory as keyof typeof SRS_COLORS])}
-          style={srsCategory === "locked" ? { backgroundColor: colors.muted } : undefined}
+          variant="outline"
+          className="ml-2 border-transparent"
+          style={{
+            backgroundColor:
+              srsCategory === "locked" ? colors.muted : SRS_COLORS[srsCategory as keyof typeof SRS_COLORS],
+          }}
         >
           <Text
             className="text-xs"
-            style={srsCategory === "locked" ? { color: colors.mutedForeground } : undefined}
+            style={{ color: srsCategory === "locked" ? colors.mutedForeground : "#ffffff" }}
           >
             {SRS_LABELS[srsCategory]}
           </Text>
