@@ -28,16 +28,16 @@ const TYPE_LABELS = {
 
 // SRS stage info
 const SRS_INFO = {
-  0: { label: "Locked", color: "bg-muted" },
-  1: { label: "Apprentice I", color: "bg-pink-500" },
-  2: { label: "Apprentice II", color: "bg-pink-500" },
-  3: { label: "Apprentice III", color: "bg-pink-500" },
-  4: { label: "Apprentice IV", color: "bg-pink-500" },
-  5: { label: "Guru I", color: "bg-purple-500" },
-  6: { label: "Guru II", color: "bg-purple-500" },
-  7: { label: "Master", color: "bg-blue-500" },
-  8: { label: "Enlightened", color: "bg-cyan-500" },
-  9: { label: "Burned", color: "bg-gray-700" },
+  0: { label: "Locked", color: null },
+  1: { label: "Apprentice I", color: "#ec4899" },
+  2: { label: "Apprentice II", color: "#ec4899" },
+  3: { label: "Apprentice III", color: "#ec4899" },
+  4: { label: "Apprentice IV", color: "#ec4899" },
+  5: { label: "Guru I", color: "#a855f7" },
+  6: { label: "Guru II", color: "#a855f7" },
+  7: { label: "Master", color: "#3b82f6" },
+  8: { label: "Enlightened", color: "#06b6d4" },
+  9: { label: "Burned", color: "#374151" },
 } as const
 
 interface SubjectHeaderProps {
@@ -56,8 +56,7 @@ export function SubjectHeader({ subject, assignment }: SubjectHeaderProps) {
   const isStarted = assignment?.startedAt !== null
 
   // For locked state, use muted color from theme
-  const srsColor = srsStage === 0 ? undefined : srsInfo.color
-  const srsBgStyle = srsStage === 0 ? { backgroundColor: colors.muted } : undefined
+  const srsBackgroundColor = srsInfo.color ?? colors.muted
 
   return (
     <View className={cn("items-center py-8 px-4", typeColor)}>
@@ -68,18 +67,35 @@ export function SubjectHeader({ subject, assignment }: SubjectHeaderProps) {
 
       {/* Type and Level badges */}
       <View className="flex-row items-center gap-2 mb-2">
-        <Badge variant="secondary" className="bg-white/20">
-          <Text className="text-white text-xs">{typeLabel}</Text>
+        <Badge
+          variant="outline"
+          className="border-transparent"
+          style={{ backgroundColor: "rgba(255, 255, 255, 0.2)", borderColor: "transparent" }}
+        >
+          <Text className="text-xs" style={{ color: "#ffffff" }}>{typeLabel}</Text>
         </Badge>
-        <Badge variant="secondary" className="bg-white/20">
-          <Text className="text-white text-xs">Level {subject.level}</Text>
+        <Badge
+          variant="outline"
+          className="border-transparent"
+          style={{ backgroundColor: "rgba(255, 255, 255, 0.2)", borderColor: "transparent" }}
+        >
+          <Text className="text-xs" style={{ color: "#ffffff" }}>Level {subject.level}</Text>
         </Badge>
       </View>
 
       {/* SRS Stage */}
       {isStarted && (
-        <Badge className={cn(srsColor, "mt-1")} style={srsBgStyle}>
-          <Text className="text-white text-xs">{srsInfo.label}</Text>
+        <Badge
+          variant="outline"
+          className="mt-1 border-transparent"
+          style={{ backgroundColor: srsBackgroundColor, borderColor: "transparent" }}
+        >
+          <Text
+            className="text-xs"
+            style={{ color: srsStage === 0 ? colors.mutedForeground : "#ffffff" }}
+          >
+            {srsInfo.label}
+          </Text>
         </Badge>
       )}
     </View>
