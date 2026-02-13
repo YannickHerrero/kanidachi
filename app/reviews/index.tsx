@@ -1,6 +1,6 @@
 import * as React from "react"
-import { Alert, View } from "react-native"
-import { SafeAreaView } from "react-native-safe-area-context"
+import { Alert, Pressable, ScrollView, View } from "react-native"
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { useRouter, Stack } from "expo-router"
 import { X } from "lucide-react-native"
 
@@ -9,7 +9,16 @@ import { Text } from "@/components/ui/text"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ErrorView } from "@/components/ui/error-view"
 import { EmptyState } from "@/components/ui/empty-state"
+import {
+  BottomSheet,
+  BottomSheetContent,
+  BottomSheetHeader,
+  BottomSheetView,
+  useBottomSheet,
+} from "@/components/ui/bottom-sheet"
 import { AnkiCard, GradeButtons, ReviewProgressBar, ReviewActions } from "@/components/reviews"
+import { SubjectCharacters } from "@/components/subject/subject-characters"
+import { SubjectDetailContent, SubjectHeader } from "@/components/subject"
 import { useAvailableReviews } from "@/hooks/useAvailableReviews"
 import {
   useReviewStore,
@@ -23,10 +32,20 @@ import { useSettingsStore } from "@/stores/settings"
 import { preloadAudio } from "@/lib/audio/cache"
 import { parsePronunciationAudios } from "@/db/queries"
 import { useActivityTimer } from "@/hooks/useActivityTimer"
+import { useSubject } from "@/hooks/useSubject"
+
+const TYPE_COLORS = {
+  radical: "#3b82f6",
+  kanji: "#ec4899",
+  vocabulary: "#a855f7",
+  kana_vocabulary: "#a855f7",
+} as const
 
 export default function ReviewSessionScreen() {
   const router = useRouter()
   const colors = useThemeColors()
+  const insets = useSafeAreaInsets()
+  const { ref: lastReviewedSheetRef, open: openLastReviewedSheet } = useBottomSheet()
 
   const { items, isLoading, error } = useAvailableReviews()
 
@@ -47,9 +66,21 @@ export default function ReviewSessionScreen() {
   } = useReviewStore()
 
   const currentItem = useReviewStore(selectCurrentItem)
+  const lastReviewedItem = useReviewStore((s) => s.lastReviewedItem)
   const progress = useReviewStore(selectProgress)
   const remainingCount = useReviewStore(selectRemainingCount)
   const isSessionComplete = useReviewStore(selectIsSessionComplete)
+
+  const lastReviewedSubjectId = lastReviewedItem?.subject.id ?? null
+  const {
+    data: lastReviewedData,
+    studyMaterial: lastReviewedStudyMaterial,
+    componentSubjects: lastReviewedComponentSubjects,
+    amalgamationSubjects: lastReviewedAmalgamationSubjects,
+    visuallySimilarSubjects: lastReviewedVisuallySimilarSubjects,
+    isLoading: isLastReviewedLoading,
+    error: lastReviewedError,
+  } = useSubject(lastReviewedSubjectId)
 
   const reviewOrdering = useSettingsStore((s) => s.reviewOrdering)
   const wrapUpBatchSize = useSettingsStore((s) => s.wrapUpBatchSize)
@@ -180,6 +211,16 @@ export default function ReviewSessionScreen() {
     return null
   }
 
+  const lastReviewedType = lastReviewedItem?.subject.type as keyof typeof TYPE_COLORS | undefined
+  const lastReviewedColor =
+    (lastReviewedType ? TYPE_COLORS[lastReviewedType] : undefined) ?? colors.primary
+  const indicatorBottomOffset = insets.bottom + (isFlipped ? 112 : 20)
+
+  const handleOpenLastReviewed = () => {
+    if (!lastReviewedItem) return
+    openLastReviewedSheet()
+  }
+
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }} edges={["top"]}>
       <Stack.Screen options={{ headerShown: false }} />
@@ -219,6 +260,105 @@ export default function ReviewSessionScreen() {
           onFlip={flipCard}
         />
       </View>
+
+      {lastReviewedItem && (
+        <View
+          pointerEvents="box-none"
+          style={{
+            position: "absolute",
+            left: 22,
+            bottom: indicatorBottomOffset,
+            zIndex: 20,
+          }}
+        >
+          <Pressable
+            accessibilityLabel="Show last reviewed card details"
+            onPress={handleOpenLastReviewed}
+            style={({ pressed }) => ({
+              borderRadius: 5,
+              paddingHorizontal: 6,
+              paddingVertical: 4,
+              backgroundColor: colors.card,
+              borderWidth: 1,
+              borderColor: colors.border,
+              opacity: pressed ? 0.85 : 1,
+              shadowColor: "#000",
+              shadowOpacity: 0.2,
+              shadowRadius: 8,
+              shadowOffset: { width: 0, height: 3 },
+              elevation: 4,
+            })}
+          >
+            <View
+              style={{
+                minWidth: 34,
+                minHeight: 34,
+                borderRadius: 5,
+                paddingHorizontal: 7,
+                justifyContent: "center",
+                alignItems: "center",
+                backgroundColor: lastReviewedColor,
+              }}
+            >
+              <SubjectCharacters
+                subject={lastReviewedItem.subject}
+                variant="inline"
+                inlineSize={18}
+                textClassName="text-white"
+              />
+            </View>
+          </Pressable>
+        </View>
+      )}
+
+      <BottomSheet>
+        <BottomSheetContent
+          ref={lastReviewedSheetRef}
+          enableDynamicSizing={false}
+          snapPoints={["90%"]}
+        >
+          <BottomSheetHeader style={{ backgroundColor: colors.background }}>
+            <Text className="text-xl font-bold pb-1" style={{ color: colors.foreground }}>
+              Last reviewed
+            </Text>
+          </BottomSheetHeader>
+
+          {isLastReviewedLoading && (
+            <BottomSheetView className="gap-4 py-4" style={{ backgroundColor: colors.background }}>
+              <Skeleton className="h-48 w-full rounded-xl" />
+              <Skeleton className="h-24 w-full rounded-xl" />
+              <Skeleton className="h-24 w-full rounded-xl" />
+            </BottomSheetView>
+          )}
+
+          {!isLastReviewedLoading && lastReviewedError && (
+            <BottomSheetView className="py-6 items-center" style={{ backgroundColor: colors.background }}>
+              <Text style={{ color: colors.destructive }}>{lastReviewedError}</Text>
+            </BottomSheetView>
+          )}
+
+          {!isLastReviewedLoading && !lastReviewedError && lastReviewedData && (
+            <ScrollView
+              className="flex-1"
+              style={{ backgroundColor: colors.background }}
+              showsVerticalScrollIndicator={false}
+            >
+              <SubjectHeader
+                subject={lastReviewedData.subject}
+                assignment={lastReviewedData.assignment}
+              />
+              <SubjectDetailContent
+                subject={lastReviewedData.subject}
+                studyMaterial={lastReviewedStudyMaterial}
+                componentSubjects={lastReviewedComponentSubjects}
+                amalgamationSubjects={lastReviewedAmalgamationSubjects}
+                visuallySimilarSubjects={lastReviewedVisuallySimilarSubjects}
+                showBottomPadding={false}
+              />
+            </ScrollView>
+          )}
+        </BottomSheetContent>
+      </BottomSheet>
 
       {/* Grade buttons - only show when flipped */}
       {isFlipped && <GradeButtons onGrade={handleGrade} />}

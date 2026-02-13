@@ -10,17 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { usePracticeStore } from "@/stores/practice"
 import {
   SubjectHeader,
-  Meanings,
-  Readings,
-  MeaningMnemonic,
-  ReadingMnemonic,
-  Components,
-  Amalgamations,
-  VisuallySimilar,
-  Sentences,
-  PartsOfSpeech,
-  UserNotes,
-  AudioPlayer,
+  SubjectDetailContent,
 } from "@/components/subject"
 import { useSubject } from "@/hooks/useSubject"
 import { useThemeColors } from "@/hooks/useThemeColors"
@@ -128,50 +118,13 @@ export default function SubjectDetailScreen() {
         {/* Subject header */}
         <SubjectHeader subject={subject} assignment={assignment} />
 
-        {/* Content sections */}
-        <View className="p-4 gap-4">
-          {/* Meanings */}
-          <Meanings subject={subject} studyMaterial={studyMaterial} />
-
-          {/* Readings (kanji/vocab only) */}
-          <Readings subject={subject} />
-
-          {/* Audio Player (vocab/kana_vocab only) */}
-          <AudioPlayer subject={subject} />
-
-          {/* Parts of Speech (vocab only) */}
-          <PartsOfSpeech subject={subject} />
-
-          {/* Components (radicals/kanji used) */}
-          <Components subject={subject} componentSubjects={componentSubjects} />
-
-          {/* Meaning Mnemonic */}
-          <MeaningMnemonic subject={subject} studyMaterial={studyMaterial} />
-
-          {/* Reading Mnemonic (kanji/vocab only) */}
-          <ReadingMnemonic subject={subject} studyMaterial={studyMaterial} />
-
-          {/* Visually Similar Kanji (kanji only) */}
-          <VisuallySimilar
-            subject={subject}
-            visuallySimilarSubjects={visuallySimilarSubjects}
-          />
-
-          {/* Used in... (amalgamations) */}
-          <Amalgamations
-            subject={subject}
-            amalgamationSubjects={amalgamationSubjects}
-          />
-
-          {/* Context Sentences (vocab only) */}
-          <Sentences subject={subject} />
-
-          {/* User Notes */}
-          <UserNotes studyMaterial={studyMaterial} />
-
-          {/* Bottom padding */}
-          <View className="h-8" />
-        </View>
+        <SubjectDetailContent
+          subject={subject}
+          studyMaterial={studyMaterial}
+          componentSubjects={componentSubjects}
+          amalgamationSubjects={amalgamationSubjects}
+          visuallySimilarSubjects={visuallySimilarSubjects}
+        />
       </ScrollView>
     </SafeAreaView>
   )

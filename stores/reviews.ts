@@ -67,6 +67,7 @@ interface HistoryEntry {
   itemsProcessed: number
   isFlipped: boolean
   wrapUpCount: number
+  lastReviewedItem: ReviewItem | null
 }
 
 interface ReviewState {
@@ -92,6 +93,7 @@ interface ReviewState {
 
   // Card state
   isFlipped: boolean
+  lastReviewedItem: ReviewItem | null
 
   // Undo history
   history: HistoryEntry[]
@@ -129,6 +131,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
   isWrapUp: false,
   wrapUpCount: 0,
   isFlipped: false,
+  lastReviewedItem: null,
   history: [],
   canUndo: false,
   isSubmitting: false,
@@ -149,6 +152,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       isWrapUp: false,
       wrapUpCount: 0,
       isFlipped: false,
+      lastReviewedItem: null,
       history: [],
       canUndo: false,
       error: null,
@@ -169,6 +173,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       isWrapUp,
       wrapUpCount,
       history,
+      lastReviewedItem,
     } = get()
 
     const currentItem = queue[currentIndex]
@@ -183,6 +188,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       itemsProcessed,
       isFlipped: true, // It was flipped when graded
       wrapUpCount,
+      lastReviewedItem,
     }
     const newHistory = [...history, historyEntry].slice(-MAX_HISTORY_SIZE)
 
@@ -277,6 +283,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
         itemsProcessed: newItemsProcessed,
         wrapUpCount: newWrapUpCount,
         isFlipped: false,
+        lastReviewedItem: currentItem,
         history: newHistory,
         canUndo: true,
         isActive: false, // Session ends
@@ -290,6 +297,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
         itemsProcessed: newItemsProcessed,
         wrapUpCount: newWrapUpCount,
         isFlipped: false,
+        lastReviewedItem: currentItem,
         history: newHistory,
         canUndo: true,
       })
@@ -298,7 +306,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
 
   // Override incorrect answer as correct (for Anki mode when user realizes they knew it)
   markCorrectOverride: () => {
-    const { queue, currentIndex, results, history } = get()
+    const { queue, currentIndex, results, history, lastReviewedItem } = get()
 
     const currentItem = queue[currentIndex]
     if (!currentItem) return
@@ -312,6 +320,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       itemsProcessed: get().itemsProcessed,
       isFlipped: true,
       wrapUpCount: get().wrapUpCount,
+      lastReviewedItem,
     }
     const newHistory = [...history, historyEntry].slice(-MAX_HISTORY_SIZE)
 
@@ -358,6 +367,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
         itemsProcessed: newItemsProcessed,
         wrapUpCount: newWrapUpCount,
         isFlipped: false,
+        lastReviewedItem: currentItem,
         history: newHistory,
         canUndo: true,
         isActive: false,
@@ -369,6 +379,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
         itemsProcessed: newItemsProcessed,
         wrapUpCount: newWrapUpCount,
         isFlipped: false,
+        lastReviewedItem: currentItem,
         history: newHistory,
         canUndo: true,
       })
@@ -413,6 +424,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       itemsProcessed: lastEntry.itemsProcessed,
       isFlipped: lastEntry.isFlipped,
       wrapUpCount: lastEntry.wrapUpCount,
+      lastReviewedItem: lastEntry.lastReviewedItem,
       history: newHistory,
       canUndo: newHistory.length > 0,
       isActive: true, // Re-activate session if it ended
@@ -472,6 +484,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       isWrapUp: false,
       wrapUpCount: 0,
       isFlipped: false,
+      lastReviewedItem: null,
       history: [],
       canUndo: false,
       isSubmitting: false,
