@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Alert, Pressable, ScrollView, View } from "react-native"
+import { Alert, Pressable, View } from "react-native"
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { useRouter, Stack } from "expo-router"
 import { X } from "lucide-react-native"
@@ -13,6 +13,7 @@ import {
   BottomSheet,
   BottomSheetContent,
   BottomSheetHeader,
+  BottomSheetScrollView,
   BottomSheetView,
   useBottomSheet,
 } from "@/components/ui/bottom-sheet"
@@ -315,7 +316,7 @@ export default function ReviewSessionScreen() {
         <BottomSheetContent
           ref={lastReviewedSheetRef}
           enableDynamicSizing={false}
-          snapPoints={["90%"]}
+          snapPoints={["100%"]}
         >
           <BottomSheetHeader style={{ backgroundColor: colors.background }}>
             <Text className="text-xl font-bold pb-1" style={{ color: colors.foreground }}>
@@ -338,7 +339,7 @@ export default function ReviewSessionScreen() {
           )}
 
           {!isLastReviewedLoading && !lastReviewedError && lastReviewedData && (
-            <ScrollView
+            <BottomSheetScrollView
               className="flex-1"
               style={{ backgroundColor: colors.background }}
               showsVerticalScrollIndicator={false}
@@ -355,7 +356,7 @@ export default function ReviewSessionScreen() {
                 visuallySimilarSubjects={lastReviewedVisuallySimilarSubjects}
                 showBottomPadding={false}
               />
-            </ScrollView>
+            </BottomSheetScrollView>
           )}
         </BottomSheetContent>
       </BottomSheet>

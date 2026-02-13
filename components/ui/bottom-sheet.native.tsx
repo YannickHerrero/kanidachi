@@ -7,6 +7,7 @@ import {
   BottomSheetFlatList as GBottomSheetFlatList,
   BottomSheetFooter as GBottomSheetFooter,
   BottomSheetModal,
+  BottomSheetScrollView as GBottomSheetScrollView,
   BottomSheetTextInput as GBottomSheetTextInput,
   BottomSheetView as GBottomSheetView,
   useBottomSheetModal,
@@ -275,6 +276,28 @@ const BottomSheetFlatList = React.forwardRef<
   );
 });
 
+type BottomSheetScrollViewRef = React.ElementRef<typeof GBottomSheetScrollView>;
+type BottomSheetScrollViewProps = React.ComponentPropsWithoutRef<
+  typeof GBottomSheetScrollView
+>;
+const BottomSheetScrollView = React.forwardRef<
+  BottomSheetScrollViewRef,
+  BottomSheetScrollViewProps
+>(({className, contentContainerStyle, ...props}, ref) => {
+  const insets = useSafeAreaInsets();
+  return (
+    <GBottomSheetScrollView
+      ref={ref}
+      className={cn("py-0", className)}
+      contentContainerStyle={[{paddingBottom: insets.bottom + 16}, contentContainerStyle]}
+      keyboardShouldPersistTaps="handled"
+      {...props}
+    >
+      {props.children}
+    </GBottomSheetScrollView>
+  );
+});
+
 type BottomSheetHeaderRef = React.ElementRef<typeof View>;
 type BottomSheetHeaderProps = React.ComponentPropsWithoutRef<typeof View>;
 const BottomSheetHeader = React.forwardRef<
@@ -361,6 +384,7 @@ export {
   BottomSheetFooter,
   BottomSheetHeader,
   BottomSheetOpenTrigger,
+  BottomSheetScrollView,
   BottomSheetTextInput,
   BottomSheetView,
   useBottomSheet,
