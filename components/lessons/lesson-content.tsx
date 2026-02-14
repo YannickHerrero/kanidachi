@@ -56,15 +56,24 @@ export function LessonContent({ subject }: LessonContentProps) {
   const vocabReadings = readings.filter((r) => !r.type) // Vocabulary readings have no type
 
   // Fetch component subjects (radicals for kanji, kanji for vocab)
-  const componentSubjectIds = parseNumberArray(subject.componentSubjectIds)
+  const componentSubjectIds = React.useMemo(
+    () => parseNumberArray(subject.componentSubjectIds),
+    [subject.componentSubjectIds]
+  )
   const [componentSubjects, setComponentSubjects] = React.useState<Subject[]>([])
 
   // Fetch visually similar kanji (for kanji lessons only)
-  const visuallySimilarIds = parseNumberArray(subject.visuallySimilarSubjectIds)
+  const visuallySimilarIds = React.useMemo(
+    () => parseNumberArray(subject.visuallySimilarSubjectIds),
+    [subject.visuallySimilarSubjectIds]
+  )
   const [visuallySimilarSubjects, setVisuallySimilarSubjects] = React.useState<Subject[]>([])
 
   // Fetch used in vocabulary (amalgamations) for kanji lessons
-  const amalgamationIds = parseNumberArray(subject.amalgamationSubjectIds)
+  const amalgamationIds = React.useMemo(
+    () => parseNumberArray(subject.amalgamationSubjectIds),
+    [subject.amalgamationSubjectIds]
+  )
   const [amalgamationSubjects, setAmalgamationSubjects] = React.useState<Subject[]>([])
 
   React.useEffect(() => {
@@ -73,7 +82,7 @@ export function LessonContent({ subject }: LessonContentProps) {
     } else {
       setComponentSubjects([])
     }
-  }, [db, subject.id])
+  }, [db, componentSubjectIds])
 
   React.useEffect(() => {
     if (db && visuallySimilarIds.length > 0 && subject.type === "kanji") {
@@ -81,7 +90,7 @@ export function LessonContent({ subject }: LessonContentProps) {
     } else {
       setVisuallySimilarSubjects([])
     }
-  }, [db, subject.id, subject.type])
+  }, [db, subject.type, visuallySimilarIds])
 
   React.useEffect(() => {
     if (db && subject.type === "kanji" && amalgamationIds.length > 0) {
@@ -89,7 +98,7 @@ export function LessonContent({ subject }: LessonContentProps) {
     } else {
       setAmalgamationSubjects([])
     }
-  }, [db, amalgamationIds, subject.id, subject.type])
+  }, [db, subject.type, amalgamationIds])
 
   // Determine component section title
   const componentTitle = subject.type === "kanji" 
