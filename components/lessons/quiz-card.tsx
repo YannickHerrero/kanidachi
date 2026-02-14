@@ -1,137 +1,38 @@
-import * as React from "react"
 import { Pressable, View } from "react-native"
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Text } from "@/components/ui/text"
-import { FormattedText } from "@/components/ui/formatted-text"
-import { Muted } from "@/components/ui/typography"
 import { Button } from "@/components/ui/button"
-import { SubjectCharacters } from "@/components/subject/subject-characters"
-import { AudioButton } from "@/components/subject/audio-player"
-import { UsedInVocabularySection } from "@/components/subject/used-in-vocabulary"
-import { getSubjectsByIds, parseMeanings, parseNumberArray, parseReadings } from "@/db/queries"
-import { useDatabase } from "@/db/provider"
 import { useThemeColors } from "@/hooks/useThemeColors"
-import { useSettingsStore } from "@/stores/settings"
-import type { Subject } from "@/stores/lessons"
-
-// Subject type colors
-const TYPE_COLORS = {
-  radical: "bg-blue-500",
-  kanji: "bg-pink-500",
-  vocabulary: "bg-purple-500",
-  kana_vocabulary: "bg-purple-500",
-} as const
+import { CardBack } from "@/components/reviews/card-back"
+import { CardFront } from "@/components/reviews/card-front"
+import type { Assignment, Subject } from "@/stores/lessons"
 
 interface QuizCardProps {
   subject: Subject
+  assignment: Assignment
   isFlipped: boolean
   onFlip: () => void
   onGrade: (correct: boolean) => void
 }
 
-export function QuizCard({ subject, isFlipped, onFlip, onGrade }: QuizCardProps) {
-  const { db } = useDatabase()
+export function QuizCard({ subject, assignment, isFlipped, onFlip, onGrade }: QuizCardProps) {
   const colors = useThemeColors()
   const passColor = "#22c55e"
-  const autoPlayAudio = useSettingsStore((s) => s.autoPlayAudioLessons)
-  const meanings = parseMeanings(subject.meanings)
-  const readings = parseReadings(subject.readings)
-  const amalgamationIds = parseNumberArray(subject.amalgamationSubjectIds)
-  const [amalgamationSubjects, setAmalgamationSubjects] = React.useState<Subject[]>([])
-
-  React.useEffect(() => {
-    if (db && subject.type === "kanji" && amalgamationIds.length > 0) {
-      getSubjectsByIds(db, amalgamationIds).then(setAmalgamationSubjects)
-    } else {
-      setAmalgamationSubjects([])
-    }
-  }, [db, amalgamationIds, subject.id, subject.type])
-
-  const primaryMeanings = meanings.filter((m) => m.primary).map((m) => m.meaning)
-  const primaryReadings = readings.filter((r) => r.primary).map((r) => r.reading)
-
-  const hasAudio = subject.type === "vocabulary" || subject.type === "kana_vocabulary"
-  const typeColor = TYPE_COLORS[subject.type as keyof typeof TYPE_COLORS] ?? TYPE_COLORS.vocabulary
 
   return (
-    <View className="flex-1 px-4">
+    <View className="flex-1">
       <Pressable
         onPress={!isFlipped ? onFlip : undefined}
-        className="flex-1"
+        style={{ flex: 1 }}
         disabled={isFlipped}
       >
-        <Card className="flex-1">
-          <CardContent className="flex-1 items-center justify-center p-6">
-            {/* Character with type-colored background */}
-            <View className="relative mb-6">
-              <View className={`px-8 py-6 rounded-2xl ${typeColor}`}>
-                <SubjectCharacters subject={subject} size="xl" textClassName="text-white" />
-              </View>
-              {isFlipped && hasAudio && (
-                <View className="absolute -bottom-2 -right-2">
-                  <AudioButton
-                    subject={subject}
-                    size="md"
-                    autoPlay={autoPlayAudio}
-                    className="bg-white shadow-md"
-                  />
-                </View>
-              )}
-            </View>
-
-            {!isFlipped ? (
-              /* Front of card - prompt to flip */
-              <View className="items-center">
-                <Text className="text-lg mb-2" style={{ color: colors.mutedForeground }}>
-                  Do you know this {subject.type === "radical" ? "radical" : "item"}?
-                </Text>
-                <Muted>Tap to reveal</Muted>
-              </View>
+        <Card className="flex-1 mx-4">
+          <CardContent className="flex-1 py-6">
+            {isFlipped ? (
+              <CardBack subject={subject} assignment={assignment} />
             ) : (
-              /* Back of card - answer */
-              <View className="items-center w-full">
-                {/* Meanings */}
-                <View className="mb-4 items-center">
-                  <Muted className="text-xs mb-1">Meaning</Muted>
-                  <Text className="text-2xl font-semibold text-center">
-                    {primaryMeanings.join(", ")}
-                  </Text>
-                </View>
-
-                {/* Readings (if applicable) */}
-                {primaryReadings.length > 0 && (
-                  <View className="mb-4 items-center">
-                    <Muted className="text-xs mb-1">Reading</Muted>
-                    <Text className="text-2xl font-semibold text-center">
-                      {primaryReadings.join(", ")}
-                    </Text>
-                  </View>
-                )}
-
-                {/* Used in Vocabulary (kanji only) */}
-                {subject.type === "kanji" && amalgamationSubjects.length > 0 && (
-                  <View className="mb-4 w-full">
-                    <UsedInVocabularySection
-                      items={amalgamationSubjects}
-                      limit={12}
-                      variant="inline"
-                      titleAlign="center"
-                    />
-                  </View>
-                )}
-
-                {/* Mnemonic hint */}
-                {subject.meaningMnemonic && (
-                  <View className="mt-2 p-3 rounded-lg w-full" style={{ backgroundColor: colors.muted }}>
-                    <FormattedText
-                      text={subject.meaningMnemonic}
-                      numberOfLines={3}
-                      style={{ fontSize: 14, lineHeight: 20, textAlign: "center" }}
-                    />
-                  </View>
-                )}
-              </View>
+              <CardFront subject={subject} />
             )}
           </CardContent>
         </Card>
