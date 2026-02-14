@@ -1,6 +1,5 @@
 import * as React from "react"
-import { Pressable, ScrollView, View } from "react-native"
-import { useRouter } from "expo-router"
+import { ScrollView, View } from "react-native"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Text } from "@/components/ui/text"
@@ -11,6 +10,7 @@ import { FormattedText } from "@/components/ui/formatted-text"
 import { AudioPlayer } from "@/components/subject/audio-player"
 import { SubjectCharacters } from "@/components/subject/subject-characters"
 import { SubjectChip } from "@/components/subject/subject-chip"
+import { UsedInVocabularySection } from "@/components/subject/used-in-vocabulary"
 import { parseMeanings, parseReadings, parseContextSentences, parseNumberArray, getSubjectsByIds } from "@/db/queries"
 import { useSettingsStore } from "@/stores/settings"
 import { useDatabase } from "@/db/provider"
@@ -37,7 +37,6 @@ interface LessonContentProps {
 }
 
 export function LessonContent({ subject }: LessonContentProps) {
-  const router = useRouter()
   const { db } = useDatabase()
   const colors = useThemeColors()
   const autoPlayAudio = useSettingsStore((s) => s.autoPlayAudioLessons)
@@ -99,21 +98,6 @@ export function LessonContent({ subject }: LessonContentProps) {
       ? "Kanji Used"
       : "Components"
 
-  const usedInVocabularyItems = amalgamationSubjects.slice(0, 6)
-
-  const getPrimaryMeaning = (item: Subject): string => {
-    const itemMeanings = parseMeanings(item.meanings)
-    return itemMeanings.find((m) => m.primary)?.meaning ?? ""
-  }
-
-  const getPrimaryReading = (item: Subject): string => {
-    const itemReadings = parseReadings(item.readings)
-    return itemReadings.find((r) => r.primary)?.reading ?? itemReadings[0]?.reading ?? ""
-  }
-
-  const handleOpenSubject = (itemId: number) => {
-    router.push(`/subject/${itemId}`)
-  }
 
   return (
     <ScrollView
@@ -208,50 +192,7 @@ export function LessonContent({ subject }: LessonContentProps) {
 
       {/* Used in Vocabulary (kanji only) */}
       {subject.type === "kanji" && amalgamationSubjects.length > 0 && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Used in Vocabulary</CardTitle>
-          </CardHeader>
-          <CardContent className="gap-2">
-            {usedInVocabularyItems.map((item) => {
-              const itemTypeColor = TYPE_COLORS[item.type as keyof typeof TYPE_COLORS] ?? TYPE_COLORS.vocabulary
-              return (
-                <View key={item.id} className="w-full">
-                  <Pressable onPress={() => handleOpenSubject(item.id)} style={{ width: "100%" }}>
-                    <View
-                      className="flex-row items-center rounded-lg overflow-hidden"
-                      style={{ backgroundColor: colors.muted }}
-                    >
-                      <View className={itemTypeColor} style={{ width: 6, alignSelf: "stretch" }} />
-                      <View className="flex-row items-center gap-3 px-3 py-2 flex-1">
-                        <View
-                          className={`items-center justify-center rounded-md px-3 py-1 ${itemTypeColor}`}
-                        >
-                          <Text className="text-base font-semibold text-white">
-                            {item.characters}
-                          </Text>
-                        </View>
-                        <View className="flex-1">
-                          <Text className="text-base font-semibold" numberOfLines={1}>
-                            {getPrimaryMeaning(item)}
-                          </Text>
-                          <Muted className="text-xs" numberOfLines={1}>
-                            {getPrimaryReading(item)}
-                          </Muted>
-                        </View>
-                      </View>
-                    </View>
-                  </Pressable>
-                </View>
-              )
-            })}
-            {amalgamationSubjects.length > usedInVocabularyItems.length && (
-              <Muted className="text-sm mt-1">
-                +{amalgamationSubjects.length - usedInVocabularyItems.length} more...
-              </Muted>
-            )}
-          </CardContent>
-        </Card>
+        <UsedInVocabularySection items={amalgamationSubjects} limit={6} />
       )}
 
       {/* Audio Player - Only for vocabulary */}

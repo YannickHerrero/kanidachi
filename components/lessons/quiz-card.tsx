@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Pressable, ScrollView, View } from "react-native"
+import { Pressable, View } from "react-native"
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Text } from "@/components/ui/text"
@@ -8,7 +8,7 @@ import { Muted } from "@/components/ui/typography"
 import { Button } from "@/components/ui/button"
 import { SubjectCharacters } from "@/components/subject/subject-characters"
 import { AudioButton } from "@/components/subject/audio-player"
-import { SubjectChip } from "@/components/subject/subject-chip"
+import { UsedInVocabularySection } from "@/components/subject/used-in-vocabulary"
 import { getSubjectsByIds, parseMeanings, parseNumberArray, parseReadings } from "@/db/queries"
 import { useDatabase } from "@/db/provider"
 import { useThemeColors } from "@/hooks/useThemeColors"
@@ -112,21 +112,12 @@ export function QuizCard({ subject, isFlipped, onFlip, onGrade }: QuizCardProps)
                 {/* Used in Vocabulary (kanji only) */}
                 {subject.type === "kanji" && amalgamationSubjects.length > 0 && (
                   <View className="mb-4 w-full">
-                    <Muted className="text-xs mb-2 text-center">Used in Vocabulary</Muted>
-                    <ScrollView
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                      contentContainerClassName="gap-2 px-1"
-                    >
-                      {amalgamationSubjects.slice(0, 12).map((item) => (
-                        <SubjectChip
-                          key={item.id}
-                          subject={item}
-                          size="sm"
-                          showReading
-                        />
-                      ))}
-                    </ScrollView>
+                    <UsedInVocabularySection
+                      items={amalgamationSubjects}
+                      limit={12}
+                      variant="inline"
+                      titleAlign="center"
+                    />
                   </View>
                 )}
 

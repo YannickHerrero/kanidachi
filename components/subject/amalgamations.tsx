@@ -4,6 +4,7 @@ import { View } from "react-native"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Text } from "@/components/ui/text"
 import { SubjectChip } from "./subject-chip"
+import { UsedInVocabularySection } from "@/components/subject/used-in-vocabulary"
 import { useThemeColors } from "@/hooks/useThemeColors"
 import type { subjects } from "@/db/schema"
 
@@ -33,27 +34,31 @@ export function Amalgamations({ subject, amalgamationSubjects }: AmalgamationsPr
   const hasMore = amalgamationSubjects.length > 20
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base">{title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <View className="flex-row flex-wrap gap-2">
-          {displaySubjects.map((item) => (
-            <SubjectChip
-              key={item.id}
-              subject={item}
-              size="md"
-              showMeaning
-            />
-          ))}
-        </View>
-        {hasMore && (
-          <Text className="text-sm mt-2" style={{ color: colors.mutedForeground }}>
-            +{amalgamationSubjects.length - 20} more...
-          </Text>
-        )}
-      </CardContent>
-    </Card>
+    subject.type === "kanji" ? (
+      <UsedInVocabularySection items={amalgamationSubjects} limit={20} />
+    ) : (
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">{title}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <View className="flex-row flex-wrap gap-2">
+            {displaySubjects.map((item) => (
+              <SubjectChip
+                key={item.id}
+                subject={item}
+                size="md"
+                showMeaning
+              />
+            ))}
+          </View>
+          {hasMore && (
+            <Text className="text-sm mt-2" style={{ color: colors.mutedForeground }}>
+              +{amalgamationSubjects.length - 20} more...
+            </Text>
+          )}
+        </CardContent>
+      </Card>
+    )
   )
 }

@@ -11,6 +11,7 @@ import { AudioButton } from "@/components/subject/audio-player"
 import { SubjectCharacters } from "@/components/subject/subject-characters"
 import { StudyMaterialEditor } from "@/components/subject/study-material-editor"
 import { SubjectChip } from "@/components/subject/subject-chip"
+import { UsedInVocabularySection } from "@/components/subject/used-in-vocabulary"
 import { parseMeanings, parseReadings, parseContextSentences, parseStringArray, parseNumberArray, getSubjectsByIds } from "@/db/queries"
 import { useDatabase } from "@/db/provider"
 import { useSettingsStore } from "@/stores/settings"
@@ -306,21 +307,32 @@ export function CardBack({ subject, assignment }: CardBackProps) {
           {/* Amalgamations (Found in Kanji / Used in Vocabulary) */}
           {amalgamationSubjects.length > 0 && (
             <View className="w-full mb-4">
-              <Muted className="text-xs mb-2">{amalgamationTitle}</Muted>
-              <View className="flex-row flex-wrap gap-2">
-                {amalgamationSubjects.slice(0, 20).map((item) => (
-                  <SubjectChip
-                    key={item.id}
-                    subject={item}
-                    size="md"
-                    showMeaning
-                  />
-                ))}
-              </View>
-              {amalgamationSubjects.length > 20 && (
-                <Muted className="text-sm mt-2">
-                  +{amalgamationSubjects.length - 20} more...
-                </Muted>
+              {subject.type === "kanji" ? (
+                <UsedInVocabularySection
+                  items={amalgamationSubjects}
+                  limit={20}
+                  variant="inline"
+                  titleAlign="left"
+                />
+              ) : (
+                <View className="w-full">
+                  <Muted className="text-xs mb-2">{amalgamationTitle}</Muted>
+                  <View className="flex-row flex-wrap gap-2">
+                    {amalgamationSubjects.slice(0, 20).map((item) => (
+                      <SubjectChip
+                        key={item.id}
+                        subject={item}
+                        size="md"
+                        showMeaning
+                      />
+                    ))}
+                  </View>
+                  {amalgamationSubjects.length > 20 && (
+                    <Muted className="text-sm mt-2">
+                      +{amalgamationSubjects.length - 20} more...
+                    </Muted>
+                  )}
+                </View>
               )}
             </View>
           )}
