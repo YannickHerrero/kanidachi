@@ -62,6 +62,10 @@ export function LessonContent({ subject }: LessonContentProps) {
   const visuallySimilarIds = parseNumberArray(subject.visuallySimilarSubjectIds)
   const [visuallySimilarSubjects, setVisuallySimilarSubjects] = React.useState<Subject[]>([])
 
+  // Fetch used in vocabulary (amalgamations) for kanji lessons
+  const amalgamationIds = parseNumberArray(subject.amalgamationSubjectIds)
+  const [amalgamationSubjects, setAmalgamationSubjects] = React.useState<Subject[]>([])
+
   React.useEffect(() => {
     if (db && componentSubjectIds.length > 0) {
       getSubjectsByIds(db, componentSubjectIds).then(setComponentSubjects)
@@ -77,6 +81,14 @@ export function LessonContent({ subject }: LessonContentProps) {
       setVisuallySimilarSubjects([])
     }
   }, [db, subject.id, subject.type])
+
+  React.useEffect(() => {
+    if (db && subject.type === "kanji" && amalgamationIds.length > 0) {
+      getSubjectsByIds(db, amalgamationIds).then(setAmalgamationSubjects)
+    } else {
+      setAmalgamationSubjects([])
+    }
+  }, [db, amalgamationIds, subject.id, subject.type])
 
   // Determine component section title
   const componentTitle = subject.type === "kanji" 
@@ -172,6 +184,33 @@ export function LessonContent({ subject }: LessonContentProps) {
                 />
               ))}
             </View>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Used in Vocabulary (kanji only) */}
+      {subject.type === "kanji" && amalgamationSubjects.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Used in Vocabulary</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <View className="flex-row flex-wrap gap-2">
+              {amalgamationSubjects.slice(0, 20).map((item) => (
+                <SubjectChip
+                  key={item.id}
+                  subject={item}
+                  size="md"
+                  showMeaning
+                  showReading
+                />
+              ))}
+            </View>
+            {amalgamationSubjects.length > 20 && (
+              <Muted className="text-sm mt-2">
+                +{amalgamationSubjects.length - 20} more...
+              </Muted>
+            )}
           </CardContent>
         </Card>
       )}

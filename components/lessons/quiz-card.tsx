@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Pressable, View } from "react-native"
+import { Pressable, ScrollView, View } from "react-native"
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Text } from "@/components/ui/text"
@@ -8,7 +8,9 @@ import { Muted } from "@/components/ui/typography"
 import { Button } from "@/components/ui/button"
 import { SubjectCharacters } from "@/components/subject/subject-characters"
 import { AudioButton } from "@/components/subject/audio-player"
-import { parseMeanings, parseReadings } from "@/db/queries"
+import { SubjectChip } from "@/components/subject/subject-chip"
+import { getSubjectsByIds, parseMeanings, parseNumberArray, parseReadings } from "@/db/queries"
+import { useDatabase } from "@/db/provider"
 import { useThemeColors } from "@/hooks/useThemeColors"
 import { useSettingsStore } from "@/stores/settings"
 import type { Subject } from "@/stores/lessons"
@@ -29,11 +31,22 @@ interface QuizCardProps {
 }
 
 export function QuizCard({ subject, isFlipped, onFlip, onGrade }: QuizCardProps) {
+  const { db } = useDatabase()
   const colors = useThemeColors()
   const passColor = "#22c55e"
   const autoPlayAudio = useSettingsStore((s) => s.autoPlayAudioLessons)
   const meanings = parseMeanings(subject.meanings)
   const readings = parseReadings(subject.readings)
+  const amalgamationIds = parseNumberArray(subject.amalgamationSubjectIds)
+  const [amalgamationSubjects, setAmalgamationSubjects] = React.useState<Subject[]>([])
+
+  React.useEffect(() => {
+    if (db && subject.type === "kanji" && amalgamationIds.length > 0) {
+      getSubjectsByIds(db, amalgamationIds).then(setAmalgamationSubjects)
+    } else {
+      setAmalgamationSubjects([])
+    }
+  }, [db, amalgamationIds, subject.id, subject.type])
 
   const primaryMeanings = meanings.filter((m) => m.primary).map((m) => m.meaning)
   const primaryReadings = readings.filter((r) => r.primary).map((r) => r.reading)
@@ -93,6 +106,27 @@ export function QuizCard({ subject, isFlipped, onFlip, onGrade }: QuizCardProps)
                     <Text className="text-2xl font-semibold text-center">
                       {primaryReadings.join(", ")}
                     </Text>
+                  </View>
+                )}
+
+                {/* Used in Vocabulary (kanji only) */}
+                {subject.type === "kanji" && amalgamationSubjects.length > 0 && (
+                  <View className="mb-4 w-full">
+                    <Muted className="text-xs mb-2 text-center">Used in Vocabulary</Muted>
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerClassName="gap-2 px-1"
+                    >
+                      {amalgamationSubjects.slice(0, 12).map((item) => (
+                        <SubjectChip
+                          key={item.id}
+                          subject={item}
+                          size="sm"
+                          showReading
+                        />
+                      ))}
+                    </ScrollView>
                   </View>
                 )}
 

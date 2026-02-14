@@ -21,6 +21,7 @@ interface SubjectChipProps {
   subject: Subject
   size?: "sm" | "md" | "lg"
   showMeaning?: boolean
+  showReading?: boolean
   onPress?: () => void
 }
 
@@ -28,6 +29,7 @@ export function SubjectChip({
   subject,
   size = "md",
   showMeaning = false,
+  showReading = false,
   onPress,
 }: SubjectChipProps) {
   const router = useRouter()
@@ -56,10 +58,20 @@ export function SubjectChip({
 
   // Get primary meaning for display
   let primaryMeaning = ""
+  let primaryReading = ""
   if (showMeaning) {
     try {
       const meanings = JSON.parse(subject.meanings)
       primaryMeaning = meanings.find((m: { primary: boolean }) => m.primary)?.meaning ?? ""
+    } catch {
+      // ignore
+    }
+  }
+
+  if (showReading) {
+    try {
+      const readings = JSON.parse(subject.readings)
+      primaryReading = readings.find((r: { primary: boolean }) => r.primary)?.reading ?? ""
     } catch {
       // ignore
     }
@@ -83,8 +95,21 @@ export function SubjectChip({
         textClassName="text-white"
       />
       {showMeaning && primaryMeaning && (
-        <Text className="text-white/80 text-xs mt-0.5" numberOfLines={1}>
+        <Text
+          className="text-xs mt-0.5"
+          style={{ color: "rgba(255, 255, 255, 0.8)" }}
+          numberOfLines={1}
+        >
           {primaryMeaning}
+        </Text>
+      )}
+      {showReading && primaryReading && (
+        <Text
+          className="text-xs"
+          style={{ color: "rgba(255, 255, 255, 0.75)" }}
+          numberOfLines={1}
+        >
+          {primaryReading}
         </Text>
       )}
     </Pressable>
