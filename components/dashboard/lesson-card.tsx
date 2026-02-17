@@ -18,16 +18,37 @@ export function LessonCard({ count }: LessonCardProps) {
   const router = useRouter()
   const colors = useThemeColors()
   const hasLessons = count > 0
+  const longPressHandled = React.useRef(false)
 
   const handlePress = () => {
     if (hasLessons) {
+      if (longPressHandled.current) {
+        longPressHandled.current = false
+        return
+      }
       router.push("/lessons")
+    }
+  }
+
+  const handleLongPress = () => {
+    if (hasLessons) {
+      longPressHandled.current = true
+      router.push({ pathname: "/lessons", params: { mode: "express" } })
     }
   }
 
   return (
     <View style={styles.container}>
-      <Pressable onPress={handlePress} disabled={!hasLessons} style={styles.pressable}>
+      <Pressable
+        onPress={handlePress}
+        onLongPress={handleLongPress}
+        onPressOut={() => {
+          longPressHandled.current = false
+        }}
+        delayLongPress={350}
+        disabled={!hasLessons}
+        style={styles.pressable}
+      >
         <Card
           style={[
             styles.card,

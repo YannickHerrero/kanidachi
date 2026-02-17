@@ -104,6 +104,7 @@ interface LessonState {
 
   // Actions - Content
   startContent: (ordering?: LessonOrdering, currentUserLevel?: number) => void
+  startContentWithItems: (items: LessonItem[]) => void
   nextContent: () => void
   previousContent: () => void
   markViewed: (subjectId: number) => void
@@ -174,6 +175,17 @@ export const useLessonStore = create<LessonState>((set, get) => ({
     set({
       phase: "content",
       lessonItems,
+      contentIndex: 0,
+      viewedSubjectIds: new Set(),
+    })
+  },
+
+  startContentWithItems: (items) => {
+    if (items.length === 0) return
+
+    set({
+      phase: "content",
+      lessonItems: items,
       contentIndex: 0,
       viewedSubjectIds: new Set(),
     })

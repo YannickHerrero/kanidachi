@@ -1,7 +1,7 @@
 import * as React from "react"
 import { View, ScrollView } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { useRouter, Stack } from "expo-router"
+import { useRouter, Stack, useLocalSearchParams } from "expo-router"
 import { ChevronLeft } from "lucide-react-native"
 
 import { Button } from "@/components/ui/button"
@@ -12,12 +12,16 @@ import { EmptyState } from "@/components/ui/empty-state"
 import { SubjectGrid, FilterBar } from "@/components/lessons"
 import { useAvailableLessons } from "@/hooks/useAvailableLessons"
 import { useLessonStore, selectSelectedCount } from "@/stores/lessons"
+import type { LessonItem } from "@/stores/lessons"
 import { useThemeColors } from "@/hooks/useThemeColors"
 import { useSettingsStore } from "@/stores/settings"
 
 export default function LessonPickerScreen() {
   const router = useRouter()
   const colors = useThemeColors()
+  const { mode } = useLocalSearchParams<{ mode?: string }>()
+  const isExpress = mode === "express"
+  const hasStartedExpress = React.useRef(false)
 
   const { filteredItems, items, isLoading, error, typeFilter, setTypeFilter, userLevel } =
     useAvailableLessons()
@@ -29,10 +33,23 @@ export default function LessonPickerScreen() {
     deselectAll,
     setAvailableItems,
     startContent,
+    startContentWithItems,
   } = useLessonStore()
 
   const selectedCount = useLessonStore(selectSelectedCount)
   const lessonOrdering = useSettingsStore((s) => s.lessonOrdering)
+
+  const sortExpressLessonItems = React.useCallback((lessonItems: LessonItem[]) => {
+    const typeOrder = { radical: 0, kanji: 1, vocabulary: 2, kana_vocabulary: 2 }
+
+    return [...lessonItems].sort((a, b) => {
+      const aType = typeOrder[a.subject.type as keyof typeof typeOrder] ?? 3
+      const bType = typeOrder[b.subject.type as keyof typeof typeOrder] ?? 3
+      if (aType !== bType) return aType - bType
+      if (a.subject.level !== b.subject.level) return a.subject.level - b.subject.level
+      return a.subject.id - b.subject.id
+    })
+  }, [])
 
   // Set available items when loaded
   React.useEffect(() => {
@@ -40,6 +57,19 @@ export default function LessonPickerScreen() {
       setAvailableItems(items, lessonOrdering, userLevel ?? undefined)
     }
   }, [items, setAvailableItems, lessonOrdering, userLevel])
+
+  React.useEffect(() => {
+    if (!isExpress || hasStartedExpress.current) return
+    if (items.length === 0) return
+
+    const orderedItems = sortExpressLessonItems(items)
+    const firstItem = orderedItems[0]
+    if (!firstItem) return
+
+    hasStartedExpress.current = true
+    startContentWithItems([firstItem])
+    router.push("/lessons/content")
+  }, [isExpress, items, sortExpressLessonItems, startContentWithItems, router])
 
   // Calculate filter counts
   const counts = React.useMemo(() => {
