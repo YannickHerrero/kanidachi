@@ -24,7 +24,11 @@ export function useAvailableReviews(
   const reviewOrdering = useSettingsStore((s) => s.reviewOrdering)
   const isExpress = options.mode === "express"
   const effectiveOrdering = isExpress ? "srs_stage" : reviewOrdering
-  const effectiveLimit = isExpress ? 3 : reviewItemLimit
+  const expressLimit = React.useMemo(
+    () => (isExpress ? Math.floor(Math.random() * 5) + 1 : null),
+    [isExpress]
+  )
+  const effectiveLimit = isExpress ? expressLimit : reviewItemLimit
   const [items, setItems] = React.useState<ReviewItem[]>([])
   const [totalAvailable, setTotalAvailable] = React.useState(0)
   const [isLoading, setIsLoading] = React.useState(true)
