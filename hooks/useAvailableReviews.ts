@@ -12,10 +12,19 @@ interface UseAvailableReviewsResult {
   refetch: () => Promise<void>
 }
 
-export function useAvailableReviews(): UseAvailableReviewsResult {
+interface UseAvailableReviewsOptions {
+  mode?: "express"
+}
+
+export function useAvailableReviews(
+  options: UseAvailableReviewsOptions = {}
+): UseAvailableReviewsResult {
   const { db } = useDatabase()
   const reviewItemLimit = useSettingsStore((s) => s.reviewItemLimit)
   const reviewOrdering = useSettingsStore((s) => s.reviewOrdering)
+  const isExpress = options.mode === "express"
+  const effectiveOrdering = isExpress ? "srs_stage" : reviewOrdering
+  const effectiveLimit = isExpress ? 3 : reviewItemLimit
   const [items, setItems] = React.useState<ReviewItem[]>([])
   const [totalAvailable, setTotalAvailable] = React.useState(0)
   const [isLoading, setIsLoading] = React.useState(true)
@@ -42,7 +51,7 @@ export function useAvailableReviews(): UseAvailableReviewsResult {
 
       // Apply ordering before limiting (so limits honor the chosen order)
       const orderedAssignments = (() => {
-        switch (reviewOrdering) {
+        switch (effectiveOrdering) {
           case "srs_stage":
             return [...allAssignments].sort((a, b) =>
               (a.srsStage - b.srsStage) || (a.level - b.level) || (a.id - b.id)
@@ -64,8 +73,8 @@ export function useAvailableReviews(): UseAvailableReviewsResult {
       })()
 
       // Apply item limit if set
-      const assignments = reviewItemLimit && reviewItemLimit > 0
-        ? orderedAssignments.slice(0, reviewItemLimit)
+      const assignments = effectiveLimit && effectiveLimit > 0
+        ? orderedAssignments.slice(0, effectiveLimit)
         : orderedAssignments
 
       // Get subject IDs from assignments
@@ -93,7 +102,7 @@ export function useAvailableReviews(): UseAvailableReviewsResult {
     } finally {
       setIsLoading(false)
     }
-  }, [db, reviewItemLimit, reviewOrdering])
+  }, [db, effectiveLimit, effectiveOrdering])
 
   // Initial fetch
   React.useEffect(() => {

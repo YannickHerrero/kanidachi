@@ -1,7 +1,7 @@
 import * as React from "react"
 import { Alert, Pressable, View } from "react-native"
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
-import { useRouter, Stack } from "expo-router"
+import { useRouter, Stack, useLocalSearchParams } from "expo-router"
 import { X } from "lucide-react-native"
 
 import { Button } from "@/components/ui/button"
@@ -48,7 +48,11 @@ export default function ReviewSessionScreen() {
   const insets = useSafeAreaInsets()
   const { ref: lastReviewedSheetRef, open: openLastReviewedSheet } = useBottomSheet()
 
-  const { items, isLoading, error } = useAvailableReviews()
+  const { mode } = useLocalSearchParams<{ mode?: string }>()
+  const isExpress = mode === "express"
+  const { items, isLoading, error } = useAvailableReviews(
+    isExpress ? { mode: "express" } : undefined
+  )
 
   const {
     isActive,
@@ -92,9 +96,9 @@ export default function ReviewSessionScreen() {
   // Start session when items are loaded
   React.useEffect(() => {
     if (items.length > 0 && !isActive && !isSessionComplete) {
-      startSession(items, reviewOrdering)
+      startSession(items, isExpress ? "srs_stage" : reviewOrdering)
     }
-  }, [items, isActive, isSessionComplete, startSession, reviewOrdering])
+  }, [items, isActive, isSessionComplete, startSession, reviewOrdering, isExpress])
 
   // Preload audio for upcoming items
   const queue = useReviewStore((s) => s.queue)

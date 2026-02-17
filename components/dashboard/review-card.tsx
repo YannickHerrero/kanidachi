@@ -18,16 +18,37 @@ export function ReviewCard({ count }: ReviewCardProps) {
   const router = useRouter()
   const colors = useThemeColors()
   const hasReviews = count > 0
+  const longPressHandled = React.useRef(false)
 
   const handlePress = () => {
     if (hasReviews) {
+      if (longPressHandled.current) {
+        longPressHandled.current = false
+        return
+      }
       router.push("/reviews")
+    }
+  }
+
+  const handleLongPress = () => {
+    if (hasReviews) {
+      longPressHandled.current = true
+      router.push({ pathname: "/reviews", params: { mode: "express" } })
     }
   }
 
   return (
     <View style={styles.container}>
-      <Pressable onPress={handlePress} disabled={!hasReviews} style={styles.pressable}>
+      <Pressable
+        onPress={handlePress}
+        onLongPress={handleLongPress}
+        onPressOut={() => {
+          longPressHandled.current = false
+        }}
+        delayLongPress={350}
+        disabled={!hasReviews}
+        style={styles.pressable}
+      >
         <Card
           style={[
             styles.card,
