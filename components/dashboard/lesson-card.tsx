@@ -33,7 +33,7 @@ export function LessonCard({ count }: LessonCardProps) {
   const handleLongPress = () => {
     if (hasLessons) {
       longPressHandled.current = true
-      router.push({ pathname: "/lessons", params: { mode: "express" } })
+      router.push({ pathname: "/lessons/content", params: { mode: "express" } })
     }
   }
 
