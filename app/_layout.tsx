@@ -13,7 +13,11 @@ import { DARK_THEME, LIGHT_THEME } from "@/lib/constants";
 import { storage } from "@/lib/storage";
 import { useThemeStore } from "@/stores/theme";
 import { useFrameworkReady } from "@/hooks/useFrameworkReady";
-import { Inter_400Regular, Inter_600SemiBold, useFonts } from '@expo-google-fonts/inter';
+import { Inter_400Regular, Inter_600SemiBold, useFonts } from "@expo-google-fonts/inter";
+import {
+  NotoSansJP_400Regular,
+  NotoSansJP_700Bold,
+} from "@expo-google-fonts/noto-sans-jp";
 import { useEffect } from "react";
 import { useAuthStore } from "@/stores/auth";
 import { initializeBackgroundSync, stopBackgroundSync } from "@/lib/sync/background-sync";
@@ -112,6 +116,8 @@ export default function RootLayout() {
   const [loaded, error] = useFonts({
     Inter_400Regular,
     Inter_600SemiBold,
+    NotoSansJP_400Regular,
+    NotoSansJP_700Bold,
   });
 
   useFrameworkReady();
