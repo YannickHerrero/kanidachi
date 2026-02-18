@@ -84,7 +84,7 @@ export default function StatsStudyDetailsScreen() {
         const totalSeconds =
           entry.reviewsSeconds + entry.lessonsSeconds + entry.lessonsQuizSeconds
         const totalNew = entry.newRadicals + entry.newKanji + entry.newVocabulary
-        return totalSeconds > 0 || totalNew > 0
+        return totalSeconds > 0 || totalNew > 0 || entry.expressReviewsCompleted > 0
       }).sort((a, b) => b.date.localeCompare(a.date))
       setDetails(filtered)
     } catch (err) {
@@ -175,6 +175,12 @@ export default function StatsStudyDetailsScreen() {
                   {details.reduce((sum, entry) => {
                     return sum + entry.newRadicals + entry.newKanji + entry.newVocabulary
                   }, 0)}
+                </Text>
+              </View>
+              <View className="flex-1 min-w-[140px]">
+                <Muted className="text-xs">Express reviews</Muted>
+                <Text className="text-lg" style={{ color: colors.foreground }}>
+                  {details.reduce((sum, entry) => sum + entry.expressReviewsCompleted, 0)}
                 </Text>
               </View>
             </View>
@@ -296,6 +302,12 @@ export default function StatsStudyDetailsScreen() {
                             <Muted className="text-xs">Reviews</Muted>
                             <Text className="text-xs" style={{ color: colors.foreground }}>
                               {formatDuration(entry.reviewsSeconds)}
+                            </Text>
+                          </View>
+                          <View className="flex-row items-center justify-between">
+                            <Muted className="text-xs">Express reviews</Muted>
+                            <Text className="text-xs" style={{ color: colors.foreground }}>
+                              {entry.expressReviewsCompleted}
                             </Text>
                           </View>
                         </View>

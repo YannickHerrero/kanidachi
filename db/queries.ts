@@ -15,7 +15,9 @@ import {
   levelProgressions,
   errorLog,
   dailyActivity,
+  dailyCounters,
   type DailyActivityType,
+  type DailyCounterType,
   type Meaning,
   type Reading,
   type ContextSentence,
@@ -1082,6 +1084,7 @@ export interface DailyActivityTotals {
   reviews: number
   lessons: number
   lessonsQuiz: number
+  expressReviewsCompleted: number
 }
 
 export interface DailyActivityByDate {
@@ -1089,6 +1092,7 @@ export interface DailyActivityByDate {
   reviewsSeconds: number
   lessonsSeconds: number
   lessonsQuizSeconds: number
+  expressReviewsCompleted: number
 }
 
 export interface StudyDayDetail {
@@ -1096,6 +1100,7 @@ export interface StudyDayDetail {
   reviewsSeconds: number
   lessonsSeconds: number
   lessonsQuizSeconds: number
+  expressReviewsCompleted: number
   newRadicals: number
   newKanji: number
   newVocabulary: number
@@ -1128,12 +1133,39 @@ export async function incrementDailyActivitySeconds(
     })
 }
 
+export async function incrementDailyCounter(
+  db: Database,
+  date: string,
+  counter: DailyCounterType,
+  count: number
+): Promise<void> {
+  if (!db || count <= 0) return
+
+  const now = Math.floor(Date.now() / 1000)
+
+  await db
+    .insert(dailyCounters)
+    .values({
+      date,
+      counter,
+      count,
+      updatedAt: now,
+    })
+    .onConflictDoUpdate({
+      target: [dailyCounters.date, dailyCounters.counter],
+      set: {
+        count: sql`${dailyCounters.count} + ${count}`,
+        updatedAt: now,
+      },
+    })
+}
+
 export async function getDailyActivityTotals(
   db: Database,
   date: string
 ): Promise<DailyActivityTotals> {
   if (!db) {
-    return { reviews: 0, lessons: 0, lessonsQuiz: 0 }
+    return { reviews: 0, lessons: 0, lessonsQuiz: 0, expressReviewsCompleted: 0 }
   }
 
   const rows = await db
@@ -1144,7 +1176,12 @@ export async function getDailyActivityTotals(
     .from(dailyActivity)
     .where(eq(dailyActivity.date, date))
 
-  const totals: DailyActivityTotals = { reviews: 0, lessons: 0, lessonsQuiz: 0 }
+  const totals: DailyActivityTotals = {
+    reviews: 0,
+    lessons: 0,
+    lessonsQuiz: 0,
+    expressReviewsCompleted: 0,
+  }
 
   for (const row of rows as Array<{ activity: string; seconds: number }>) {
     if (row.activity === "reviews") {
@@ -1153,6 +1190,20 @@ export async function getDailyActivityTotals(
       totals.lessons = row.seconds
     } else if (row.activity === "lessons_quiz") {
       totals.lessonsQuiz = row.seconds
+    }
+  }
+
+  const counterRows = await db
+    .select({
+      counter: dailyCounters.counter,
+      count: dailyCounters.count,
+    })
+    .from(dailyCounters)
+    .where(eq(dailyCounters.date, date))
+
+  for (const row of counterRows as Array<{ counter: string; count: number }>) {
+    if (row.counter === "express_reviews_completed") {
+      totals.expressReviewsCompleted = row.count
     }
   }
 
@@ -1181,6 +1232,7 @@ export async function getDailyActivityByDate(
       reviewsSeconds: 0,
       lessonsSeconds: 0,
       lessonsQuizSeconds: 0,
+      expressReviewsCompleted: 0,
     })
   }
 
@@ -1194,6 +1246,23 @@ export async function getDailyActivityByDate(
       entry.lessonsSeconds = row.seconds
     } else if (row.activity === "lessons_quiz") {
       entry.lessonsQuizSeconds = row.seconds
+    }
+  }
+
+  const counterRows = await db
+    .select({
+      date: dailyCounters.date,
+      counter: dailyCounters.counter,
+      count: dailyCounters.count,
+    })
+    .from(dailyCounters)
+    .where(inArray(dailyCounters.date, dateKeys))
+
+  for (const row of counterRows as Array<{ date: string; counter: string; count: number }>) {
+    const entry = totals.get(row.date)
+    if (!entry) continue
+    if (row.counter === "express_reviews_completed") {
+      entry.expressReviewsCompleted = row.count
     }
   }
 
@@ -1260,6 +1329,7 @@ export async function getStudyDayDetails(
       reviewsSeconds: 0,
       lessonsSeconds: 0,
       lessonsQuizSeconds: 0,
+      expressReviewsCompleted: 0,
     }
 
     results.push({
@@ -1267,6 +1337,7 @@ export async function getStudyDayDetails(
       reviewsSeconds: activityEntry.reviewsSeconds,
       lessonsSeconds: activityEntry.lessonsSeconds,
       lessonsQuizSeconds: activityEntry.lessonsQuizSeconds,
+      expressReviewsCompleted: activityEntry.expressReviewsCompleted,
       newRadicals,
       newKanji,
       newVocabulary,

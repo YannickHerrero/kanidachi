@@ -79,6 +79,7 @@ export interface StatisticsData {
     reviewsSeconds: number
     lessonsSeconds: number
     lessonsQuizSeconds: number
+    expressReviewsCompleted: number
   }>
 }
 

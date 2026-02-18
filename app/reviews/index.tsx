@@ -31,7 +31,9 @@ import {
 import { useThemeColors } from "@/hooks/useThemeColors"
 import { useSettingsStore } from "@/stores/settings"
 import { preloadAudio } from "@/lib/audio/cache"
-import { parsePronunciationAudios } from "@/db/queries"
+import { incrementDailyCounter, parsePronunciationAudios } from "@/db/queries"
+import { getLocalDateKey } from "@/lib/date-utils"
+import { useDatabase } from "@/db/provider"
 import { useActivityTimer } from "@/hooks/useActivityTimer"
 import { useSubject } from "@/hooks/useSubject"
 
@@ -47,12 +49,14 @@ export default function ReviewSessionScreen() {
   const colors = useThemeColors()
   const insets = useSafeAreaInsets()
   const { ref: lastReviewedSheetRef, open: openLastReviewedSheet } = useBottomSheet()
+  const { db } = useDatabase()
 
   const { mode } = useLocalSearchParams<{ mode?: string }>()
   const isExpress = mode === "express"
   const { items, isLoading, error } = useAvailableReviews(
     isExpress ? { mode: "express" } : undefined
   )
+  const expressSessionRecorded = React.useRef(false)
 
   const {
     isActive,
@@ -100,6 +104,12 @@ export default function ReviewSessionScreen() {
     }
   }, [items, isActive, isSessionComplete, startSession, reviewOrdering, isExpress])
 
+  React.useEffect(() => {
+    if (isActive) {
+      expressSessionRecorded.current = false
+    }
+  }, [isActive])
+
   // Preload audio for upcoming items
   const queue = useReviewStore((s) => s.queue)
   const currentIndex = useReviewStore((s) => s.currentIndex)
@@ -125,10 +135,20 @@ export default function ReviewSessionScreen() {
   // Handle session end (no more items)
   React.useEffect(() => {
     if (!isActive && progress.completed > 0) {
+      if (isExpress && remainingCount === 0 && !expressSessionRecorded.current) {
+        expressSessionRecorded.current = true
+        if (db) {
+          incrementDailyCounter(db, getLocalDateKey(), "express_reviews_completed", 1).catch(
+            (error) => {
+              console.error("[ReviewSession] Failed to log express review:", error)
+            }
+          )
+        }
+      }
       // Session ended, go to summary
       router.replace("/reviews/summary")
     }
-  }, [isActive, progress.completed, router])
+  }, [isActive, progress.completed, router, isExpress, remainingCount, db])
 
   const handleEndSession = () => {
     Alert.alert(

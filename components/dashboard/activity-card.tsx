@@ -25,7 +25,14 @@ function formatDuration(seconds: number): string {
 
 export function ActivityCard() {
   const colors = useThemeColors()
-  const { reviews, lessons, lessonsQuiz, lessonsCompleted, isLoading } = useDailyActivity()
+  const {
+    reviews,
+    lessons,
+    lessonsQuiz,
+    lessonsCompleted,
+    expressReviewsCompleted,
+    isLoading,
+  } = useDailyActivity()
   const isDark = colors.background === "#0a0a0b"
   const [isExpanded, setIsExpanded] = React.useState(false)
 
@@ -76,6 +83,15 @@ export function ActivityCard() {
               </Text>
               <Text className="text-sm" style={{ color: colors.foreground }}>
                 {isLoading ? "…" : lessonsCompleted}
+              </Text>
+            </View>
+
+            <View className="flex-row items-center justify-between">
+              <Text className="text-sm" style={{ color: colors.mutedForeground }}>
+                Express Reviews
+              </Text>
+              <Text className="text-sm" style={{ color: colors.foreground }}>
+                {isLoading ? "…" : expressReviewsCompleted}
               </Text>
             </View>
 

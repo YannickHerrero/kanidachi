@@ -211,6 +211,29 @@ export const dailyActivity = sqliteTable(
 )
 
 // ============================================================================
+// DAILY COUNTERS - Per-day session counts
+// ============================================================================
+
+export type DailyCounterType = "express_reviews_completed"
+
+export const dailyCounters = sqliteTable(
+  "daily_counters",
+  {
+    id: text("id").primaryKey().$defaultFn(() => createId()),
+    date: text("date").notNull(), // Local date key: YYYY-MM-DD
+    counter: text("counter").notNull(),
+    count: integer("count").notNull().default(0),
+    updatedAt: integer("updated_at").notNull(),
+  },
+  (table) => ({
+    dateCounterIdx: uniqueIndex("daily_counters_date_counter_idx").on(
+      table.date,
+      table.counter
+    ),
+  })
+)
+
+// ============================================================================
 // TYPE DEFINITIONS (for JSON fields)
 // ============================================================================
 

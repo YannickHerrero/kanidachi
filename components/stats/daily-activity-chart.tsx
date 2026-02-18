@@ -12,6 +12,7 @@ export interface DailyActivityDay {
   reviewsSeconds: number
   lessonsSeconds: number
   lessonsQuizSeconds: number
+  expressReviewsCompleted: number
 }
 
 interface DailyActivityChartProps {
@@ -38,6 +39,7 @@ export function DailyActivityChart({ days }: DailyActivityChartProps) {
     lessonSeconds: number
     reviewSeconds: number
     totalSeconds: number
+    expressReviewsCompleted: number
   }>(null)
 
   const normalizedDays = React.useMemo(() => {
@@ -66,6 +68,7 @@ export function DailyActivityChart({ days }: DailyActivityChartProps) {
       lessonSeconds: latest.lessonSeconds,
       reviewSeconds: latest.reviewSeconds,
       totalSeconds: latest.totalSeconds,
+      expressReviewsCompleted: latest.expressReviewsCompleted,
     })
   }, [activeDay, normalizedDays])
 
@@ -138,6 +141,7 @@ export function DailyActivityChart({ days }: DailyActivityChartProps) {
                         lessonSeconds: day.lessonSeconds,
                         reviewSeconds: day.reviewSeconds,
                         totalSeconds: day.totalSeconds,
+                        expressReviewsCompleted: day.expressReviewsCompleted,
                       })
                     }}
                     onHoverIn={() => {
@@ -146,6 +150,7 @@ export function DailyActivityChart({ days }: DailyActivityChartProps) {
                         lessonSeconds: day.lessonSeconds,
                         reviewSeconds: day.reviewSeconds,
                         totalSeconds: day.totalSeconds,
+                        expressReviewsCompleted: day.expressReviewsCompleted,
                       })
                     }}
                     onFocus={() => {
@@ -154,6 +159,7 @@ export function DailyActivityChart({ days }: DailyActivityChartProps) {
                         lessonSeconds: day.lessonSeconds,
                         reviewSeconds: day.reviewSeconds,
                         totalSeconds: day.totalSeconds,
+                        expressReviewsCompleted: day.expressReviewsCompleted,
                       })
                     }}
                     accessibilityRole="button"
@@ -219,6 +225,9 @@ export function DailyActivityChart({ days }: DailyActivityChartProps) {
             </Text>
             <Text className="text-xs" style={{ color: colors.foreground }}>
               Reviews: {formatDuration(activeDay.reviewSeconds)}
+            </Text>
+            <Text className="text-xs" style={{ color: colors.foreground }}>
+              Express reviews: {activeDay.expressReviewsCompleted}
             </Text>
           </View>
         )}

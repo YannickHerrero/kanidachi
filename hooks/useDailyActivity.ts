@@ -18,6 +18,7 @@ const initialSummary: DailyActivitySummary = {
   reviews: 0,
   lessons: 0,
   lessonsQuiz: 0,
+  expressReviewsCompleted: 0,
   lessonsCompleted: 0,
   dateKey: getLocalDateKey(),
 }
