@@ -1,7 +1,7 @@
 import "./global.css";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { ThemeProvider } from "@react-navigation/native";
-import { SplashScreen, Slot, Stack, useRouter, useSegments } from "expo-router";
+import { SplashScreen, Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as React from "react";
 import { Platform, useColorScheme } from "react-native";
@@ -143,9 +143,9 @@ export default function RootLayout() {
     }
   }, [loaded]);
 
-  // Don't render navigation until fonts are loaded - use Slot to let expo-router handle initial state
+  // Don't render navigation until fonts are loaded
   if (!loaded && !error) {
-    return <Slot />;
+    return null;
   }
 
   return (
