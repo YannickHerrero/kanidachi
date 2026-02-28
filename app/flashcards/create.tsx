@@ -30,6 +30,7 @@ export default function FlashcardCreateScreen() {
   const [word, setWord] = React.useState("")
   const [content, setContent] = React.useState<FlashcardGeneration | null>(null)
   const [manualSentence, setManualSentence] = React.useState("")
+  const [isSentenceConfirmed, setIsSentenceConfirmed] = React.useState(false)
   const [wordAudioUri, setWordAudioUri] = React.useState<string | null>(null)
   const [sentenceAudioUri, setSentenceAudioUri] = React.useState<string | null>(null)
   const [isGenerating, setIsGenerating] = React.useState(false)
@@ -45,6 +46,10 @@ export default function FlashcardCreateScreen() {
     router.back()
   }, [router])
 
+  const handleOpenSettings = React.useCallback(() => {
+    router.push("/settings")
+  }, [router])
+
   const handleGenerate = React.useCallback(async () => {
     const trimmedWord = word.trim()
     if (!trimmedWord) {
@@ -58,6 +63,7 @@ export default function FlashcardCreateScreen() {
       const generated = await generateFlashcardContent(trimmedWord)
       setContent(generated)
       setManualSentence(generated.sentenceJa)
+      setIsSentenceConfirmed(false)
       setWordAudioUri(null)
       setSentenceAudioUri(null)
     } catch (err) {
@@ -68,7 +74,7 @@ export default function FlashcardCreateScreen() {
   }, [word])
 
   const handleGenerateAudio = React.useCallback(async () => {
-    if (!content) return
+    if (!content || !isSentenceConfirmed) return
 
     setIsGeneratingAudio(true)
     setError(null)
@@ -84,7 +90,7 @@ export default function FlashcardCreateScreen() {
     } finally {
       setIsGeneratingAudio(false)
     }
-  }, [content, manualSentence, word])
+  }, [content, isSentenceConfirmed, manualSentence, word])
 
   const handleSave = React.useCallback(async () => {
     if (!db || !content) return
@@ -113,9 +119,40 @@ export default function FlashcardCreateScreen() {
     }
   }, [content, db, manualSentence, router, sentenceAudioUri, word, wordAudioUri])
 
+  const handleConfirmSentence = React.useCallback(() => {
+    if (!manualSentence.trim()) {
+      setError("Sentence cannot be empty")
+      return
+    }
+
+    setError(null)
+    setIsSentenceConfirmed(true)
+    setSentenceAudioUri(null)
+  }, [manualSentence])
+
+  const handleSentenceChange = React.useCallback((value: string) => {
+    setManualSentence(value)
+    setIsSentenceConfirmed(false)
+    setSentenceAudioUri(null)
+  }, [])
+
+  const handleWordChange = React.useCallback((value: string) => {
+    setWord(value)
+    setContent(null)
+    setManualSentence("")
+    setIsSentenceConfirmed(false)
+    setWordAudioUri(null)
+    setSentenceAudioUri(null)
+    setError(null)
+  }, [])
+
   const canGenerate = word.trim().length > 0 && !isGenerating && hasFlashcardApiKey
-  const canGenerateAudio = Boolean(content && manualSentence.trim() && !isGeneratingAudio)
-  const canSave = Boolean(content && manualSentence.trim() && !isSaving)
+  const canGenerateAudio = Boolean(
+    content && manualSentence.trim() && isSentenceConfirmed && !isGeneratingAudio
+  )
+  const canSave = Boolean(
+    content && manualSentence.trim() && isSentenceConfirmed && wordAudioUri && sentenceAudioUri && !isSaving
+  )
 
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }} edges={["top"]}>
@@ -132,22 +169,25 @@ export default function FlashcardCreateScreen() {
       <ScrollView className="flex-1" contentContainerClassName="p-4 gap-4">
         {!hasFlashcardApiKey && (
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-4 gap-3">
               <Text style={{ color: colors.destructive }}>
                 AI key not set. Open Settings and configure Flashcard AI Key first.
               </Text>
+              <Button variant="outline" onPress={handleOpenSettings}>
+                <Text>Open Settings</Text>
+              </Button>
             </CardContent>
           </Card>
         )}
 
         <Card>
           <CardHeader>
-            <CardTitle>Word</CardTitle>
+            <CardTitle>Step 1: Generate Content</CardTitle>
           </CardHeader>
           <CardContent className="gap-3">
             <Input
               value={word}
-              onChangeText={setWord}
+              onChangeText={handleWordChange}
               autoCapitalize="none"
               autoCorrect={false}
               placeholder="日本語の単語"
@@ -157,6 +197,9 @@ export default function FlashcardCreateScreen() {
                 {isGenerating ? "Generating..." : "Generate Sentence"}
               </Text>
             </Button>
+            <Text className="text-xs" style={{ color: colors.mutedForeground }}>
+              Tip: regenerate until you like the sentence, then edit manually if needed.
+            </Text>
           </CardContent>
         </Card>
 
@@ -164,16 +207,19 @@ export default function FlashcardCreateScreen() {
           <>
             <Card>
               <CardHeader>
-                <CardTitle>Generated Content</CardTitle>
+                <CardTitle>Step 2: Finalize Sentence</CardTitle>
               </CardHeader>
               <CardContent className="gap-3">
                 <Text>Word translation: {content.wordTranslation}</Text>
                 <Text>Sentence translation: {content.sentenceTranslation}</Text>
                 <Textarea
                   value={manualSentence}
-                  onChangeText={setManualSentence}
+                  onChangeText={handleSentenceChange}
                   placeholder="Edit sentence manually"
                 />
+                <Button variant="outline" onPress={handleConfirmSentence}>
+                  <Text>{isSentenceConfirmed ? "Sentence Confirmed" : "Confirm This Sentence"}</Text>
+                </Button>
                 <Button variant="outline" onPress={handleGenerate} disabled={isGenerating}>
                   <View className="flex-row items-center gap-2">
                     <RefreshCw size={16} color={colors.foreground} />
@@ -185,7 +231,7 @@ export default function FlashcardCreateScreen() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Audio</CardTitle>
+                <CardTitle>Step 3: Generate Audio</CardTitle>
               </CardHeader>
               <CardContent className="gap-3">
                 <Button onPress={handleGenerateAudio} disabled={!canGenerateAudio}>
@@ -193,6 +239,11 @@ export default function FlashcardCreateScreen() {
                     {isGeneratingAudio ? "Generating audio..." : "Generate Word + Sentence Audio"}
                   </Text>
                 </Button>
+                {!isSentenceConfirmed && (
+                  <Text className="text-xs" style={{ color: colors.mutedForeground }}>
+                    Confirm your sentence before generating audio.
+                  </Text>
+                )}
 
                 <View className="flex-row gap-2">
                   <Button
@@ -223,9 +274,14 @@ export default function FlashcardCreateScreen() {
 
             <Button onPress={handleSave} disabled={!canSave}>
               <Text style={{ color: colors.primaryForeground }}>
-                {isSaving ? "Saving..." : "Save Flashcard"}
+                {isSaving ? "Saving..." : "Save Flashcard to Lessons"}
               </Text>
             </Button>
+            {!canSave && (
+              <Text className="text-xs" style={{ color: colors.mutedForeground }}>
+                Save unlocks after sentence confirmation and both audio clips are generated.
+              </Text>
+            )}
           </>
         )}
 
