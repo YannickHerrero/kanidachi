@@ -17,10 +17,10 @@ export const LogoutItem = () => {
   const resetSettings = useSettingsStore((s) => s.resetSettings)
   const resetDatabase = useDatabase().resetDatabase
 
-  const handleLogout = () => {
+  const handleSignOutOnly = () => {
     Alert.alert(
       "Sign Out",
-      "This will sign you out and delete all local data including synced subjects, assignments, and cached audio. You will need to sync again when you sign back in.",
+      "You will be signed out, but your local flashcards and study data will stay on this device.",
       [
         {
           text: "Cancel",
@@ -28,6 +28,33 @@ export const LogoutItem = () => {
         },
         {
           text: "Sign Out",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              stopBackgroundSync()
+              await logout()
+              router.replace("/login")
+            } catch (error) {
+              console.error("Failed to sign out:", error)
+              Alert.alert("Error", "Failed to sign out. Please try again.")
+            }
+          },
+        },
+      ]
+    )
+  }
+
+  const handleSignOutAndDelete = () => {
+    Alert.alert(
+      "Sign Out & Delete Local Data",
+      "This will sign you out and delete local data including synced subjects, flashcards, progress, and cached audio.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Delete Data",
           style: "destructive",
           onPress: async () => {
             try {
@@ -50,8 +77,8 @@ export const LogoutItem = () => {
                 console.warn("Failed to reset database:", error)
               }
 
-              // Logout (clears token from secure storage)
-              await logout()
+               // Logout (clears token from secure storage)
+               await logout()
 
               // Navigate to login
               router.replace("/login")
@@ -66,12 +93,20 @@ export const LogoutItem = () => {
   }
 
   return (
-    <ListItem
-      itemLeft={(props) => <LogOut {...props} />}
-      label="Sign Out"
-      variant="destructive"
-      onPress={handleLogout}
-      detail={false}
-    />
+    <>
+      <ListItem
+        itemLeft={(props) => <LogOut {...props} />}
+        label="Sign Out"
+        onPress={handleSignOutOnly}
+        detail={false}
+      />
+      <ListItem
+        itemLeft={(props) => <LogOut {...props} />}
+        label="Sign Out & Delete Local Data"
+        variant="destructive"
+        onPress={handleSignOutAndDelete}
+        detail={false}
+      />
+    </>
   )
 }

@@ -1,5 +1,6 @@
 import { create } from "zustand"
 import { storage, getItem, setItem } from "@/lib/storage"
+import { getFlashcardApiKey } from "@/lib/flashcards/api-key"
 
 // Storage key for settings
 const SETTINGS_KEY = "app_settings"
@@ -30,6 +31,9 @@ interface Settings {
   // Notification settings
   notificationsEnabled: boolean
   notificationTime: string // HH:mm format
+
+  // Flashcard AI settings
+  hasFlashcardApiKey: boolean
 }
 
 interface SettingsState extends Settings {
@@ -46,6 +50,8 @@ interface SettingsState extends Settings {
   setReviewItemLimit: (limit: number | null) => void
   setNotificationsEnabled: (enabled: boolean) => void
   setNotificationTime: (time: string) => void
+  setHasFlashcardApiKey: (hasKey: boolean) => void
+  refreshFlashcardApiKeyStatus: () => Promise<void>
 
   // Persistence
   loadSettings: () => void
@@ -66,6 +72,7 @@ const DEFAULT_SETTINGS: Settings = {
   reviewItemLimit: null, // Unlimited by default
   notificationsEnabled: false,
   notificationTime: "09:00",
+  hasFlashcardApiKey: false,
 }
 
 // Helper to persist settings
@@ -141,6 +148,18 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   setNotificationTime: (time) => {
     set({ notificationTime: time })
     persistSettings({ notificationTime: time })
+  },
+
+  setHasFlashcardApiKey: (hasKey) => {
+    set({ hasFlashcardApiKey: hasKey })
+    persistSettings({ hasFlashcardApiKey: hasKey })
+  },
+
+  refreshFlashcardApiKeyStatus: async () => {
+    const key = await getFlashcardApiKey()
+    const hasKey = Boolean(key && key.trim())
+    set({ hasFlashcardApiKey: hasKey })
+    persistSettings({ hasFlashcardApiKey: hasKey })
   },
 
   // Load settings from storage

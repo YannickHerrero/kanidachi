@@ -15,10 +15,18 @@ import { LessonSettingsItem } from "@/components/settings/LessonSettingsItem"
 import { ReviewSettingsItem } from "@/components/settings/ReviewSettingsItem"
 import { CacheSettingsItem } from "@/components/settings/CacheSettingsItem"
 import { LogoutItem } from "@/components/settings/LogoutItem"
+import { FlashcardApiKeyItem } from "@/components/settings/FlashcardApiKeyItem"
 import { useThemeColors } from "@/hooks/useThemeColors"
+import { useSettingsStore } from "@/stores/settings"
 
 export default function Settings() {
   const colors = useThemeColors()
+  const refreshFlashcardApiKeyStatus = useSettingsStore((s) => s.refreshFlashcardApiKeyStatus)
+
+  React.useEffect(() => {
+    refreshFlashcardApiKeyStatus()
+  }, [refreshFlashcardApiKeyStatus])
+
   const openExternalURL = (url: string) => {
     if (Platform.OS === "web") {
       Linking.openURL(url)
@@ -42,6 +50,11 @@ export default function Settings() {
         </ListHeader>
         <LessonSettingsItem />
         <ReviewSettingsItem />
+
+        <ListHeader className="pt-8">
+          <Muted>AI</Muted>
+        </ListHeader>
+        <FlashcardApiKeyItem />
 
         {/* Audio Settings (Native only) */}
         {Platform.OS !== "web" && (
