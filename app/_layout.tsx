@@ -170,6 +170,7 @@ export default function RootLayout() {
               <Stack.Screen name="subject/[id]" options={{ headerShown: false }} />
               <Stack.Screen name="stats" options={{ headerShown: false }} />
               <Stack.Screen name="stats-study-details" options={{ headerShown: false }} />
+              <Stack.Screen name="flashcards/create" options={{ headerShown: false }} />
             </Stack>
             <AuthNavigator fontsLoaded={loaded} />
           </BottomSheetModalProvider>

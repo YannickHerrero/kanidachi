@@ -3,9 +3,11 @@ import { RefreshControl, ScrollView, View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useRouter } from "expo-router"
 import { Settings } from "lucide-react-native"
+import { Sparkles } from "lucide-react-native"
 
 import { Button } from "@/components/ui/button"
 import { Text } from "@/components/ui/text"
+import { Card, CardContent } from "@/components/ui/card"
 import { H1, Muted } from "@/components/ui/typography"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ReviewCard } from "@/components/dashboard/review-card"
@@ -49,6 +51,10 @@ export default function Dashboard() {
 
   const handleSettingsPress = () => {
     router.push("/settings")
+  }
+
+  const handleCreateFlashcard = () => {
+    router.push("/flashcards/create" as never)
   }
 
   if (isLoading) {
@@ -141,6 +147,28 @@ export default function Dashboard() {
           <ReviewCard count={reviewCount} />
           <LessonCard count={lessonCount} />
         </View>
+
+        <Card>
+          <CardContent className="p-4">
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center gap-3">
+                <View
+                  className="w-10 h-10 rounded-full items-center justify-center"
+                  style={{ backgroundColor: colors.primary }}
+                >
+                  <Sparkles size={18} color={colors.primaryForeground} />
+                </View>
+                <View>
+                  <Text className="text-base font-medium">Create Flashcard</Text>
+                  <Muted>Generate a JP sentence and audio with AI</Muted>
+                </View>
+              </View>
+              <Button size="sm" onPress={handleCreateFlashcard}>
+                <Text style={{ color: colors.primaryForeground }}>Open</Text>
+              </Button>
+            </View>
+          </CardContent>
+        </Card>
 
         {/* Browse Card */}
         <BrowseCard />
