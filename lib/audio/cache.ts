@@ -6,6 +6,10 @@ import type { PronunciationAudio } from "@/db/schema"
 // Audio cache directory
 const AUDIO_CACHE_DIR_NAME = "audio"
 
+function isCacheableRemoteUrl(url: string): boolean {
+  return url.startsWith("https://") || url.startsWith("http://")
+}
+
 /**
  * Get the audio cache directory
  */
@@ -67,6 +71,10 @@ export async function cacheAudio(
 ): Promise<string | null> {
   if (Platform.OS === "web") return null
 
+  if (!isCacheableRemoteUrl(url)) {
+    return null
+  }
+
   try {
     ensureCacheDir()
 
@@ -101,6 +109,10 @@ export function getAudioSource(
   url: string
 ): { uri: string; shouldCache: boolean } {
   if (Platform.OS === "web") {
+    return { uri: url, shouldCache: false }
+  }
+
+  if (!isCacheableRemoteUrl(url)) {
     return { uri: url, shouldCache: false }
   }
 
