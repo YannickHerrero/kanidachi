@@ -64,6 +64,44 @@ export const assignments = sqliteTable("assignments", {
 })
 
 // ============================================================================
+// FLASHCARDS - User-created cards
+// ============================================================================
+
+export const flashcards = sqliteTable("flashcards", {
+  id: text("id").primaryKey().$defaultFn(() => createId()),
+  word: text("word").notNull(),
+  wordReading: text("word_reading"),
+  wordTranslation: text("word_translation").notNull(),
+  sentenceJa: text("sentence_ja").notNull(),
+  sentenceReading: text("sentence_reading"),
+  sentenceTranslation: text("sentence_translation").notNull(),
+  wordAudioUri: text("word_audio_uri"),
+  sentenceAudioUri: text("sentence_audio_uri"),
+  sourceModel: text("source_model"),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+})
+
+export const flashcardAssignments = sqliteTable(
+  "flashcard_assignments",
+  {
+    id: text("id").primaryKey().$defaultFn(() => createId()),
+    flashcardId: text("flashcard_id").notNull(),
+    srsStage: integer("srs_stage").notNull().default(0),
+    unlockedAt: integer("unlocked_at").notNull(),
+    startedAt: integer("started_at"),
+    passedAt: integer("passed_at"),
+    burnedAt: integer("burned_at"),
+    availableAt: integer("available_at"),
+    createdAt: integer("created_at").notNull(),
+    updatedAt: integer("updated_at").notNull(),
+  },
+  (table) => ({
+    flashcardIdIdx: uniqueIndex("flashcard_assignments_flashcard_id_idx").on(table.flashcardId),
+  })
+)
+
+// ============================================================================
 // STUDY MATERIALS - User notes and synonyms
 // ============================================================================
 

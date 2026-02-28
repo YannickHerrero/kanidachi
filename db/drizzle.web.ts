@@ -20,6 +20,8 @@ DELETE FROM "audio_cache";
 DELETE FROM "error_log";
 DELETE FROM "daily_activity";
 DELETE FROM "daily_counters";
+DELETE FROM "flashcard_assignments";
+DELETE FROM "flashcards";
 `
 
 const ENSURE_DAILY_ACTIVITY_SQL = `

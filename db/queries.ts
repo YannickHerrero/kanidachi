@@ -16,6 +16,8 @@ import {
   errorLog,
   dailyActivity,
   dailyCounters,
+  flashcards,
+  flashcardAssignments,
   type DailyActivityType,
   type DailyCounterType,
   type Meaning,
@@ -24,9 +26,24 @@ import {
   type PronunciationAudio,
   type SubjectType,
 } from "./schema"
+import {
+  getFlashcardNextAvailableAt,
+  getNextFlashcardSrsStage,
+} from "@/lib/flashcards/srs"
 
 // Use a union type for database
 type Database = SQLJsDatabase | ExpoSQLiteDatabase | null
+
+export interface FlashcardLessonRow {
+  flashcard: typeof flashcards.$inferSelect
+  assignment: typeof flashcardAssignments.$inferSelect
+}
+
+export interface FlashcardReviewResultInput {
+  flashcardAssignmentId: string
+  meaningWrongCount: number
+  readingWrongCount: number
+}
 
 // SRS stage categories
 const SRS_APPRENTICE = [1, 2, 3, 4]
@@ -126,7 +143,7 @@ export async function getAvailableReviews(db: Database) {
 export async function getAvailableReviewCount(db: Database): Promise<number> {
   if (!db) return 0
   const now = Math.floor(Date.now() / 1000)
-  const result = await (db as ExpoSQLiteDatabase)
+  const wkResult = await (db as ExpoSQLiteDatabase)
     .select({ cnt: sql<number>`count(*)` })
     .from(assignments)
     .where(
@@ -136,7 +153,19 @@ export async function getAvailableReviewCount(db: Database): Promise<number> {
         lte(assignments.availableAt, now)
       )
     )
-  return (result[0] as { cnt: number })?.cnt ?? 0
+
+  const flashcardResult = await (db as ExpoSQLiteDatabase)
+    .select({ cnt: sql<number>`count(*)` })
+    .from(flashcardAssignments)
+    .where(
+      and(
+        isNotNull(flashcardAssignments.startedAt),
+        isNull(flashcardAssignments.burnedAt),
+        lte(flashcardAssignments.availableAt, now)
+      )
+    )
+
+  return ((wkResult[0] as { cnt: number })?.cnt ?? 0) + ((flashcardResult[0] as { cnt: number })?.cnt ?? 0)
 }
 
 /**
@@ -177,7 +206,13 @@ export async function getAvailableLessonCount(
     .from(assignments)
     .innerJoin(subjects, eq(assignments.subjectId, subjects.id))
     .where(and(...conditions))
-  return (result[0] as { cnt: number })?.cnt ?? 0
+
+  const flashcardResult = await (db as ExpoSQLiteDatabase)
+    .select({ cnt: sql<number>`count(*)` })
+    .from(flashcardAssignments)
+    .where(isNull(flashcardAssignments.startedAt))
+
+  return ((result[0] as { cnt: number })?.cnt ?? 0) + ((flashcardResult[0] as { cnt: number })?.cnt ?? 0)
 }
 
 /**
@@ -606,6 +641,144 @@ export async function addCachedAudio(
     fileSize: data.fileSize,
     cachedAt: Math.floor(Date.now() / 1000),
   })
+}
+
+// ============================================================================
+// FLASHCARD QUERIES
+// ============================================================================
+
+export async function createFlashcard(
+  db: Database,
+  data: {
+    word: string
+    wordReading?: string | null
+    wordTranslation: string
+    sentenceJa: string
+    sentenceReading?: string | null
+    sentenceTranslation: string
+    wordAudioUri?: string | null
+    sentenceAudioUri?: string | null
+    sourceModel?: string | null
+  }
+) {
+  if (!db) return null
+
+  const now = Math.floor(Date.now() / 1000)
+  const [flashcard] = await db
+    .insert(flashcards)
+    .values({
+      word: data.word,
+      wordReading: data.wordReading ?? null,
+      wordTranslation: data.wordTranslation,
+      sentenceJa: data.sentenceJa,
+      sentenceReading: data.sentenceReading ?? null,
+      sentenceTranslation: data.sentenceTranslation,
+      wordAudioUri: data.wordAudioUri ?? null,
+      sentenceAudioUri: data.sentenceAudioUri ?? null,
+      sourceModel: data.sourceModel ?? null,
+      createdAt: now,
+      updatedAt: now,
+    })
+    .returning()
+
+  await db.insert(flashcardAssignments).values({
+    flashcardId: flashcard.id,
+    srsStage: 0,
+    unlockedAt: now,
+    availableAt: now,
+    createdAt: now,
+    updatedAt: now,
+  })
+
+  return flashcard
+}
+
+export async function getAvailableFlashcardLessons(db: Database): Promise<FlashcardLessonRow[]> {
+  if (!db) return []
+
+  const rows = await (db as ExpoSQLiteDatabase)
+    .select({
+      flashcard: flashcards,
+      assignment: flashcardAssignments,
+    })
+    .from(flashcardAssignments)
+    .innerJoin(flashcards, eq(flashcardAssignments.flashcardId, flashcards.id))
+    .where(isNull(flashcardAssignments.startedAt))
+    .orderBy(desc(flashcards.createdAt))
+
+  return rows as FlashcardLessonRow[]
+}
+
+export async function getAvailableFlashcardReviews(db: Database): Promise<FlashcardLessonRow[]> {
+  if (!db) return []
+  const now = Math.floor(Date.now() / 1000)
+
+  const rows = await (db as ExpoSQLiteDatabase)
+    .select({
+      flashcard: flashcards,
+      assignment: flashcardAssignments,
+    })
+    .from(flashcardAssignments)
+    .innerJoin(flashcards, eq(flashcardAssignments.flashcardId, flashcards.id))
+    .where(
+      and(
+        isNotNull(flashcardAssignments.startedAt),
+        isNull(flashcardAssignments.burnedAt),
+        lte(flashcardAssignments.availableAt, now)
+      )
+    )
+    .orderBy(flashcardAssignments.availableAt)
+
+  return rows as FlashcardLessonRow[]
+}
+
+export async function markFlashcardLessonsCompleted(db: Database, assignmentIds: string[]): Promise<void> {
+  if (!db || assignmentIds.length === 0) return
+  const now = Math.floor(Date.now() / 1000)
+  const nextStage = 1
+
+  await db
+    .update(flashcardAssignments)
+    .set({
+      startedAt: now,
+      srsStage: nextStage,
+      availableAt: getFlashcardNextAvailableAt(nextStage, now),
+      updatedAt: now,
+    })
+    .where(inArray(flashcardAssignments.id, assignmentIds))
+}
+
+export async function submitFlashcardReviewResults(
+  db: Database,
+  results: FlashcardReviewResultInput[]
+): Promise<void> {
+  if (!db || results.length === 0) return
+
+  const now = Math.floor(Date.now() / 1000)
+
+  for (const result of results) {
+    const [assignment] = await db
+      .select()
+      .from(flashcardAssignments)
+      .where(eq(flashcardAssignments.id, result.flashcardAssignmentId))
+      .limit(1)
+
+    if (!assignment) continue
+
+    const isCorrect = result.meaningWrongCount === 0 && result.readingWrongCount === 0
+    const nextStage = getNextFlashcardSrsStage(assignment.srsStage, isCorrect)
+
+    await db
+      .update(flashcardAssignments)
+      .set({
+        srsStage: nextStage,
+        availableAt: getFlashcardNextAvailableAt(nextStage, now),
+        passedAt: nextStage >= 5 ? now : null,
+        burnedAt: nextStage >= 9 ? now : null,
+        updatedAt: now,
+      })
+      .where(eq(flashcardAssignments.id, assignment.id))
+  }
 }
 
 // ============================================================================
