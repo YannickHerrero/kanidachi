@@ -193,7 +193,7 @@ export default function LessonContentScreen() {
       </View>
 
       {/* Content */}
-      <LessonContent subject={currentItem.subject} />
+      <LessonContent subject={currentItem.subject} source={currentItem.source} />
 
       {/* Navigation */}
       <View className="flex-row items-center justify-between px-4 py-4 border-t" style={{ borderColor: colors.border }}>

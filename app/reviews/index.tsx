@@ -282,6 +282,7 @@ export default function ReviewSessionScreen() {
         <AnkiCard
           subject={currentItem.subject}
           assignment={currentItem.assignment}
+          source={currentItem.source}
           isFlipped={isFlipped}
           onFlip={flipCard}
         />

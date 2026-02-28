@@ -34,9 +34,10 @@ const TYPE_LABELS = {
 
 interface LessonContentProps {
   subject: Subject
+  source?: "wanikani" | "flashcard"
 }
 
-export function LessonContent({ subject }: LessonContentProps) {
+export function LessonContent({ subject, source }: LessonContentProps) {
   const { db } = useDatabase()
   const colors = useThemeColors()
   const autoPlayAudio = useSettingsStore((s) => s.autoPlayAudioLessons)
@@ -48,7 +49,9 @@ export function LessonContent({ subject }: LessonContentProps) {
   const secondaryMeanings = meanings.filter((m) => !m.primary && m.acceptedAnswer).map((m) => m.meaning)
 
   const typeColor = TYPE_COLORS[subject.type as keyof typeof TYPE_COLORS] ?? TYPE_COLORS.vocabulary
-  const typeLabel = TYPE_LABELS[subject.type as keyof typeof TYPE_LABELS] ?? "Item"
+  const typeLabel = source === "flashcard"
+    ? "Sentence Card"
+    : (TYPE_LABELS[subject.type as keyof typeof TYPE_LABELS] ?? "Item")
 
   // Group readings by type for kanji
   const onyomiReadings = readings.filter((r) => r.type === "onyomi")
@@ -122,7 +125,7 @@ export function LessonContent({ subject }: LessonContentProps) {
         </View>
         <Badge variant="secondary" className="bg-white/20">
           <Text className="text-white text-xs">
-            {typeLabel} - Level {subject.level}
+            {source === "flashcard" ? typeLabel : `${typeLabel} - Level ${subject.level}`}
           </Text>
         </Badge>
       </View>

@@ -192,6 +192,7 @@ export default function LessonQuizScreen() {
         <QuizCard
           subject={currentItem.subject}
           assignment={currentItem.assignment}
+          source={currentItem.source}
           isFlipped={isFlipped}
           onFlip={handleFlip}
           onGrade={handleGrade}

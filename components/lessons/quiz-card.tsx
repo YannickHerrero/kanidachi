@@ -6,19 +6,23 @@ import { Button } from "@/components/ui/button"
 import { useThemeColors } from "@/hooks/useThemeColors"
 import { CardBack } from "@/components/reviews/card-back"
 import { CardFront } from "@/components/reviews/card-front"
+import { FlashcardBack } from "@/components/reviews/flashcard-back"
+import { FlashcardFront } from "@/components/reviews/flashcard-front"
 import type { Assignment, Subject } from "@/stores/lessons"
 
 interface QuizCardProps {
   subject: Subject
   assignment: Assignment
+  source?: "wanikani" | "flashcard"
   isFlipped: boolean
   onFlip: () => void
   onGrade: (correct: boolean) => void
 }
 
-export function QuizCard({ subject, assignment, isFlipped, onFlip, onGrade }: QuizCardProps) {
+export function QuizCard({ subject, assignment, source, isFlipped, onFlip, onGrade }: QuizCardProps) {
   const colors = useThemeColors()
   const passColor = "#22c55e"
+  const isFlashcard = source === "flashcard"
 
   return (
     <View className="flex-1">
@@ -30,9 +34,13 @@ export function QuizCard({ subject, assignment, isFlipped, onFlip, onGrade }: Qu
         <Card className="flex-1 mx-4">
           <CardContent className="flex-1 py-6">
             {isFlipped ? (
-              <CardBack subject={subject} assignment={assignment} />
+              isFlashcard ? (
+                <FlashcardBack subject={subject} />
+              ) : (
+                <CardBack subject={subject} assignment={assignment} />
+              )
             ) : (
-              <CardFront subject={subject} />
+              isFlashcard ? <FlashcardFront subject={subject} /> : <CardFront subject={subject} />
             )}
           </CardContent>
         </Card>
