@@ -1,10 +1,15 @@
 import * as React from "react"
 import { useDatabase } from "@/db/provider"
-import { getAvailableLessons, getSubjectsByIds, getCurrentUser } from "@/db/queries"
+import {
+  getAvailableLessons,
+  getAvailableFlashcardLessons,
+  getSubjectsByIds,
+  getCurrentUser,
+} from "@/db/queries"
 import type { LessonItem } from "@/stores/lessons"
 import { useSettingsStore, type LessonOrdering } from "@/stores/settings"
 
-export type SubjectTypeFilter = "all" | "radical" | "kanji" | "vocabulary"
+export type SubjectTypeFilter = "all" | "radical" | "kanji" | "vocabulary" | "flashcard"
 
 interface UseAvailableLessonsResult {
   items: LessonItem[]
@@ -96,8 +101,9 @@ export function useAvailableLessons(): UseAvailableLessonsResult {
 
       // Get assignments available for lessons
       const assignments = await getAvailableLessons(db)
+      const flashcardLessons = await getAvailableFlashcardLessons(db)
 
-      if (assignments.length === 0) {
+      if (assignments.length === 0 && flashcardLessons.length === 0) {
         setItems([])
         setIsLoading(false)
         return
@@ -117,8 +123,94 @@ export function useAvailableLessons(): UseAvailableLessonsResult {
       for (const assignment of assignments) {
         const subject = subjectMap.get(assignment.subjectId)
         if (subject) {
-          lessonItems.push({ assignment, subject })
+          lessonItems.push({ assignment, subject, source: "wanikani" })
         }
+      }
+
+      let virtualSubjectId = -1
+      let virtualAssignmentId = -1
+      for (const row of flashcardLessons) {
+        const meaning = row.flashcard.wordTranslation
+        const reading = row.flashcard.wordReading
+
+        lessonItems.push({
+          assignment: {
+            id: virtualAssignmentId,
+            subjectId: virtualSubjectId,
+            subjectType: "vocabulary",
+            srsStage: row.assignment.srsStage,
+            level: 1,
+            unlockedAt: row.assignment.unlockedAt,
+            startedAt: row.assignment.startedAt,
+            passedAt: row.assignment.passedAt,
+            burnedAt: row.assignment.burnedAt,
+            availableAt: row.assignment.availableAt,
+            resurrectedAt: null,
+            dataUpdatedAt: null,
+          },
+          subject: {
+            id: virtualSubjectId,
+            type: "vocabulary",
+            level: 1,
+            characters: row.flashcard.word,
+            slug: row.flashcard.word,
+            documentUrl: "",
+            meanings: JSON.stringify([{ meaning, primary: true, acceptedAnswer: true }]),
+            readings: reading
+              ? JSON.stringify([{ reading, primary: true, acceptedAnswer: true }])
+              : null,
+            auxiliaryMeanings: null,
+            componentSubjectIds: null,
+            amalgamationSubjectIds: null,
+            visuallySimilarSubjectIds: null,
+            meaningMnemonic: "",
+            meaningHint: null,
+            readingMnemonic: null,
+            readingHint: null,
+            contextSentences: JSON.stringify([
+              { ja: row.flashcard.sentenceJa, en: row.flashcard.sentenceTranslation },
+            ]),
+            partsOfSpeech: JSON.stringify(["flashcard"]),
+            pronunciationAudios: JSON.stringify([
+              row.flashcard.wordAudioUri
+                ? {
+                    url: row.flashcard.wordAudioUri,
+                    contentType: "audio/mpeg",
+                    metadata: {
+                      gender: "female",
+                      sourceId: 0,
+                      pronunciation: row.flashcard.word,
+                      voiceActorId: 0,
+                      voiceActorName: "AI",
+                      voiceDescription: "Generated",
+                    },
+                  }
+                : null,
+              row.flashcard.sentenceAudioUri
+                ? {
+                    url: row.flashcard.sentenceAudioUri,
+                    contentType: "audio/mpeg",
+                    metadata: {
+                      gender: "female",
+                      sourceId: 1,
+                      pronunciation: row.flashcard.sentenceJa,
+                      voiceActorId: 0,
+                      voiceActorName: "AI",
+                      voiceDescription: "Generated",
+                    },
+                  }
+                : null,
+            ].filter(Boolean)),
+            characterImages: null,
+            hiddenAt: null,
+            dataUpdatedAt: null,
+          },
+          source: "flashcard",
+          flashcardAssignmentId: row.assignment.id,
+        })
+
+        virtualSubjectId -= 1
+        virtualAssignmentId -= 1
       }
 
       const filteredLessonItems = hideKanaVocabulary
@@ -151,9 +243,17 @@ export function useAvailableLessons(): UseAvailableLessonsResult {
     if (typeFilter === "all") return items
 
     return items.filter((item) => {
+      if (typeFilter === "flashcard") {
+        return item.source === "flashcard"
+      }
+
       if (typeFilter === "vocabulary") {
+        if (item.source === "flashcard") return false
         return item.subject.type === "vocabulary" || item.subject.type === "kana_vocabulary"
       }
+
+      if (item.source === "flashcard") return false
+
       return item.subject.type === typeFilter
     })
   }, [items, typeFilter])

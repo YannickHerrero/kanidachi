@@ -9,6 +9,8 @@ export type Assignment = typeof assignments.$inferSelect
 export interface LessonItem {
   assignment: Assignment
   subject: Subject
+  source?: "wanikani" | "flashcard"
+  flashcardAssignmentId?: string
 }
 
 /**

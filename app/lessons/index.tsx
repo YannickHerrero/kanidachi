@@ -48,8 +48,11 @@ export default function LessonPickerScreen() {
       radical: items.filter((i) => i.subject.type === "radical").length,
       kanji: items.filter((i) => i.subject.type === "kanji").length,
       vocabulary: items.filter(
-        (i) => i.subject.type === "vocabulary" || i.subject.type === "kana_vocabulary"
+        (i) =>
+          i.source !== "flashcard" &&
+          (i.subject.type === "vocabulary" || i.subject.type === "kana_vocabulary")
       ).length,
+      flashcard: items.filter((i) => i.source === "flashcard").length,
     }
   }, [items])
 

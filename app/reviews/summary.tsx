@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { useReviewStore, type SessionSummary } from "@/stores/reviews"
 import { useDatabase } from "@/db/provider"
-import { addPendingProgress } from "@/db/queries"
+import { addPendingProgress, submitFlashcardReviewResults } from "@/db/queries"
 import { parseMeanings } from "@/db/queries"
 import { useThemeColors } from "@/hooks/useThemeColors"
 import { useSettingsStore } from "@/stores/settings"
@@ -66,6 +66,12 @@ export default function ReviewSummaryScreen() {
       setIsSubmitting(true)
 
       try {
+        const flashcardResults: Array<{
+          flashcardAssignmentId: string
+          meaningWrongCount: number
+          readingWrongCount: number
+        }> = []
+
         // Queue all review results
         for (const result of summary.results) {
           // Apply minimize penalty setting
@@ -78,6 +84,15 @@ export default function ReviewSummaryScreen() {
             readingWrongCount = Math.min(readingWrongCount, 1)
           }
 
+          if (result.source === "flashcard" && result.flashcardAssignmentId) {
+            flashcardResults.push({
+              flashcardAssignmentId: result.flashcardAssignmentId,
+              meaningWrongCount,
+              readingWrongCount,
+            })
+            continue
+          }
+
           await addPendingProgress(db, {
             assignmentId: result.assignmentId,
             subjectId: result.subjectId,
@@ -86,6 +101,8 @@ export default function ReviewSummaryScreen() {
             readingWrongCount,
           })
         }
+
+        await submitFlashcardReviewResults(db, flashcardResults)
 
         setHasSubmitted(true)
         backgroundSyncManager.processPendingQueue().catch(() => {})

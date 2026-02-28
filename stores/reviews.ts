@@ -9,6 +9,8 @@ export type Assignment = typeof assignments.$inferSelect
 export interface ReviewItem {
   assignment: Assignment
   subject: Subject
+  source?: "wanikani" | "flashcard"
+  flashcardAssignmentId?: string
 }
 
 /**
@@ -42,6 +44,8 @@ function sortReviewItems(items: ReviewItem[], ordering: ReviewOrdering): ReviewI
 export interface ItemResult {
   assignmentId: number
   subjectId: number
+  source: "wanikani" | "flashcard"
+  flashcardAssignmentId?: string
   correct: boolean
   // For combined meaning+reading, we track if they got it wrong
   // In Anki mode, wrong = both meaning and reading wrong
@@ -217,6 +221,8 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       newResults.set(currentItem.assignment.id, {
         assignmentId: currentItem.assignment.id,
         subjectId: currentItem.subject.id,
+        source: currentItem.source ?? "wanikani",
+        flashcardAssignmentId: currentItem.flashcardAssignmentId,
         correct,
         meaningWrongCount: correct ? 0 : 1,
         readingWrongCount: correct ? 0 : 1,
@@ -341,6 +347,8 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       newResults.set(currentItem.assignment.id, {
         assignmentId: currentItem.assignment.id,
         subjectId: currentItem.subject.id,
+        source: currentItem.source ?? "wanikani",
+        flashcardAssignmentId: currentItem.flashcardAssignmentId,
         correct: true,
         meaningWrongCount: 0,
         readingWrongCount: 0,

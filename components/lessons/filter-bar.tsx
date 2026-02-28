@@ -13,6 +13,7 @@ interface FilterBarProps {
     radical: number
     kanji: number
     vocabulary: number
+    flashcard: number
   }
 }
 
@@ -21,6 +22,7 @@ const FILTERS: Array<{ key: SubjectTypeFilter; label: string }> = [
   { key: "radical", label: "Radicals" },
   { key: "kanji", label: "Kanji" },
   { key: "vocabulary", label: "Vocab" },
+  { key: "flashcard", label: "Flashcards" },
 ]
 
 // Note: Using inline styles instead of NativeWind className on Pressable to avoid

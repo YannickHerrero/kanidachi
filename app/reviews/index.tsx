@@ -80,7 +80,8 @@ export default function ReviewSessionScreen() {
   const remainingCount = useReviewStore(selectRemainingCount)
   const isSessionComplete = useReviewStore(selectIsSessionComplete)
 
-  const lastReviewedSubjectId = lastReviewedItem?.subject.id ?? null
+  const lastReviewedSubjectId =
+    lastReviewedItem?.source === "flashcard" ? null : (lastReviewedItem?.subject.id ?? null)
   const {
     data: lastReviewedData,
     studyMaterial: lastReviewedStudyMaterial,
@@ -286,7 +287,7 @@ export default function ReviewSessionScreen() {
         />
       </View>
 
-      {lastReviewedItem && (
+      {lastReviewedItem && lastReviewedItem.source !== "flashcard" && (
         <View
           pointerEvents="box-none"
           style={{

@@ -17,7 +17,11 @@ import {
 } from "@/stores/lessons"
 import { useThemeColors } from "@/hooks/useThemeColors"
 import { useDatabase } from "@/db/provider"
-import { addPendingProgress, markLessonsCompleted } from "@/db/queries"
+import {
+  addPendingProgress,
+  markFlashcardLessonsCompleted,
+  markLessonsCompleted,
+} from "@/db/queries"
 import { useActivityTimer } from "@/hooks/useActivityTimer"
 
 export default function LessonQuizScreen() {
@@ -69,11 +73,25 @@ export default function LessonQuizScreen() {
     try {
       // 1. Update local assignments immediately (optimistic update)
       // This removes the items from the lessons queue right away
-      const assignmentIds = lessonItems.map((item) => item.assignment.id)
-      await markLessonsCompleted(db, assignmentIds)
+      const wkItems = lessonItems.filter((item) => item.source !== "flashcard")
+      const flashcardItems = lessonItems.filter(
+        (item) => item.source === "flashcard" && item.flashcardAssignmentId
+      )
+
+      if (wkItems.length > 0) {
+        const assignmentIds = wkItems.map((item) => item.assignment.id)
+        await markLessonsCompleted(db, assignmentIds)
+      }
+
+      if (flashcardItems.length > 0) {
+        await markFlashcardLessonsCompleted(
+          db,
+          flashcardItems.map((item) => item.flashcardAssignmentId!)
+        )
+      }
 
       // 2. Queue all lesson completions for sync with WaniKani API
-      for (const item of lessonItems) {
+      for (const item of wkItems) {
         await addPendingProgress(db, {
           assignmentId: item.assignment.id,
           subjectId: item.subject.id,
