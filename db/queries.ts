@@ -1258,6 +1258,7 @@ export interface DailyActivityTotals {
   lessons: number
   lessonsQuiz: number
   expressReviewsCompleted: number
+  reviewsCompleted: number
 }
 
 export interface DailyActivityByDate {
@@ -1266,6 +1267,11 @@ export interface DailyActivityByDate {
   lessonsSeconds: number
   lessonsQuizSeconds: number
   expressReviewsCompleted: number
+}
+
+export interface DailyReviewCountByDate {
+  date: string
+  reviewsCompleted: number
 }
 
 export interface StudyDayDetail {
@@ -1338,7 +1344,7 @@ export async function getDailyActivityTotals(
   date: string
 ): Promise<DailyActivityTotals> {
   if (!db) {
-    return { reviews: 0, lessons: 0, lessonsQuiz: 0, expressReviewsCompleted: 0 }
+    return { reviews: 0, lessons: 0, lessonsQuiz: 0, expressReviewsCompleted: 0, reviewsCompleted: 0 }
   }
 
   const rows = await db
@@ -1354,6 +1360,7 @@ export async function getDailyActivityTotals(
     lessons: 0,
     lessonsQuiz: 0,
     expressReviewsCompleted: 0,
+    reviewsCompleted: 0,
   }
 
   for (const row of rows as Array<{ activity: string; seconds: number }>) {
@@ -1377,6 +1384,8 @@ export async function getDailyActivityTotals(
   for (const row of counterRows as Array<{ counter: string; count: number }>) {
     if (row.counter === "express_reviews_completed") {
       totals.expressReviewsCompleted = row.count
+    } else if (row.counter === "reviews_completed") {
+      totals.reviewsCompleted = row.count
     }
   }
 
@@ -1437,6 +1446,42 @@ export async function getDailyActivityByDate(
     if (row.counter === "express_reviews_completed") {
       entry.expressReviewsCompleted = row.count
     }
+  }
+
+  return dateKeys.map((key) => totals.get(key)!).filter(Boolean)
+}
+
+export async function getReviewCountsByDate(
+  db: Database,
+  dateKeys: string[]
+): Promise<DailyReviewCountByDate[]> {
+  if (!db || dateKeys.length === 0) return []
+
+  const rows = await db
+    .select({
+      date: dailyCounters.date,
+      count: dailyCounters.count,
+    })
+    .from(dailyCounters)
+    .where(
+      and(
+        inArray(dailyCounters.date, dateKeys),
+        eq(dailyCounters.counter, "reviews_completed")
+      )
+    )
+
+  const totals = new Map<string, DailyReviewCountByDate>()
+  for (const dateKey of dateKeys) {
+    totals.set(dateKey, {
+      date: dateKey,
+      reviewsCompleted: 0,
+    })
+  }
+
+  for (const row of rows as Array<{ date: string; count: number }>) {
+    const entry = totals.get(row.date)
+    if (!entry) continue
+    entry.reviewsCompleted = row.count
   }
 
   return dateKeys.map((key) => totals.get(key)!).filter(Boolean)
@@ -1535,6 +1580,27 @@ export async function getLessonsCompletedCountForRange(
         isNotNull(assignments.startedAt),
         gte(assignments.startedAt, startSeconds),
         lt(assignments.startedAt, endSeconds)
+      )
+    )
+
+  return (result[0] as { cnt: number })?.cnt ?? 0
+}
+
+export async function getFlashcardLessonsCompletedCountForRange(
+  db: Database,
+  startSeconds: number,
+  endSeconds: number
+): Promise<number> {
+  if (!db) return 0
+
+  const result = await (db as ExpoSQLiteDatabase)
+    .select({ cnt: sql<number>`count(*)` })
+    .from(flashcardAssignments)
+    .where(
+      and(
+        isNotNull(flashcardAssignments.startedAt),
+        gte(flashcardAssignments.startedAt, startSeconds),
+        lt(flashcardAssignments.startedAt, endSeconds)
       )
     )
 

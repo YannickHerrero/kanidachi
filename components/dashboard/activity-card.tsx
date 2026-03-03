@@ -31,6 +31,7 @@ export function ActivityCard() {
     lessonsQuiz,
     lessonsCompleted,
     expressReviewsCompleted,
+    reviewsCompleted,
     isLoading,
   } = useDailyActivity()
   const isDark = colors.background === "#0a0a0b"
@@ -74,6 +75,15 @@ export function ActivityCard() {
               </Text>
               <Text className="text-sm" style={{ color: colors.foreground }}>
                 {isLoading ? "…" : formatDuration(totalSeconds)}
+              </Text>
+            </View>
+
+            <View className="flex-row items-center justify-between">
+              <Text className="text-sm" style={{ color: colors.mutedForeground }}>
+                Reviews Completed
+              </Text>
+              <Text className="text-sm" style={{ color: colors.foreground }}>
+                {isLoading ? "…" : reviewsCompleted}
               </Text>
             </View>
 

@@ -252,7 +252,7 @@ export const dailyActivity = sqliteTable(
 // DAILY COUNTERS - Per-day session counts
 // ============================================================================
 
-export type DailyCounterType = "express_reviews_completed"
+export type DailyCounterType = "express_reviews_completed" | "reviews_completed"
 
 export const dailyCounters = sqliteTable(
   "daily_counters",

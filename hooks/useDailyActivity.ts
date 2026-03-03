@@ -4,6 +4,7 @@ import { useFocusEffect } from "@react-navigation/native"
 import { useDatabase } from "@/db/provider"
 import {
   getDailyActivityTotals,
+  getFlashcardLessonsCompletedCountForRange,
   getLessonsCompletedCountForRange,
   type DailyActivityTotals,
 } from "@/db/queries"
@@ -19,6 +20,7 @@ const initialSummary: DailyActivitySummary = {
   lessons: 0,
   lessonsQuiz: 0,
   expressReviewsCompleted: 0,
+  reviewsCompleted: 0,
   lessonsCompleted: 0,
   dateKey: getLocalDateKey(),
 }
@@ -39,14 +41,15 @@ export function useDailyActivity() {
       const dateKey = getLocalDateKey()
       const { startSeconds, endSeconds } = getLocalDayRangeSeconds()
 
-      const [activityTotals, lessonsCompleted] = await Promise.all([
+      const [activityTotals, lessonsCompleted, flashcardLessonsCompleted] = await Promise.all([
         getDailyActivityTotals(db, dateKey),
         getLessonsCompletedCountForRange(db, startSeconds, endSeconds),
+        getFlashcardLessonsCompletedCountForRange(db, startSeconds, endSeconds),
       ])
 
       setSummary({
         ...activityTotals,
-        lessonsCompleted,
+        lessonsCompleted: lessonsCompleted + flashcardLessonsCompleted,
         dateKey,
       })
     } catch (err) {

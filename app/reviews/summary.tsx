@@ -12,11 +12,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { useReviewStore, type SessionSummary } from "@/stores/reviews"
 import { useDatabase } from "@/db/provider"
-import { addPendingProgress, submitFlashcardReviewResults } from "@/db/queries"
+import { addPendingProgress, incrementDailyCounter, submitFlashcardReviewResults } from "@/db/queries"
 import { parseMeanings } from "@/db/queries"
 import { useThemeColors } from "@/hooks/useThemeColors"
 import { useSettingsStore } from "@/stores/settings"
 import { backgroundSyncManager } from "@/lib/sync/background-sync"
+import { getLocalDateKey } from "@/lib/date-utils"
 
 export default function ReviewSummaryScreen() {
   const router = useRouter()
@@ -103,6 +104,15 @@ export default function ReviewSummaryScreen() {
         }
 
         await submitFlashcardReviewResults(db, flashcardResults)
+
+        if (summary.totalReviewed > 0) {
+          await incrementDailyCounter(
+            db,
+            getLocalDateKey(),
+            "reviews_completed",
+            summary.totalReviewed
+          )
+        }
 
         setHasSubmitted(true)
         backgroundSyncManager.processPendingQueue().catch(() => {})
