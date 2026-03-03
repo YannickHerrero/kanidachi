@@ -9,11 +9,13 @@ import {
   getReviewForecast,
   getWeeklyForecast,
   getCurrentUser,
+  getBurnedCountsByDate,
 } from "@/db/queries"
 import { triggerFullRefreshSync } from "@/lib/sync/background-sync"
 import { useAuthStore } from "@/stores/auth"
 import { useSettingsStore } from "@/stores/settings"
 import { useBackgroundSyncStore } from "@/stores/background-sync"
+import { getLocalDateKeysForPastDays } from "@/lib/date-utils"
 
 export interface DashboardData {
   /** Number of reviews available now */
@@ -45,6 +47,8 @@ export interface DashboardData {
   forecast: Array<{ hour: number; count: number }>
   /** Weekly forecast for next 7 days */
   weeklyForecast: Array<{ day: string; date: string; count: number }>
+  /** Daily burned counts for heatmap */
+  burnedHeatmap: Array<{ date: string; burnedCount: number }>
   /** User info */
   user: {
     username: string
@@ -76,6 +80,7 @@ const initialData: DashboardData = {
   },
   forecast: [],
   weeklyForecast: [],
+  burnedHeatmap: [],
   user: null,
 }
 
@@ -105,12 +110,14 @@ export function useDashboardData() {
         srsBreakdown,
         user,
         forecast,
+        burnedHeatmap,
       ] = await Promise.all([
         getAvailableReviewCount(db),
         getAvailableLessonCount(db, hideKanaVocabulary),
         getSrsBreakdown(db),
         getCurrentUser(db),
         getReviewForecast(db, 24),
+        getBurnedCountsByDate(db, getLocalDateKeysForPastDays(365)),
       ])
 
       // Get level progress based on user's current level
@@ -132,12 +139,16 @@ export function useDashboardData() {
         levelDetail,
         forecast,
         weeklyForecast,
+        burnedHeatmap,
         user: user ? { 
           username: user.username, 
           level: user.level,
           vacationStartedAt: user.vacationStartedAt,
         } : null,
       })
+      console.log("[dashboard] Burned heatmap days:", burnedHeatmap.length)
+      const nonZeroDays = burnedHeatmap.filter((day) => day.burnedCount > 0).length
+      console.log("[dashboard] Burned heatmap non-zero days:", nonZeroDays)
     } catch (err) {
       console.error("[useDashboardData] Error fetching data:", err)
       setError(err instanceof Error ? err.message : "Failed to load dashboard data")

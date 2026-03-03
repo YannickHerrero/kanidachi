@@ -1,7 +1,7 @@
 import { and, desc, eq, gte, inArray, isNotNull, isNull, lt, lte, or, sql } from "drizzle-orm"
 import type { ExpoSQLiteDatabase } from "drizzle-orm/expo-sqlite"
 import type { SQLJsDatabase } from "drizzle-orm/sql-js"
-import { getLocalDayRangeSeconds } from "@/lib/date-utils"
+import { getLocalDateKey, getLocalDayRangeSeconds } from "@/lib/date-utils"
 import {
   assignments,
   subjects,
@@ -1269,9 +1269,9 @@ export interface DailyActivityByDate {
   expressReviewsCompleted: number
 }
 
-export interface DailyReviewCountByDate {
+export interface DailyBurnedCountByDate {
   date: string
-  reviewsCompleted: number
+  burnedCount: number
 }
 
 export interface StudyDayDetail {
@@ -1451,37 +1451,41 @@ export async function getDailyActivityByDate(
   return dateKeys.map((key) => totals.get(key)!).filter(Boolean)
 }
 
-export async function getReviewCountsByDate(
+export async function getBurnedCountsByDate(
   db: Database,
   dateKeys: string[]
-): Promise<DailyReviewCountByDate[]> {
+): Promise<DailyBurnedCountByDate[]> {
   if (!db || dateKeys.length === 0) return []
+
+  const startDate = parseDateKey(dateKeys[0])
+  const endDate = parseDateKey(dateKeys[dateKeys.length - 1])
+  if (!startDate || !endDate) return []
+
+  const { startSeconds } = getLocalDayRangeSeconds(startDate)
+  const { endSeconds } = getLocalDayRangeSeconds(endDate)
 
   const rows = await db
     .select({
-      date: dailyCounters.date,
-      count: dailyCounters.count,
+      burnedAt: assignments.burnedAt,
     })
-    .from(dailyCounters)
-    .where(
-      and(
-        inArray(dailyCounters.date, dateKeys),
-        eq(dailyCounters.counter, "reviews_completed")
-      )
-    )
+    .from(assignments)
+    .where(and(isNotNull(assignments.burnedAt), gte(assignments.burnedAt, startSeconds), lt(assignments.burnedAt, endSeconds)))
 
-  const totals = new Map<string, DailyReviewCountByDate>()
+  console.log("[queries] Burned items in range:", rows.length, dateKeys[0], dateKeys[dateKeys.length - 1])
+
+  const totals = new Map<string, DailyBurnedCountByDate>()
   for (const dateKey of dateKeys) {
     totals.set(dateKey, {
       date: dateKey,
-      reviewsCompleted: 0,
+      burnedCount: 0,
     })
   }
 
-  for (const row of rows as Array<{ date: string; count: number }>) {
-    const entry = totals.get(row.date)
+  for (const row of rows as Array<{ burnedAt: number }>) {
+    const dateKey = getLocalDateKey(new Date(row.burnedAt * 1000))
+    const entry = totals.get(dateKey)
     if (!entry) continue
-    entry.reviewsCompleted = row.count
+    entry.burnedCount += 1
   }
 
   return dateKeys.map((key) => totals.get(key)!).filter(Boolean)

@@ -22,6 +22,7 @@ import { SyncProgressBar } from "@/components/dashboard/sync-progress-bar"
 import { FullRefreshOverlay } from "@/components/dashboard/full-refresh-overlay"
 import { VacationBanner } from "@/components/dashboard/vacation-banner"
 import { WeeklyForecast } from "@/components/dashboard/weekly-forecast"
+import { BurnedHeatmap } from "@/components/dashboard/burned-heatmap"
 import { useDashboardData } from "@/hooks/useDashboardData"
 import { useDashboardFocusSync } from "@/hooks/useDashboardFocusSync"
 import { useHourlySync } from "@/hooks/useHourlySync"
@@ -38,6 +39,7 @@ export default function Dashboard() {
     levelDetail,
     forecast,
     weeklyForecast,
+    burnedHeatmap,
     user,
     isLoading,
     isRefreshing,
@@ -147,6 +149,8 @@ export default function Dashboard() {
           <ReviewCard count={reviewCount} />
           <LessonCard count={lessonCount} />
         </View>
+
+        <BurnedHeatmap days={burnedHeatmap} />
 
         <Card>
           <CardContent className="p-4">
