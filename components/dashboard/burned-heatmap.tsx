@@ -152,15 +152,6 @@ export function BurnedHeatmap({ days }: BurnedHeatmapProps) {
               scrollRef.current?.scrollToEnd({ animated: false })
             }}
           >
-            <View style={styles.monthRow}>
-              {columns.map((column, index) => (
-                <View key={`label-${index}`} style={styles.monthCell}>
-                  <Text className="text-[10px]" style={{ color: colors.mutedForeground }}>
-                    {column.monthLabel ?? ""}
-                  </Text>
-                </View>
-              ))}
-            </View>
             <View style={styles.grid}>
               {columns.map((column, index) => (
                 <View key={`col-${index}`} style={styles.column}>
@@ -219,15 +210,6 @@ export function BurnedHeatmap({ days }: BurnedHeatmapProps) {
 const styles = StyleSheet.create({
   scrollContainer: {
     paddingBottom: 4,
-  },
-  monthRow: {
-    flexDirection: "row",
-    marginBottom: 6,
-  },
-  monthCell: {
-    width: 12,
-    marginRight: 4,
-    alignItems: "flex-start",
   },
   grid: {
     flexDirection: "row",
