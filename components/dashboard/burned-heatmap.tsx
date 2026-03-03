@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Pressable, ScrollView, StyleSheet, View } from "react-native"
+import { ScrollView, StyleSheet, View } from "react-native"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Text } from "@/components/ui/text"
@@ -49,7 +49,21 @@ function withOpacity(color: string, alpha: number): string {
 export function BurnedHeatmap({ days }: BurnedHeatmapProps) {
   const colors = useThemeColors()
   const scrollRef = React.useRef<ScrollView | null>(null)
-  const [activeDay, setActiveDay] = React.useState<BurnedHeatmapDay | null>(null)
+
+  const currentMonthTotal = React.useMemo(() => {
+    if (days.length === 0) return 0
+    const now = new Date()
+    const month = now.getMonth()
+    const year = now.getFullYear()
+    return days.reduce((total, day) => {
+      const date = parseDateKey(day.date)
+      if (!date) return total
+      if (date.getFullYear() === year && date.getMonth() === month) {
+        return total + day.burnedCount
+      }
+      return total
+    }, 0)
+  }, [days])
 
   const { columns, maxCount } = React.useMemo(() => {
     if (days.length === 0) {
@@ -97,11 +111,6 @@ export function BurnedHeatmap({ days }: BurnedHeatmapProps) {
     const maxCount = Math.max(...days.map((day) => day.burnedCount), 0)
     return { columns, maxCount }
   }, [days])
-
-  React.useEffect(() => {
-    if (activeDay || days.length === 0) return
-    setActiveDay(days[days.length - 1])
-  }, [activeDay, days])
 
   const getColor = React.useCallback(
     (count: number) => {
@@ -156,7 +165,7 @@ export function BurnedHeatmap({ days }: BurnedHeatmapProps) {
               {columns.map((column, index) => (
                 <View key={`col-${index}`} style={styles.column}>
                   {column.days.map((day) => (
-                    <Pressable
+                    <View
                       key={day.date}
                       style={[
                         styles.cell,
@@ -165,13 +174,6 @@ export function BurnedHeatmap({ days }: BurnedHeatmapProps) {
                           borderColor: colors.border,
                         },
                       ]}
-                      onPress={() => {
-                        setActiveDay({ date: day.date, burnedCount: day.burnedCount })
-                      }}
-                      onHoverIn={() => {
-                        setActiveDay({ date: day.date, burnedCount: day.burnedCount })
-                      }}
-                      accessibilityRole="button"
                       accessibilityLabel={`Burned items on ${day.date}: ${day.burnedCount}`}
                     />
                   ))}
@@ -187,21 +189,19 @@ export function BurnedHeatmap({ days }: BurnedHeatmapProps) {
           </View>
         )}
 
-        {activeDay && (
-          <View className="flex-row items-center gap-3 pt-2 border-t" style={{ borderColor: colors.border }}>
+        <View className="flex-row items-center gap-3 pt-2 border-t" style={{ borderColor: colors.border }}>
+          <Text className="text-xs" style={{ color: colors.mutedForeground }}>
+            Burned this month
+          </Text>
+          <Text className="text-xs" style={{ color: colors.foreground }}>
+            {currentMonthTotal}
+          </Text>
+          {!hasData && (
             <Text className="text-xs" style={{ color: colors.mutedForeground }}>
-              {activeDay.date}
+              Keep studying to see intensity
             </Text>
-            <Text className="text-xs" style={{ color: colors.foreground }}>
-              {activeDay.burnedCount} burned
-            </Text>
-            {!hasData && (
-              <Text className="text-xs" style={{ color: colors.mutedForeground }}>
-                Keep studying to see intensity
-              </Text>
-            )}
-          </View>
-        )}
+          )}
+        </View>
       </CardContent>
     </Card>
   )
