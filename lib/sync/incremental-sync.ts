@@ -10,6 +10,7 @@ import {
   studyMaterials,
   voiceActors,
   reviewStatistics,
+  reviews,
   levelProgressions,
   user,
   syncMetadata,
@@ -21,6 +22,7 @@ import type {
   WKStudyMaterial,
   WKVoiceActor,
   WKReviewStatistic,
+  WKReview,
   WKLevelProgression,
   WKUser,
 } from "@/lib/wanikani/types"
@@ -186,6 +188,24 @@ function transformReviewStatistic(rs: WKReviewStatistic) {
     hidden: rs.data.hidden,
     createdAt: isoToUnix(rs.data.created_at),
     dataUpdatedAt: rs.data_updated_at,
+  }
+}
+
+/**
+ * Transform WaniKani review to database row
+ */
+function transformReview(r: WKReview) {
+  return {
+    id: r.id,
+    assignmentId: r.data.assignment_id,
+    subjectId: r.data.subject_id,
+    createdAt: isoToUnix(r.data.created_at) ?? 0,
+    startingSrsStage: r.data.starting_srs_stage,
+    endingSrsStage: r.data.ending_srs_stage,
+    incorrectMeaningAnswers: r.data.incorrect_meaning_answers,
+    incorrectReadingAnswers: r.data.incorrect_reading_answers,
+    spacedRepetitionSystemId: r.data.spaced_repetition_system_id,
+    dataUpdatedAt: r.data_updated_at,
   }
 }
 
@@ -368,12 +388,47 @@ export async function performIncrementalSync(db: Database): Promise<void> {
         }
       }
 
-      await db.update(syncMetadata)
-        .set({ lastSyncAt: new Date().toISOString() })
-        .where(eq(syncMetadata.id, "review_statistics"))
+    await db.update(syncMetadata)
+      .set({ lastSyncAt: new Date().toISOString() })
+      .where(eq(syncMetadata.id, "review_statistics"))
     }
 
-    // Phase 6: Level Progressions (use updated_after)
+    // Phase 6: Reviews (use updated_after)
+    const reviewsMeta = await getSyncMetadata(db, "reviews")
+    const reviewsUpdatedAfter = reviewsMeta?.lastSyncAt
+
+    if (reviewsUpdatedAfter) {
+      updateProgress({ phase: "reviews", message: "Checking for review updates...", current: 0, total: 0 })
+      const updatedReviews = await wanikaniClient.getAllReviews(
+        { updated_after: reviewsUpdatedAfter },
+        (loaded, total) => {
+          updateProgress({ current: loaded, total, message: `Syncing reviews (${loaded}/${total})...` })
+        }
+      )
+      console.log("[sync] Reviews fetched (incremental):", updatedReviews.length)
+
+      if (updatedReviews.length > 0) {
+        for (const review of updatedReviews) {
+          const row = transformReview(review)
+          await db
+            .insert(reviews)
+            .values(row)
+            .onConflictDoUpdate({
+              target: reviews.id,
+              set: row,
+            })
+        }
+        console.log("[sync] Reviews upserted (incremental):", updatedReviews.length)
+      } else {
+        console.log("[sync] Reviews upsert skipped (incremental): no data")
+      }
+
+      await db.update(syncMetadata)
+        .set({ lastSyncAt: new Date().toISOString() })
+        .where(eq(syncMetadata.id, "reviews"))
+    }
+
+    // Phase 7: Level Progressions (use updated_after)
     const levelProgressionsMeta = await getSyncMetadata(db, "level_progressions")
     const levelProgressionsUpdatedAfter = levelProgressionsMeta?.lastSyncAt
 
@@ -404,7 +459,7 @@ export async function performIncrementalSync(db: Database): Promise<void> {
         .where(eq(syncMetadata.id, "level_progressions"))
     }
 
-    // Phase 7: Voice Actors (rarely changes, skip incremental for now)
+    // Phase 8: Voice Actors (rarely changes, skip incremental for now)
     updateProgress({ phase: "voice_actors", message: "Voice actors up to date", current: 1, total: 1 })
 
     // Done!
@@ -543,6 +598,12 @@ export async function performFullRefreshSync(
       return new Date(Date.now() - 60 * 60 * 1000).toISOString()
     }
 
+    // Helper to get updated_after or null when no metadata exists
+    const getUpdatedAfterOrNull = async (key: string) => {
+      const meta = await getSyncMetadata(db, key)
+      return meta?.lastSyncAt ?? null
+    }
+
     // 2. Assignments - 10% to 50%
     const assignmentsUpdatedAfter = await getUpdatedAfter("assignments")
     const updatedAssignments = await wanikaniClient.getAllAssignments(
@@ -581,13 +642,47 @@ export async function performFullRefreshSync(
     await db.update(syncMetadata).set({ lastSyncAt: new Date().toISOString() }).where(eq(syncMetadata.id, "review_statistics"))
     onProgress?.(75)
 
-    // 4. Level Progressions (for level-up detection) - 75% to 100%
+    // 4. Reviews (for heatmap) - 75% to 90%
+    const reviewsUpdatedAfter = await getUpdatedAfterOrNull("reviews")
+    const updatedReviews = await wanikaniClient.getAllReviews(
+      reviewsUpdatedAfter ? { updated_after: reviewsUpdatedAfter } : {},
+      (loaded, total) => {
+        const p = total > 0 ? (loaded / total) * 15 : 15
+        onProgress?.(75 + p)
+      }
+    )
+    console.log(`[sync] Full refresh: ${updatedReviews.length} reviews`)
+    if (updatedReviews.length > 0) {
+      for (const review of updatedReviews) {
+        const row = transformReview(review)
+        await db.insert(reviews).values(row).onConflictDoUpdate({ target: reviews.id, set: row })
+      }
+    }
+    await db
+      .insert(syncMetadata)
+      .values({
+        id: "reviews",
+        lastSyncAt: new Date().toISOString(),
+        lastFullSyncAt: Math.floor(Date.now() / 1000),
+        itemCount: updatedReviews.length,
+      })
+      .onConflictDoUpdate({
+        target: syncMetadata.id,
+        set: {
+          lastSyncAt: new Date().toISOString(),
+          lastFullSyncAt: Math.floor(Date.now() / 1000),
+          itemCount: updatedReviews.length,
+        },
+      })
+    onProgress?.(90)
+
+    // 5. Level Progressions (for level-up detection) - 90% to 100%
     const levelProgressionsUpdatedAfter = await getUpdatedAfter("level_progressions")
     const updatedLevelProgressions = await wanikaniClient.getAllLevelProgressions(
       { updated_after: levelProgressionsUpdatedAfter },
       (loaded, total) => {
-        const p = total > 0 ? (loaded / total) * 25 : 25
-        onProgress?.(75 + p)
+        const p = total > 0 ? (loaded / total) * 10 : 10
+        onProgress?.(90 + p)
       }
     )
     if (updatedLevelProgressions.length > 0) {

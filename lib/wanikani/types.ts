@@ -181,6 +181,15 @@ export interface WKReviewData {
 
 export type WKReview = WKResource<WKReviewData>
 
+export type WKReviewsCollection = WKCollection<WKReview>
+
+export interface WKReviewsParams {
+  updated_after?: string
+  ids?: string
+  subject_ids?: string
+  assignment_ids?: string
+}
+
 export interface WKCreateReviewRequest {
   review: {
     assignment_id: number

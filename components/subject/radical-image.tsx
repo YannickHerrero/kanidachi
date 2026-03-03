@@ -42,27 +42,38 @@ export function parseCharacterImages(json: string | null): CharacterImage[] {
 
 /**
  * Select the best image from available character images
- * Prefers SVG with inline styles for better rendering
+ * Prefers SVG with inline styles; otherwise fall back to PNG
  */
-function selectBestImage(images: CharacterImage[]): CharacterImage | null {
-  if (images.length === 0) return null
+function orderImages(
+  images: CharacterImage[],
+  options: { preferSvg?: boolean } = {}
+): CharacterImage[] {
+  if (images.length === 0) return []
 
-  // Prefer SVG with inline styles (renders better)
+  const preferSvg = options.preferSvg ?? true
   const svgWithStyles = images.find(
     (img) => img.contentType === "image/svg+xml" && img.metadata.inlineStyles
   )
-  if (svgWithStyles) return svgWithStyles
-
-  // Fall back to any SVG
-  const svg = images.find((img) => img.contentType === "image/svg+xml")
-  if (svg) return svg
-
-  // Fall back to PNG
   const png = images.find((img) => img.contentType === "image/png")
-  if (png) return png
+  const svg = images.find((img) => img.contentType === "image/svg+xml")
 
-  // Return first available
-  return images[0]
+  const ordered: CharacterImage[] = []
+  const add = (img?: CharacterImage | null) => {
+    if (img && !ordered.includes(img)) ordered.push(img)
+  }
+
+  if (preferSvg) {
+    add(svgWithStyles)
+    add(svg)
+    add(png)
+  } else {
+    add(png)
+    add(svgWithStyles)
+    add(svg)
+  }
+
+  for (const img of images) add(img)
+  return ordered
 }
 
 /**
@@ -78,12 +89,23 @@ export function RadicalImage({
 }: RadicalImageProps) {
   const [isLoading, setIsLoading] = React.useState(true)
   const [error, setError] = React.useState(false)
+  const [imageIndex, setImageIndex] = React.useState(0)
 
   const sizeConfig = SIZES[size]
-  const selectedImage = React.useMemo(
-    () => selectBestImage(characterImages ?? []),
+  const orderedImages = React.useMemo(
+    () =>
+      orderImages(characterImages ?? [], {
+        preferSvg: Platform.OS === "web",
+      }),
     [characterImages]
   )
+  const selectedImage = orderedImages[imageIndex] ?? null
+
+  React.useEffect(() => {
+    setImageIndex(0)
+    setError(false)
+    setIsLoading(true)
+  }, [orderedImages.length])
 
   // If we have a character, prefer showing it
   if (characters) {
@@ -129,6 +151,11 @@ export function RadicalImage({
           uri={selectedImage.url}
           onLoad={() => setIsLoading(false)}
           onError={() => {
+            if (imageIndex + 1 < orderedImages.length) {
+              setImageIndex((index) => index + 1)
+              setIsLoading(true)
+              return
+            }
             setIsLoading(false)
             setError(true)
           }}
@@ -144,6 +171,11 @@ export function RadicalImage({
           resizeMode="contain"
           onLoad={() => setIsLoading(false)}
           onError={() => {
+            if (imageIndex + 1 < orderedImages.length) {
+              setImageIndex((index) => index + 1)
+              setIsLoading(true)
+              return
+            }
             setIsLoading(false)
             setError(true)
           }}
@@ -170,11 +202,21 @@ export function InlineRadicalImage({
   className,
 }: InlineRadicalImageProps) {
   const [error, setError] = React.useState(false)
+  const [imageIndex, setImageIndex] = React.useState(0)
 
-  const selectedImage = React.useMemo(
-    () => selectBestImage(characterImages ?? []),
+  const orderedImages = React.useMemo(
+    () =>
+      orderImages(characterImages ?? [], {
+        preferSvg: Platform.OS === "web",
+      }),
     [characterImages]
   )
+  const selectedImage = orderedImages[imageIndex] ?? null
+
+  React.useEffect(() => {
+    setImageIndex(0)
+    setError(false)
+  }, [orderedImages.length])
 
   // If we have a character, show it
   if (characters) {
@@ -202,7 +244,13 @@ export function InlineRadicalImage({
         width={size}
         height={size}
         uri={selectedImage.url}
-        onError={() => setError(true)}
+        onError={() => {
+          if (imageIndex + 1 < orderedImages.length) {
+            setImageIndex((index) => index + 1)
+            return
+          }
+          setError(true)
+        }}
       />
     )
   }
@@ -212,7 +260,13 @@ export function InlineRadicalImage({
       source={{ uri: selectedImage.url }}
       style={{ width: size, height: size }}
       resizeMode="contain"
-      onError={() => setError(true)}
+      onError={() => {
+        if (imageIndex + 1 < orderedImages.length) {
+          setImageIndex((index) => index + 1)
+          return
+        }
+        setError(true)
+      }}
     />
   )
 }

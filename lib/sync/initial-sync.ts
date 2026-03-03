@@ -9,6 +9,7 @@ import {
   studyMaterials,
   voiceActors,
   reviewStatistics,
+  reviews,
   levelProgressions,
   user,
   syncMetadata,
@@ -19,6 +20,7 @@ import type {
   WKStudyMaterial,
   WKVoiceActor,
   WKReviewStatistic,
+  WKReview,
   WKLevelProgression,
   WKUser,
 } from "@/lib/wanikani/types"
@@ -187,6 +189,24 @@ function transformReviewStatistic(rs: WKReviewStatistic) {
 }
 
 /**
+ * Transform WaniKani review to database row
+ */
+function transformReview(r: WKReview) {
+  return {
+    id: r.id,
+    assignmentId: r.data.assignment_id,
+    subjectId: r.data.subject_id,
+    createdAt: isoToUnix(r.data.created_at) ?? 0,
+    startingSrsStage: r.data.starting_srs_stage,
+    endingSrsStage: r.data.ending_srs_stage,
+    incorrectMeaningAnswers: r.data.incorrect_meaning_answers,
+    incorrectReadingAnswers: r.data.incorrect_reading_answers,
+    spacedRepetitionSystemId: r.data.spaced_repetition_system_id,
+    dataUpdatedAt: r.data_updated_at,
+  }
+}
+
+/**
  * Transform WaniKani level progression to database row
  */
 function transformLevelProgression(lp: WKLevelProgression) {
@@ -323,7 +343,32 @@ export async function performInitialSync(db: Database): Promise<void> {
       itemCount: allReviewStats.length,
     }).onConflictDoNothing()
 
-    // Phase 6: Level Progressions
+    // Phase 6: Reviews
+    updateProgress({ phase: "reviews", message: "Syncing review history...", current: 0, total: 0 })
+    const allReviews = await wanikaniClient.getAllReviews({}, (loaded, total) => {
+      updateProgress({ current: loaded, total, message: `Syncing reviews (${loaded}/${total})...` })
+    })
+    console.log("[sync] Reviews fetched (full):", allReviews.length)
+
+    if (allReviews.length > 0) {
+      const reviewRows = allReviews.map(transformReview)
+      for (let i = 0; i < reviewRows.length; i += 200) {
+        const batch = reviewRows.slice(i, i + 200)
+        await db.insert(reviews).values(batch).onConflictDoNothing()
+      }
+      console.log("[sync] Reviews inserted (full):", reviewRows.length)
+    } else {
+      console.log("[sync] Reviews insert skipped (full): no data")
+    }
+
+    await db.insert(syncMetadata).values({
+      id: "reviews",
+      lastSyncAt: new Date().toISOString(),
+      lastFullSyncAt: Math.floor(Date.now() / 1000),
+      itemCount: allReviews.length,
+    }).onConflictDoNothing()
+
+    // Phase 7: Level Progressions
     updateProgress({ phase: "level_progressions", message: "Syncing level progressions...", current: 0, total: 0 })
     const allLevelProgressions = await wanikaniClient.getAllLevelProgressions({}, (loaded, total) => {
       updateProgress({ current: loaded, total, message: `Syncing level progressions (${loaded}/${total})...` })
@@ -344,7 +389,7 @@ export async function performInitialSync(db: Database): Promise<void> {
       itemCount: allLevelProgressions.length,
     }).onConflictDoNothing()
 
-    // Phase 7: Voice Actors
+    // Phase 8: Voice Actors
     updateProgress({ phase: "voice_actors", message: "Syncing voice actors...", current: 0, total: 0 })
     const allVoiceActors = await wanikaniClient.getAllVoiceActors({}, (loaded, total) => {
       updateProgress({ current: loaded, total, message: `Syncing voice actors (${loaded}/${total})...` })

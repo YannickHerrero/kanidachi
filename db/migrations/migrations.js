@@ -7,6 +7,7 @@ import m0002 from './0002_add_error_log.sql';
 import m0003 from './0003_add_daily_activity.sql';
 import m0004 from './0004_add_daily_counters.sql';
 import m0005 from './0005_add_flashcards.sql';
+import m0006 from './0006_add_reviews.sql';
 
   export default {
     journal,
@@ -16,6 +17,7 @@ import m0005 from './0005_add_flashcards.sql';
       m0002,
       m0003,
       m0004,
-      m0005
+      m0005,
+      m0006
     }
   }

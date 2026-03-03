@@ -150,6 +150,23 @@ export const reviewStatistics = sqliteTable("review_statistics", {
 })
 
 // ============================================================================
+// REVIEWS - Review history entries
+// ============================================================================
+
+export const reviews = sqliteTable("reviews", {
+  id: integer("id").primaryKey(), // WaniKani review ID
+  assignmentId: integer("assignment_id").notNull(),
+  subjectId: integer("subject_id").notNull(),
+  createdAt: integer("created_at").notNull(),
+  startingSrsStage: integer("starting_srs_stage").notNull(),
+  endingSrsStage: integer("ending_srs_stage").notNull(),
+  incorrectMeaningAnswers: integer("incorrect_meaning_answers").notNull(),
+  incorrectReadingAnswers: integer("incorrect_reading_answers").notNull(),
+  spacedRepetitionSystemId: integer("spaced_repetition_system_id").notNull(),
+  dataUpdatedAt: text("data_updated_at"),
+})
+
+// ============================================================================
 // LEVEL PROGRESSIONS - Level unlock history
 // ============================================================================
 

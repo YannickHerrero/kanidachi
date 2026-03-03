@@ -12,6 +12,8 @@ import type {
   WKVoiceActorsCollection,
   WKReviewStatistic,
   WKReviewStatisticsCollection,
+  WKReview,
+  WKReviewsCollection,
   WKLevelProgression,
   WKLevelProgressionsCollection,
   WKCreateReviewRequest,
@@ -21,6 +23,7 @@ import type {
   WKAssignmentsParams,
   WKStudyMaterialsParams,
   WKReviewStatisticsParams,
+  WKReviewsParams,
   WKLevelProgressionsParams,
   WKVoiceActorsParams,
   WKErrorResponse,
@@ -174,6 +177,24 @@ export class WaniKaniClient {
       method: "POST",
       body: JSON.stringify(body),
     })
+  }
+
+  /**
+   * Fetch reviews
+   */
+  async getReviews(params?: WKReviewsParams): Promise<WKReviewsCollection> {
+    const query = this.buildQueryString(params as Record<string, unknown>)
+    return this.request<WKReviewsCollection>(`/reviews${query}`)
+  }
+
+  /**
+   * Fetch all reviews
+   */
+  async getAllReviews(
+    params?: Omit<WKReviewsParams, "page_after_id">,
+    onProgress?: (loaded: number, total: number) => void
+  ): Promise<WKReview[]> {
+    return this.fetchAllPages<WKReview, WKReviewsCollection>("/reviews", params, onProgress)
   }
 
   // ============================================================================
