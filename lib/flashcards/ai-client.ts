@@ -156,8 +156,8 @@ export async function generateFlashcardDefinitions(word: string): Promise<Flashc
     "- If there are multiple common meanings, include each as a separate item.",
     "- Keep each definition short (3-8 words).",
     "- Do not include romaji.",
-    "- commonness is a 0-100 score for how often the word is used with that meaning",
-    "  in natural spoken Japanese (100 = extremely common, 0 = extremely rare).",
+    "- commonness is a 0-100 score for whether an intermediate learner should learn",
+    "  the word with that meaning (100 = very useful/priority, 0 = niche/unnecessary).",
     `Word: ${trimmedWord}`,
   ].join("\n")
 
