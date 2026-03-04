@@ -14,7 +14,12 @@ const flashcardGenerationSchema = z.object({
   sentenceTranslation: z.string().min(1),
 })
 
+const flashcardDefinitionsSchema = z.object({
+  definitions: z.array(z.string().min(1)).min(1),
+})
+
 export type FlashcardGeneration = z.infer<typeof flashcardGenerationSchema>
+export type FlashcardDefinitions = z.infer<typeof flashcardDefinitionsSchema>
 
 function encodeBase64(bytes: Uint8Array): string {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
@@ -68,10 +73,18 @@ async function authorizedRequest(path: string, init: RequestInit): Promise<Respo
   return response
 }
 
-export async function generateFlashcardContent(word: string): Promise<FlashcardGeneration> {
+export async function generateFlashcardContent(
+  word: string,
+  definition: string
+): Promise<FlashcardGeneration> {
   const trimmedWord = word.trim()
   if (!trimmedWord) {
     throw new Error("Please enter a Japanese word")
+  }
+
+  const trimmedDefinition = definition.trim()
+  if (!trimmedDefinition) {
+    throw new Error("Please select a definition")
   }
 
   const prompt = [
@@ -82,7 +95,9 @@ export async function generateFlashcardContent(word: string): Promise<FlashcardG
     "- sentenceJa must be a short natural Japanese sentence using the given word exactly once.",
     "- Keep grammar simple and easy.",
     "- Translations must be concise and natural English.",
+    "- Use the provided definition for the meaning/context.",
     `Word: ${trimmedWord}`,
+    `Definition: ${trimmedDefinition}`,
   ].join("\n")
 
   const response = await authorizedRequest("/chat/completions", {
@@ -118,6 +133,58 @@ export async function generateFlashcardContent(word: string): Promise<FlashcardG
   }
 
   return flashcardGenerationSchema.parse(parsed)
+}
+
+export async function generateFlashcardDefinitions(word: string): Promise<FlashcardDefinitions> {
+  const trimmedWord = word.trim()
+  if (!trimmedWord) {
+    throw new Error("Please enter a Japanese word")
+  }
+
+  const prompt = [
+    "You are helping create Japanese flashcards for beginners.",
+    "Return STRICT JSON only with this key:",
+    "definitions (an array of concise English definitions).",
+    "Constraints:",
+    "- If there are multiple common meanings, include each as a separate item.",
+    "- Keep each definition short (3-8 words).",
+    "- Do not include romaji.",
+    `Word: ${trimmedWord}`,
+  ].join("\n")
+
+  const response = await authorizedRequest("/chat/completions", {
+    method: "POST",
+    body: JSON.stringify({
+      model: CHAT_MODEL,
+      temperature: 0.6,
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content: "You only return valid JSON.",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+    }),
+  })
+
+  const json = await response.json()
+  const content = json?.choices?.[0]?.message?.content
+  if (!content || typeof content !== "string") {
+    throw new Error("The model returned an invalid response")
+  }
+
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(content)
+  } catch {
+    throw new Error("Could not parse generation output")
+  }
+
+  return flashcardDefinitionsSchema.parse(parsed)
 }
 
 export async function generateSpeechAudio(text: string): Promise<string> {

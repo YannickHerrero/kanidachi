@@ -14,6 +14,7 @@ import { createFlashcard } from "@/db/queries"
 import { useThemeColors } from "@/hooks/useThemeColors"
 import {
   generateFlashcardContent,
+  generateFlashcardDefinitions,
   generateSpeechAudio,
   type FlashcardGeneration,
 } from "@/lib/flashcards/ai-client"
@@ -29,11 +30,14 @@ export default function FlashcardCreateScreen() {
 
   const [word, setWord] = React.useState("")
   const [content, setContent] = React.useState<FlashcardGeneration | null>(null)
+  const [definitions, setDefinitions] = React.useState<string[]>([])
+  const [selectedDefinition, setSelectedDefinition] = React.useState<string | null>(null)
   const [manualSentence, setManualSentence] = React.useState("")
   const [isSentenceConfirmed, setIsSentenceConfirmed] = React.useState(false)
   const [wordAudioUri, setWordAudioUri] = React.useState<string | null>(null)
   const [sentenceAudioUri, setSentenceAudioUri] = React.useState<string | null>(null)
   const [isGenerating, setIsGenerating] = React.useState(false)
+  const [isFetchingDefinitions, setIsFetchingDefinitions] = React.useState(false)
   const [isGeneratingAudio, setIsGeneratingAudio] = React.useState(false)
   const [isSaving, setIsSaving] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
@@ -50,17 +54,47 @@ export default function FlashcardCreateScreen() {
     router.push("/settings")
   }, [router])
 
-  const handleGenerate = React.useCallback(async () => {
+  const handleFetchDefinitions = React.useCallback(async () => {
     const trimmedWord = word.trim()
     if (!trimmedWord) {
       setError("Please enter a Japanese word")
       return
     }
 
+    setIsFetchingDefinitions(true)
+    setError(null)
+    try {
+      const generated = await generateFlashcardDefinitions(trimmedWord)
+      setDefinitions(generated.definitions)
+      setSelectedDefinition(generated.definitions[0] ?? null)
+      setContent(null)
+      setManualSentence("")
+      setIsSentenceConfirmed(false)
+      setWordAudioUri(null)
+      setSentenceAudioUri(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch definitions")
+    } finally {
+      setIsFetchingDefinitions(false)
+    }
+  }, [word])
+
+  const handleGenerate = React.useCallback(async () => {
+    const trimmedWord = word.trim()
+    const definition = selectedDefinition?.trim() ?? ""
+    if (!trimmedWord) {
+      setError("Please enter a Japanese word")
+      return
+    }
+    if (!definition) {
+      setError("Please select a definition")
+      return
+    }
+
     setIsGenerating(true)
     setError(null)
     try {
-      const generated = await generateFlashcardContent(trimmedWord)
+      const generated = await generateFlashcardContent(trimmedWord, definition)
       setContent(generated)
       setManualSentence(generated.sentenceJa)
       setIsSentenceConfirmed(false)
@@ -71,7 +105,7 @@ export default function FlashcardCreateScreen() {
     } finally {
       setIsGenerating(false)
     }
-  }, [word])
+  }, [selectedDefinition, word])
 
   const handleGenerateAudio = React.useCallback(async () => {
     if (!content || !isSentenceConfirmed) return
@@ -139,6 +173,8 @@ export default function FlashcardCreateScreen() {
   const handleWordChange = React.useCallback((value: string) => {
     setWord(value)
     setContent(null)
+    setDefinitions([])
+    setSelectedDefinition(null)
     setManualSentence("")
     setIsSentenceConfirmed(false)
     setWordAudioUri(null)
@@ -146,7 +182,20 @@ export default function FlashcardCreateScreen() {
     setError(null)
   }, [])
 
-  const canGenerate = word.trim().length > 0 && !isGenerating && hasFlashcardApiKey
+  const handleDefinitionSelect = React.useCallback((definition: string) => {
+    setSelectedDefinition(definition)
+    setContent(null)
+    setManualSentence("")
+    setIsSentenceConfirmed(false)
+    setWordAudioUri(null)
+    setSentenceAudioUri(null)
+    setError(null)
+  }, [])
+
+  const canFetchDefinitions =
+    word.trim().length > 0 && !isFetchingDefinitions && hasFlashcardApiKey
+  const canGenerate =
+    word.trim().length > 0 && Boolean(selectedDefinition) && !isGenerating && hasFlashcardApiKey
   const canGenerateAudio = Boolean(
     content && manualSentence.trim() && isSentenceConfirmed && !isGeneratingAudio
   )
@@ -182,7 +231,7 @@ export default function FlashcardCreateScreen() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Step 1: Generate Content</CardTitle>
+            <CardTitle>Step 1: Enter Word</CardTitle>
           </CardHeader>
           <CardContent className="gap-3">
             <Input
@@ -192,22 +241,55 @@ export default function FlashcardCreateScreen() {
               autoCorrect={false}
               placeholder="日本語の単語"
             />
-            <Button onPress={handleGenerate} disabled={!canGenerate}>
+            <Button onPress={handleFetchDefinitions} disabled={!canFetchDefinitions}>
               <Text style={{ color: colors.primaryForeground }}>
-                {isGenerating ? "Generating..." : "Generate Sentence"}
+                {isFetchingDefinitions ? "Finding definitions..." : "Find Definitions"}
               </Text>
             </Button>
             <Text className="text-xs" style={{ color: colors.mutedForeground }}>
-              Tip: regenerate until you like the sentence, then edit manually if needed.
+              Tip: pick the definition that matches your intended meaning.
             </Text>
           </CardContent>
         </Card>
+
+        {definitions.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Step 2: Choose Definition</CardTitle>
+            </CardHeader>
+            <CardContent className="gap-2">
+              {definitions.map((definition) => (
+                <Button
+                  key={definition}
+                  variant={definition === selectedDefinition ? "default" : "outline"}
+                  onPress={() => handleDefinitionSelect(definition)}
+                >
+                  <Text
+                    style={{
+                      color:
+                        definition === selectedDefinition
+                          ? colors.primaryForeground
+                          : colors.foreground,
+                    }}
+                  >
+                    {definition}
+                  </Text>
+                </Button>
+              ))}
+              <Button onPress={handleGenerate} disabled={!canGenerate}>
+                <Text style={{ color: colors.primaryForeground }}>
+                  {isGenerating ? "Generating..." : "Generate Sentence"}
+                </Text>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         {content && (
           <>
             <Card>
               <CardHeader>
-                <CardTitle>Step 2: Finalize Sentence</CardTitle>
+                <CardTitle>Step 3: Finalize Sentence</CardTitle>
               </CardHeader>
               <CardContent className="gap-3">
                 <Text>Word translation: {content.wordTranslation}</Text>
@@ -231,7 +313,7 @@ export default function FlashcardCreateScreen() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Step 3: Generate Audio</CardTitle>
+                <CardTitle>Step 4: Generate Audio</CardTitle>
               </CardHeader>
               <CardContent className="gap-3">
                 <Button onPress={handleGenerateAudio} disabled={!canGenerateAudio}>
@@ -289,7 +371,7 @@ export default function FlashcardCreateScreen() {
           <Text style={{ color: colors.destructive }}>{error}</Text>
         )}
 
-        {(isGenerating || isGeneratingAudio || isSaving) && (
+        {(isGenerating || isGeneratingAudio || isSaving || isFetchingDefinitions) && (
           <View className="py-2">
             <ActivityIndicator />
           </View>
