@@ -77,6 +77,7 @@ export const flashcards = sqliteTable("flashcards", {
   sentenceTranslation: text("sentence_translation").notNull(),
   wordAudioUri: text("word_audio_uri"),
   sentenceAudioUri: text("sentence_audio_uri"),
+  componentSubjectIds: text("component_subject_ids"),
   sourceModel: text("source_model"),
   createdAt: integer("created_at").notNull(),
   updatedAt: integer("updated_at").notNull(),

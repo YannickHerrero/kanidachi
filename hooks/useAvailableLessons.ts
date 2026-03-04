@@ -160,7 +160,7 @@ export function useAvailableLessons(): UseAvailableLessonsResult {
               ? JSON.stringify([{ reading, primary: true, acceptedAnswer: true }])
               : null,
             auxiliaryMeanings: null,
-            componentSubjectIds: null,
+            componentSubjectIds: row.flashcard.componentSubjectIds ?? null,
             amalgamationSubjectIds: null,
             visuallySimilarSubjectIds: null,
             meaningMnemonic: "",

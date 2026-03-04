@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Text } from "@/components/ui/text"
 import { Textarea } from "@/components/ui/textarea"
 import { useDatabase } from "@/db/provider"
-import { createFlashcard } from "@/db/queries"
+import { createFlashcard, getKanjiSubjectsByCharacters } from "@/db/queries"
 import { useThemeColors } from "@/hooks/useThemeColors"
 import {
   generateFlashcardContent,
@@ -133,6 +133,12 @@ export default function FlashcardCreateScreen() {
     setError(null)
 
     try {
+      const kanjiChars = Array.from(word)
+        .filter((char) => /[\u4E00-\u9FFF]/u.test(char))
+      const uniqueKanjiChars = Array.from(new Set(kanjiChars))
+      const kanjiSubjects = await getKanjiSubjectsByCharacters(db, uniqueKanjiChars)
+      const componentSubjectIds = kanjiSubjects.map((subject) => subject.id)
+
       await createFlashcard(db, {
         word: word.trim(),
         wordReading: content.wordReading,
@@ -142,6 +148,7 @@ export default function FlashcardCreateScreen() {
         sentenceTranslation: content.sentenceTranslation,
         wordAudioUri,
         sentenceAudioUri,
+        componentSubjectIds,
         sourceModel: "gpt-4o-mini",
       })
 

@@ -67,6 +67,14 @@ export async function getSubjectsByIds(db: Database, ids: number[]) {
   return db.select().from(subjects).where(inArray(subjects.id, ids))
 }
 
+export async function getKanjiSubjectsByCharacters(db: Database, characters: string[]) {
+  if (!db || characters.length === 0) return []
+  return db
+    .select()
+    .from(subjects)
+    .where(and(eq(subjects.type, "kanji"), inArray(subjects.characters, characters)))
+}
+
 export async function getSubjectsByLevel(db: Database, level: number) {
   if (!db) return []
   return db.select().from(subjects).where(eq(subjects.level, level))
@@ -658,6 +666,7 @@ export async function createFlashcard(
     sentenceTranslation: string
     wordAudioUri?: string | null
     sentenceAudioUri?: string | null
+    componentSubjectIds?: number[] | null
     sourceModel?: string | null
   }
 ) {
@@ -675,6 +684,10 @@ export async function createFlashcard(
       sentenceTranslation: data.sentenceTranslation,
       wordAudioUri: data.wordAudioUri ?? null,
       sentenceAudioUri: data.sentenceAudioUri ?? null,
+      componentSubjectIds:
+        data.componentSubjectIds && data.componentSubjectIds.length > 0
+          ? JSON.stringify(data.componentSubjectIds)
+          : null,
       sourceModel: data.sourceModel ?? null,
       createdAt: now,
       updatedAt: now,
