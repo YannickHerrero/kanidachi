@@ -15,7 +15,14 @@ const flashcardGenerationSchema = z.object({
 })
 
 const flashcardDefinitionsSchema = z.object({
-  definitions: z.array(z.string().min(1)).min(1),
+  definitions: z
+    .array(
+      z.object({
+        definition: z.string().min(1),
+        commonness: z.number().min(0).max(100),
+      })
+    )
+    .min(1),
 })
 
 export type FlashcardGeneration = z.infer<typeof flashcardGenerationSchema>
@@ -144,11 +151,13 @@ export async function generateFlashcardDefinitions(word: string): Promise<Flashc
   const prompt = [
     "You are helping create Japanese flashcards for beginners.",
     "Return STRICT JSON only with this key:",
-    "definitions (an array of concise English definitions).",
+    "definitions (an array of objects with: definition, commonness).",
     "Constraints:",
     "- If there are multiple common meanings, include each as a separate item.",
     "- Keep each definition short (3-8 words).",
     "- Do not include romaji.",
+    "- commonness is a 0-100 score for how often the word is used with that meaning",
+    "  in natural spoken Japanese (100 = extremely common, 0 = extremely rare).",
     `Word: ${trimmedWord}`,
   ].join("\n")
 

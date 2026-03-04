@@ -1,5 +1,5 @@
 import * as React from "react"
-import { ActivityIndicator, ScrollView, View } from "react-native"
+import { ActivityIndicator, Pressable, ScrollView, View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useRouter, Stack } from "expo-router"
 import { ChevronLeft, RefreshCw, Volume2 } from "lucide-react-native"
@@ -17,6 +17,7 @@ import {
   generateFlashcardDefinitions,
   generateSpeechAudio,
   type FlashcardGeneration,
+  type FlashcardDefinitions,
 } from "@/lib/flashcards/ai-client"
 import { audioPlayer } from "@/lib/audio/player"
 import { useSettingsStore } from "@/stores/settings"
@@ -30,8 +31,10 @@ export default function FlashcardCreateScreen() {
 
   const [word, setWord] = React.useState("")
   const [content, setContent] = React.useState<FlashcardGeneration | null>(null)
-  const [definitions, setDefinitions] = React.useState<string[]>([])
-  const [selectedDefinition, setSelectedDefinition] = React.useState<string | null>(null)
+  const [definitions, setDefinitions] = React.useState<FlashcardDefinitions["definitions"]>([])
+  const [selectedDefinitionIndex, setSelectedDefinitionIndex] = React.useState<number | null>(
+    null
+  )
   const [manualSentence, setManualSentence] = React.useState("")
   const [isSentenceConfirmed, setIsSentenceConfirmed] = React.useState(false)
   const [wordAudioUri, setWordAudioUri] = React.useState<string | null>(null)
@@ -66,7 +69,7 @@ export default function FlashcardCreateScreen() {
     try {
       const generated = await generateFlashcardDefinitions(trimmedWord)
       setDefinitions(generated.definitions)
-      setSelectedDefinition(generated.definitions[0] ?? null)
+      setSelectedDefinitionIndex(generated.definitions.length > 0 ? 0 : null)
       setContent(null)
       setManualSentence("")
       setIsSentenceConfirmed(false)
@@ -81,7 +84,10 @@ export default function FlashcardCreateScreen() {
 
   const handleGenerate = React.useCallback(async () => {
     const trimmedWord = word.trim()
-    const definition = selectedDefinition?.trim() ?? ""
+    const definition =
+      selectedDefinitionIndex === null
+        ? ""
+        : definitions[selectedDefinitionIndex]?.definition?.trim() ?? ""
     if (!trimmedWord) {
       setError("Please enter a Japanese word")
       return
@@ -105,7 +111,7 @@ export default function FlashcardCreateScreen() {
     } finally {
       setIsGenerating(false)
     }
-  }, [selectedDefinition, word])
+  }, [definitions, selectedDefinitionIndex, word])
 
   const handleGenerateAudio = React.useCallback(async () => {
     if (!content || !isSentenceConfirmed) return
@@ -181,7 +187,7 @@ export default function FlashcardCreateScreen() {
     setWord(value)
     setContent(null)
     setDefinitions([])
-    setSelectedDefinition(null)
+    setSelectedDefinitionIndex(null)
     setManualSentence("")
     setIsSentenceConfirmed(false)
     setWordAudioUri(null)
@@ -189,8 +195,8 @@ export default function FlashcardCreateScreen() {
     setError(null)
   }, [])
 
-  const handleDefinitionSelect = React.useCallback((definition: string) => {
-    setSelectedDefinition(definition)
+  const handleDefinitionSelect = React.useCallback((index: number) => {
+    setSelectedDefinitionIndex(index)
     setContent(null)
     setManualSentence("")
     setIsSentenceConfirmed(false)
@@ -202,13 +208,61 @@ export default function FlashcardCreateScreen() {
   const canFetchDefinitions =
     word.trim().length > 0 && !isFetchingDefinitions && hasFlashcardApiKey
   const canGenerate =
-    word.trim().length > 0 && Boolean(selectedDefinition) && !isGenerating && hasFlashcardApiKey
+    word.trim().length > 0 && selectedDefinitionIndex !== null && !isGenerating && hasFlashcardApiKey
   const canGenerateAudio = Boolean(
     content && manualSentence.trim() && isSentenceConfirmed && !isGeneratingAudio
   )
   const canSave = Boolean(
     content && manualSentence.trim() && isSentenceConfirmed && wordAudioUri && sentenceAudioUri && !isSaving
   )
+
+  const renderOptionStyleE = (definition: FlashcardDefinitions["definitions"][number], index: number) => {
+    const isSelected = index === selectedDefinitionIndex
+    return (
+      <Pressable
+        key={`style-e-${definition.definition}-${definition.commonness}-${index}`}
+        onPress={() => handleDefinitionSelect(index)}
+        style={{
+          paddingVertical: 10,
+          paddingHorizontal: 12,
+          borderRadius: 12,
+          borderWidth: 1,
+          borderColor: isSelected ? colors.primary : colors.border,
+          backgroundColor: isSelected ? colors.secondary : colors.card,
+        }}
+      >
+        <View className="flex-row items-center gap-3">
+          <View
+            style={{
+              width: 26,
+              height: 26,
+              borderRadius: 13,
+              backgroundColor: colors.muted,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Text className="text-xs" style={{ color: colors.mutedForeground }}>
+              {index + 1}
+            </Text>
+          </View>
+          <Text style={{ color: colors.foreground, flex: 1 }}>{definition.definition}</Text>
+          <View
+            style={{
+              paddingHorizontal: 8,
+              paddingVertical: 3,
+              borderRadius: 8,
+              backgroundColor: colors.muted,
+            }}
+          >
+              <Text className="text-xs" style={{ color: colors.mutedForeground }}>
+                {definition.commonness}
+              </Text>
+            </View>
+          </View>
+        </Pressable>
+      )
+  }
 
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }} edges={["top"]}>
@@ -265,24 +319,7 @@ export default function FlashcardCreateScreen() {
               <CardTitle>Step 2: Choose Definition</CardTitle>
             </CardHeader>
             <CardContent className="gap-2">
-              {definitions.map((definition) => (
-                <Button
-                  key={definition}
-                  variant={definition === selectedDefinition ? "default" : "outline"}
-                  onPress={() => handleDefinitionSelect(definition)}
-                >
-                  <Text
-                    style={{
-                      color:
-                        definition === selectedDefinition
-                          ? colors.primaryForeground
-                          : colors.foreground,
-                    }}
-                  >
-                    {definition}
-                  </Text>
-                </Button>
-              ))}
+              {definitions.map(renderOptionStyleE)}
               <Button onPress={handleGenerate} disabled={!canGenerate}>
                 <Text style={{ color: colors.primaryForeground }}>
                   {isGenerating ? "Generating..." : "Generate Sentence"}
