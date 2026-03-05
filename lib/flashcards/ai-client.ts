@@ -305,6 +305,7 @@ export async function extractSentenceFromImage(
     "sentenceJa.",
     "Constraints:",
     "- Return only the Japanese sentence with punctuation.",
+    "- Ignore furigana and ruby text; keep only the main sentence text.",
     "- Remove line breaks and extra whitespace.",
     "- Do not add translations or commentary.",
   ].join("\n")
