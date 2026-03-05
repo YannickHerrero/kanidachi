@@ -25,6 +25,14 @@ const flashcardDefinitionsSchema = z.object({
     .min(1),
 })
 
+const ocrSentenceSchema = z.object({
+  sentenceJa: z.string().min(1),
+})
+
+const sentenceWordsSchema = z.object({
+  words: z.array(z.string().min(1)).min(1),
+})
+
 export type FlashcardGeneration = z.infer<typeof flashcardGenerationSchema>
 export type FlashcardDefinitions = z.infer<typeof flashcardDefinitionsSchema>
 
@@ -46,6 +54,22 @@ function encodeBase64(bytes: Uint8Array): string {
   }
 
   return output
+}
+
+function normalizeBase64(input: string): string {
+  let cleaned = input.trim()
+  if (cleaned.startsWith("data:")) {
+    const commaIndex = cleaned.indexOf(",")
+    if (commaIndex >= 0) {
+      cleaned = cleaned.slice(commaIndex + 1)
+    }
+  }
+  cleaned = cleaned.replace(/\s+/g, "")
+  const remainder = cleaned.length % 4
+  if (remainder !== 0) {
+    cleaned = cleaned.padEnd(cleaned.length + (4 - remainder), "=")
+  }
+  return cleaned
 }
 
 async function authorizedRequest(path: string, init: RequestInit): Promise<Response> {
@@ -142,6 +166,76 @@ export async function generateFlashcardContent(
   return flashcardGenerationSchema.parse(parsed)
 }
 
+export async function generateFlashcardContentFromSentence(
+  word: string,
+  definition: string,
+  sentence: string
+): Promise<FlashcardGeneration> {
+  const trimmedWord = word.trim()
+  if (!trimmedWord) {
+    throw new Error("Please enter a Japanese word")
+  }
+
+  const trimmedDefinition = definition.trim()
+  if (!trimmedDefinition) {
+    throw new Error("Please select a definition")
+  }
+
+  const trimmedSentence = sentence.trim()
+  if (!trimmedSentence) {
+    throw new Error("Please provide a Japanese sentence")
+  }
+
+  const prompt = [
+    "You are helping create Japanese flashcards for beginners.",
+    "Return STRICT JSON only with these keys:",
+    "wordReading, wordTranslation, sentenceJa, sentenceReading, sentenceTranslation.",
+    "Constraints:",
+    "- Use the provided sentence exactly as-is for sentenceJa.",
+    "- Provide readings for the word and the sentence.",
+    "- Translations must be concise and natural English.",
+    "- Use the provided definition for the word meaning.",
+    `Word: ${trimmedWord}`,
+    `Definition: ${trimmedDefinition}`,
+    `Sentence: ${trimmedSentence}`,
+  ].join("\n")
+
+  const response = await authorizedRequest("/chat/completions", {
+    method: "POST",
+    body: JSON.stringify({
+      model: CHAT_MODEL,
+      temperature: 0.4,
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content: "You only return valid JSON.",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+    }),
+  })
+
+  const json = await response.json()
+  const content = json?.choices?.[0]?.message?.content
+  if (!content || typeof content !== "string") {
+    throw new Error("The model returned an invalid response")
+  }
+
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(content)
+  } catch {
+    throw new Error("Could not parse generation output")
+  }
+
+  const parsedResult = flashcardGenerationSchema.parse(parsed)
+  return { ...parsedResult, sentenceJa: trimmedSentence }
+}
+
 export async function generateFlashcardDefinitions(word: string): Promise<FlashcardDefinitions> {
   const trimmedWord = word.trim()
   if (!trimmedWord) {
@@ -194,6 +288,122 @@ export async function generateFlashcardDefinitions(word: string): Promise<Flashc
   }
 
   return flashcardDefinitionsSchema.parse(parsed)
+}
+
+export async function extractSentenceFromImage(
+  base64: string,
+  mimeType = "image/png"
+): Promise<string> {
+  const normalized = normalizeBase64(base64)
+  if (!normalized) {
+    throw new Error("Missing image data")
+  }
+
+  const prompt = [
+    "Extract the Japanese text from the provided image of a single manga speech bubble.",
+    "Return STRICT JSON only with this key:",
+    "sentenceJa.",
+    "Constraints:",
+    "- Return only the Japanese sentence with punctuation.",
+    "- Remove line breaks and extra whitespace.",
+    "- Do not add translations or commentary.",
+  ].join("\n")
+
+  const response = await authorizedRequest("/chat/completions", {
+    method: "POST",
+    body: JSON.stringify({
+      model: CHAT_MODEL,
+      temperature: 0.2,
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content: "You only return valid JSON.",
+        },
+        {
+          role: "user",
+          content: [
+            { type: "text", text: prompt },
+            {
+              type: "image_url",
+              image_url: {
+                url: `data:${mimeType};base64,${normalized}`,
+              },
+            },
+          ],
+        },
+      ],
+    }),
+  })
+
+  const json = await response.json()
+  const content = json?.choices?.[0]?.message?.content
+  if (!content || typeof content !== "string") {
+    throw new Error("The model returned an invalid response")
+  }
+
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(content)
+  } catch {
+    throw new Error("Could not parse OCR output")
+  }
+
+  const result = ocrSentenceSchema.parse(parsed)
+  return result.sentenceJa.trim()
+}
+
+export async function extractSentenceWords(sentence: string): Promise<string[]> {
+  const trimmed = sentence.trim()
+  if (!trimmed) {
+    throw new Error("Missing sentence for word extraction")
+  }
+
+  const prompt = [
+    "Given the Japanese sentence, list the main word candidates as they appear in the sentence.",
+    "Return STRICT JSON only with this key:",
+    "words (array of strings, ordered by appearance, no romaji).",
+    "Constraints:",
+    "- Use the surface forms as written in the sentence.",
+    "- Include multi-character words; avoid single punctuation tokens.",
+    "- Remove duplicates if a word appears multiple times.",
+    `Sentence: ${trimmed}`,
+  ].join("\n")
+
+  const response = await authorizedRequest("/chat/completions", {
+    method: "POST",
+    body: JSON.stringify({
+      model: CHAT_MODEL,
+      temperature: 0.3,
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content: "You only return valid JSON.",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+    }),
+  })
+
+  const json = await response.json()
+  const content = json?.choices?.[0]?.message?.content
+  if (!content || typeof content !== "string") {
+    throw new Error("The model returned an invalid response")
+  }
+
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(content)
+  } catch {
+    throw new Error("Could not parse word extraction output")
+  }
+
+  const result = sentenceWordsSchema.parse(parsed)
+  return result.words
 }
 
 export async function generateSpeechAudio(text: string): Promise<string> {

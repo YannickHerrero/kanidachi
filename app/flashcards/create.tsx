@@ -1,4 +1,6 @@
 import * as React from "react"
+import * as Clipboard from "expo-clipboard"
+import * as FileSystem from "expo-file-system"
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useRouter, Stack } from "expo-router"
@@ -13,7 +15,10 @@ import { useDatabase } from "@/db/provider"
 import { createFlashcard, getKanjiSubjectsByCharacters } from "@/db/queries"
 import { useThemeColors } from "@/hooks/useThemeColors"
 import {
+  extractSentenceFromImage,
+  extractSentenceWords,
   generateFlashcardContent,
+  generateFlashcardContentFromSentence,
   generateFlashcardDefinitions,
   generateSpeechAudio,
   type FlashcardGeneration,
@@ -29,6 +34,7 @@ export default function FlashcardCreateScreen() {
   const refreshFlashcardApiKeyStatus = useSettingsStore((s) => s.refreshFlashcardApiKeyStatus)
   const hasFlashcardApiKey = useSettingsStore((s) => s.hasFlashcardApiKey)
 
+  const [inputMode, setInputMode] = React.useState<"word" | "image">("word")
   const [word, setWord] = React.useState("")
   const [content, setContent] = React.useState<FlashcardGeneration | null>(null)
   const [definitions, setDefinitions] = React.useState<FlashcardDefinitions["definitions"]>([])
@@ -36,11 +42,14 @@ export default function FlashcardCreateScreen() {
     null
   )
   const [manualSentence, setManualSentence] = React.useState("")
+  const [sentenceCandidates, setSentenceCandidates] = React.useState<string[]>([])
   const [isSentenceConfirmed, setIsSentenceConfirmed] = React.useState(false)
   const [wordAudioUri, setWordAudioUri] = React.useState<string | null>(null)
   const [sentenceAudioUri, setSentenceAudioUri] = React.useState<string | null>(null)
   const [isGenerating, setIsGenerating] = React.useState(false)
   const [isFetchingDefinitions, setIsFetchingDefinitions] = React.useState(false)
+  const [isExtractingSentence, setIsExtractingSentence] = React.useState(false)
+  const [isExtractingWords, setIsExtractingWords] = React.useState(false)
   const [isGeneratingAudio, setIsGeneratingAudio] = React.useState(false)
   const [isSaving, setIsSaving] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
@@ -57,6 +66,113 @@ export default function FlashcardCreateScreen() {
     router.push("/settings")
   }, [router])
 
+  const resolveClipboardImage = React.useCallback(async () => {
+    console.log("[Flashcard OCR] Checking clipboard for image")
+    const image = await Clipboard.getImageAsync({ format: "png" })
+    if (!image) {
+      console.warn("[Flashcard OCR] No image found in clipboard")
+      throw new Error("No image found in clipboard")
+    }
+
+    const base64 = (image as { data?: string; base64?: string }).data
+      ?? (image as { data?: string; base64?: string }).base64
+    const uri = (image as { uri?: string }).uri
+
+    console.log("[Flashcard OCR] Clipboard image fields", {
+      hasBase64: Boolean(base64),
+      uri,
+    })
+
+    if (base64) {
+      return { base64, uri }
+    }
+
+    if (!uri) {
+      console.warn("[Flashcard OCR] Clipboard image missing base64 and uri")
+      throw new Error("Clipboard image is missing data")
+    }
+
+    console.log("[Flashcard OCR] Reading clipboard image from uri")
+    const fileBase64 = await FileSystem.readAsStringAsync(uri, {
+      encoding: FileSystem.EncodingType.Base64,
+    })
+
+    console.log("[Flashcard OCR] Read clipboard image from uri", {
+      base64Length: fileBase64.length,
+      uri,
+    })
+
+    return { base64: fileBase64, uri }
+  }, [])
+
+  const getMimeTypeFromUri = React.useCallback((uri?: string) => {
+    if (!uri) return "image/png"
+    const lower = uri.toLowerCase()
+    if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg"
+    if (lower.endsWith(".webp")) return "image/webp"
+    if (lower.endsWith(".png")) return "image/png"
+    return "image/png"
+  }, [])
+
+  const handleModeChange = React.useCallback((mode: "word" | "image") => {
+    setInputMode(mode)
+    setWord("")
+    setContent(null)
+    setDefinitions([])
+    setSelectedDefinitionIndex(null)
+    setManualSentence("")
+    setSentenceCandidates([])
+    setIsSentenceConfirmed(false)
+    setWordAudioUri(null)
+    setSentenceAudioUri(null)
+    setError(null)
+  }, [])
+
+  const handleExtractSentence = React.useCallback(async () => {
+    setIsExtractingSentence(true)
+    setError(null)
+
+    let extractedSentence = ""
+    try {
+      const { base64, uri } = await resolveClipboardImage()
+      console.log("[Flashcard OCR] Starting OCR request", {
+        base64Length: base64.length,
+        mimeType: getMimeTypeFromUri(uri),
+      })
+      extractedSentence = await extractSentenceFromImage(base64, getMimeTypeFromUri(uri))
+      setManualSentence(extractedSentence)
+      setSentenceCandidates([])
+      setWord("")
+      setDefinitions([])
+      setSelectedDefinitionIndex(null)
+      setContent(null)
+      setIsSentenceConfirmed(false)
+      setWordAudioUri(null)
+      setSentenceAudioUri(null)
+    } catch (err) {
+      console.error("[Flashcard OCR] Extraction failed", err)
+      setError(err instanceof Error ? err.message : "Failed to extract sentence")
+    } finally {
+      setIsExtractingSentence(false)
+    }
+
+    if (!extractedSentence) {
+      return
+    }
+
+    setIsExtractingWords(true)
+    try {
+      console.log("[Flashcard OCR] Extracting word candidates")
+      const candidates = await extractSentenceWords(extractedSentence)
+      setSentenceCandidates(candidates)
+    } catch (err) {
+      console.error("[Flashcard OCR] Word candidate extraction failed", err)
+      setError(err instanceof Error ? err.message : "Failed to extract word candidates")
+    } finally {
+      setIsExtractingWords(false)
+    }
+  }, [getMimeTypeFromUri, resolveClipboardImage])
+
   const handleFetchDefinitions = React.useCallback(async () => {
     const trimmedWord = word.trim()
     if (!trimmedWord) {
@@ -71,7 +187,9 @@ export default function FlashcardCreateScreen() {
       setDefinitions(generated.definitions)
       setSelectedDefinitionIndex(generated.definitions.length > 0 ? 0 : null)
       setContent(null)
-      setManualSentence("")
+      if (inputMode === "word") {
+        setManualSentence("")
+      }
       setIsSentenceConfirmed(false)
       setWordAudioUri(null)
       setSentenceAudioUri(null)
@@ -80,7 +198,7 @@ export default function FlashcardCreateScreen() {
     } finally {
       setIsFetchingDefinitions(false)
     }
-  }, [word])
+  }, [inputMode, word])
 
   const handleGenerate = React.useCallback(async () => {
     const trimmedWord = word.trim()
@@ -96,13 +214,31 @@ export default function FlashcardCreateScreen() {
       setError("Please select a definition")
       return
     }
+    if (inputMode === "image" && !manualSentence.trim()) {
+      setError("Please extract and review the sentence first")
+      return
+    }
+    if (inputMode === "image" && !manualSentence.includes(trimmedWord)) {
+      setError("Selected word must appear in the sentence")
+      return
+    }
 
     setIsGenerating(true)
     setError(null)
     try {
-      const generated = await generateFlashcardContent(trimmedWord, definition)
-      setContent(generated)
-      setManualSentence(generated.sentenceJa)
+      if (inputMode === "image") {
+        const generated = await generateFlashcardContentFromSentence(
+          trimmedWord,
+          definition,
+          manualSentence
+        )
+        setContent(generated)
+        setManualSentence(generated.sentenceJa)
+      } else {
+        const generated = await generateFlashcardContent(trimmedWord, definition)
+        setContent(generated)
+        setManualSentence(generated.sentenceJa)
+      }
       setIsSentenceConfirmed(false)
       setWordAudioUri(null)
       setSentenceAudioUri(null)
@@ -111,7 +247,7 @@ export default function FlashcardCreateScreen() {
     } finally {
       setIsGenerating(false)
     }
-  }, [definitions, selectedDefinitionIndex, word])
+  }, [definitions, inputMode, manualSentence, selectedDefinitionIndex, word])
 
   const handleGenerateAudio = React.useCallback(async () => {
     if (!content || !isSentenceConfirmed) return
@@ -188,7 +324,20 @@ export default function FlashcardCreateScreen() {
     setContent(null)
     setDefinitions([])
     setSelectedDefinitionIndex(null)
-    setManualSentence("")
+    if (inputMode === "word") {
+      setManualSentence("")
+    }
+    setIsSentenceConfirmed(false)
+    setWordAudioUri(null)
+    setSentenceAudioUri(null)
+    setError(null)
+  }, [inputMode])
+
+  const handleWordPick = React.useCallback((value: string) => {
+    setWord(value)
+    setContent(null)
+    setDefinitions([])
+    setSelectedDefinitionIndex(null)
     setIsSentenceConfirmed(false)
     setWordAudioUri(null)
     setSentenceAudioUri(null)
@@ -198,23 +347,36 @@ export default function FlashcardCreateScreen() {
   const handleDefinitionSelect = React.useCallback((index: number) => {
     setSelectedDefinitionIndex(index)
     setContent(null)
-    setManualSentence("")
+    if (inputMode === "word") {
+      setManualSentence("")
+    }
     setIsSentenceConfirmed(false)
     setWordAudioUri(null)
     setSentenceAudioUri(null)
     setError(null)
-  }, [])
+  }, [inputMode])
 
   const canFetchDefinitions =
     word.trim().length > 0 && !isFetchingDefinitions && hasFlashcardApiKey
   const canGenerate =
-    word.trim().length > 0 && selectedDefinitionIndex !== null && !isGenerating && hasFlashcardApiKey
+    word.trim().length > 0
+    && selectedDefinitionIndex !== null
+    && !isGenerating
+    && hasFlashcardApiKey
+    && (inputMode === "word" || manualSentence.trim().length > 0)
   const canGenerateAudio = Boolean(
     content && manualSentence.trim() && isSentenceConfirmed && !isGeneratingAudio
   )
   const canSave = Boolean(
     content && manualSentence.trim() && isSentenceConfirmed && wordAudioUri && sentenceAudioUri && !isSaving
   )
+
+  const sentenceStepTitle =
+    inputMode === "image"
+      ? content
+        ? "Step 4: Finalize Sentence"
+        : "Step 2: Review Sentence"
+      : "Step 3: Finalize Sentence"
 
   const renderOptionStyleE = (definition: FlashcardDefinitions["definitions"][number], index: number) => {
     const isSelected = index === selectedDefinitionIndex
@@ -292,26 +454,157 @@ export default function FlashcardCreateScreen() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Step 1: Enter Word</CardTitle>
+            <CardTitle>Mode</CardTitle>
           </CardHeader>
-          <CardContent className="gap-3">
-            <Input
-              value={word}
-              onChangeText={handleWordChange}
-              autoCapitalize="none"
-              autoCorrect={false}
-              placeholder="日本語の単語"
-            />
-            <Button onPress={handleFetchDefinitions} disabled={!canFetchDefinitions}>
-              <Text style={{ color: colors.primaryForeground }}>
-                {isFetchingDefinitions ? "Finding definitions..." : "Find Definitions"}
-              </Text>
-            </Button>
+          <CardContent className="gap-2">
+            <View className="flex-row gap-2">
+              <Button
+                className="flex-1"
+                variant={inputMode === "word" ? "default" : "outline"}
+                onPress={() => handleModeChange("word")}
+              >
+                <Text style={{ color: inputMode === "word" ? colors.primaryForeground : colors.foreground }}>
+                  Word
+                </Text>
+              </Button>
+              <Button
+                className="flex-1"
+                variant={inputMode === "image" ? "default" : "outline"}
+                onPress={() => handleModeChange("image")}
+              >
+                <Text style={{ color: inputMode === "image" ? colors.primaryForeground : colors.foreground }}>
+                  Image OCR
+                </Text>
+              </Button>
+            </View>
             <Text className="text-xs" style={{ color: colors.mutedForeground }}>
-              Tip: pick the definition that matches your intended meaning.
+              {inputMode === "word"
+                ? "Type a word to generate a fresh sentence."
+                : "Paste a manga speech bubble image to extract a sentence."}
             </Text>
           </CardContent>
         </Card>
+
+        {inputMode === "word" ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>Step 1: Enter Word</CardTitle>
+            </CardHeader>
+            <CardContent className="gap-3">
+              <Input
+                value={word}
+                onChangeText={handleWordChange}
+                autoCapitalize="none"
+                autoCorrect={false}
+                placeholder="日本語の単語"
+              />
+              <Button onPress={handleFetchDefinitions} disabled={!canFetchDefinitions}>
+                <Text style={{ color: colors.primaryForeground }}>
+                  {isFetchingDefinitions ? "Finding definitions..." : "Find Definitions"}
+                </Text>
+              </Button>
+              <Text className="text-xs" style={{ color: colors.mutedForeground }}>
+                Tip: pick the definition that matches your intended meaning.
+              </Text>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle>Step 1: Paste Image</CardTitle>
+            </CardHeader>
+            <CardContent className="gap-3">
+              <Button
+                onPress={handleExtractSentence}
+                disabled={!hasFlashcardApiKey || isExtractingSentence}
+              >
+                <Text style={{ color: colors.primaryForeground }}>
+                  {isExtractingSentence ? "Extracting sentence..." : "Extract Sentence from Clipboard"}
+                </Text>
+              </Button>
+              <Text className="text-xs" style={{ color: colors.mutedForeground }}>
+                Copy the manga panel image to the Android clipboard first.
+              </Text>
+              {manualSentence.trim().length > 0 && (
+                <Text className="text-sm" style={{ color: colors.foreground }}>
+                  Extracted: {manualSentence}
+                </Text>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {inputMode === "image" && manualSentence.trim().length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>{sentenceStepTitle}</CardTitle>
+            </CardHeader>
+            <CardContent className="gap-3">
+              {content && (
+                <>
+                  <Text>Word translation: {content.wordTranslation}</Text>
+                  <Text>Sentence translation: {content.sentenceTranslation}</Text>
+                </>
+              )}
+              <Textarea
+                value={manualSentence}
+                onChangeText={handleSentenceChange}
+                placeholder="Edit OCR sentence"
+              />
+              <Button variant="outline" onPress={handleConfirmSentence}>
+                <Text>{isSentenceConfirmed ? "Sentence Confirmed" : "Confirm This Sentence"}</Text>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {inputMode === "image" && manualSentence.trim().length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Step 3: Pick Word</CardTitle>
+            </CardHeader>
+            <CardContent className="gap-3">
+              <Input
+                value={word}
+                onChangeText={handleWordChange}
+                autoCapitalize="none"
+                autoCorrect={false}
+                placeholder="単語を入力"
+              />
+              {sentenceCandidates.length > 0 && (
+                <View className="flex-row flex-wrap gap-2">
+                  {sentenceCandidates.map((candidate) => (
+                    <Button
+                      key={`candidate-${candidate}`}
+                      variant={candidate === word ? "default" : "outline"}
+                      size="sm"
+                      onPress={() => handleWordPick(candidate)}
+                    >
+                      <Text
+                        style={{
+                          color:
+                            candidate === word ? colors.primaryForeground : colors.foreground,
+                        }}
+                      >
+                        {candidate}
+                      </Text>
+                    </Button>
+                  ))}
+                </View>
+              )}
+              {isExtractingWords && (
+                <Text className="text-xs" style={{ color: colors.mutedForeground }}>
+                  Extracting word candidates...
+                </Text>
+              )}
+              <Button onPress={handleFetchDefinitions} disabled={!canFetchDefinitions}>
+                <Text style={{ color: colors.primaryForeground }}>
+                  {isFetchingDefinitions ? "Finding definitions..." : "Find Definitions"}
+                </Text>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         {definitions.length > 0 && (
           <Card>
@@ -322,8 +615,38 @@ export default function FlashcardCreateScreen() {
               {definitions.map(renderOptionStyleE)}
               <Button onPress={handleGenerate} disabled={!canGenerate}>
                 <Text style={{ color: colors.primaryForeground }}>
-                  {isGenerating ? "Generating..." : "Generate Sentence"}
+                  {isGenerating
+                    ? "Generating..."
+                    : inputMode === "image"
+                      ? "Generate Details"
+                      : "Generate Sentence"}
                 </Text>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {content && inputMode === "word" && (
+          <Card>
+            <CardHeader>
+              <CardTitle>{sentenceStepTitle}</CardTitle>
+            </CardHeader>
+            <CardContent className="gap-3">
+              <Text>Word translation: {content.wordTranslation}</Text>
+              <Text>Sentence translation: {content.sentenceTranslation}</Text>
+              <Textarea
+                value={manualSentence}
+                onChangeText={handleSentenceChange}
+                placeholder="Edit sentence manually"
+              />
+              <Button variant="outline" onPress={handleConfirmSentence}>
+                <Text>{isSentenceConfirmed ? "Sentence Confirmed" : "Confirm This Sentence"}</Text>
+              </Button>
+              <Button variant="outline" onPress={handleGenerate} disabled={isGenerating}>
+                <View className="flex-row items-center gap-2">
+                  <RefreshCw size={16} color={colors.foreground} />
+                  <Text>Regenerate Sentence</Text>
+                </View>
               </Button>
             </CardContent>
           </Card>
@@ -331,30 +654,6 @@ export default function FlashcardCreateScreen() {
 
         {content && (
           <>
-            <Card>
-              <CardHeader>
-                <CardTitle>Step 3: Finalize Sentence</CardTitle>
-              </CardHeader>
-              <CardContent className="gap-3">
-                <Text>Word translation: {content.wordTranslation}</Text>
-                <Text>Sentence translation: {content.sentenceTranslation}</Text>
-                <Textarea
-                  value={manualSentence}
-                  onChangeText={handleSentenceChange}
-                  placeholder="Edit sentence manually"
-                />
-                <Button variant="outline" onPress={handleConfirmSentence}>
-                  <Text>{isSentenceConfirmed ? "Sentence Confirmed" : "Confirm This Sentence"}</Text>
-                </Button>
-                <Button variant="outline" onPress={handleGenerate} disabled={isGenerating}>
-                  <View className="flex-row items-center gap-2">
-                    <RefreshCw size={16} color={colors.foreground} />
-                    <Text>Regenerate Sentence</Text>
-                  </View>
-                </Button>
-              </CardContent>
-            </Card>
-
             <Card>
               <CardHeader>
                 <CardTitle>Step 4: Generate Audio</CardTitle>
@@ -415,7 +714,12 @@ export default function FlashcardCreateScreen() {
           <Text style={{ color: colors.destructive }}>{error}</Text>
         )}
 
-        {(isGenerating || isGeneratingAudio || isSaving || isFetchingDefinitions) && (
+        {(isGenerating
+          || isGeneratingAudio
+          || isSaving
+          || isFetchingDefinitions
+          || isExtractingSentence
+          || isExtractingWords) && (
           <View className="py-2">
             <ActivityIndicator />
           </View>
