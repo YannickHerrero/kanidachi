@@ -20,9 +20,10 @@ import type { Subject } from "@/stores/reviews"
 
 interface FlashcardBackProps {
   subject: Subject
+  autoPlaySentenceAudio?: boolean
 }
 
-export function FlashcardBack({ subject }: FlashcardBackProps) {
+export function FlashcardBack({ subject, autoPlaySentenceAudio }: FlashcardBackProps) {
   const colors = useThemeColors()
   const { db } = useDatabase()
   const meanings = parseMeanings(subject.meanings)
@@ -67,6 +68,13 @@ export function FlashcardBack({ subject }: FlashcardBackProps) {
   const wordReading = readings.find((r) => r.primary)?.reading ?? readings[0]?.reading ?? ""
   const wordAudio = audios.find((audio) => audio.metadata.sourceId === 0)?.url
   const sentenceAudio = audios.find((audio) => audio.metadata.sourceId === 1)?.url
+  const hasAutoPlayed = React.useRef(false)
+
+  React.useEffect(() => {
+    if (!autoPlaySentenceAudio || !sentenceAudio || hasAutoPlayed.current) return
+    hasAutoPlayed.current = true
+    audioPlayer.play(sentenceAudio)
+  }, [autoPlaySentenceAudio, sentenceAudio])
 
   return (
     <View className="flex-1 px-2 items-center justify-center gap-5">

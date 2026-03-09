@@ -6,6 +6,7 @@ import { CardFront } from "./card-front"
 import { CardBack } from "./card-back"
 import { FlashcardFront } from "./flashcard-front"
 import { FlashcardBack } from "./flashcard-back"
+import { useSettingsStore } from "@/stores/settings"
 import type { Assignment, Subject } from "@/stores/reviews"
 
 interface AnkiCardProps {
@@ -18,6 +19,7 @@ interface AnkiCardProps {
 
 export function AnkiCard({ subject, assignment, source, isFlipped, onFlip }: AnkiCardProps) {
   const isFlashcard = source === "flashcard"
+  const autoPlayAudio = useSettingsStore((s) => s.autoPlayAudioReviews)
 
   return (
     <Pressable
@@ -29,7 +31,7 @@ export function AnkiCard({ subject, assignment, source, isFlipped, onFlip }: Ank
         <CardContent className="flex-1 py-6">
           {isFlipped ? (
             isFlashcard ? (
-              <FlashcardBack subject={subject} />
+              <FlashcardBack subject={subject} autoPlaySentenceAudio={autoPlayAudio} />
             ) : (
               <CardBack subject={subject} assignment={assignment} />
             )

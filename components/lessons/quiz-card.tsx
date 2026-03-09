@@ -8,6 +8,7 @@ import { CardBack } from "@/components/reviews/card-back"
 import { CardFront } from "@/components/reviews/card-front"
 import { FlashcardBack } from "@/components/reviews/flashcard-back"
 import { FlashcardFront } from "@/components/reviews/flashcard-front"
+import { useSettingsStore } from "@/stores/settings"
 import type { Assignment, Subject } from "@/stores/lessons"
 
 interface QuizCardProps {
@@ -23,6 +24,7 @@ export function QuizCard({ subject, assignment, source, isFlipped, onFlip, onGra
   const colors = useThemeColors()
   const passColor = "#22c55e"
   const isFlashcard = source === "flashcard"
+  const autoPlayAudio = useSettingsStore((s) => s.autoPlayAudioLessons)
 
   return (
     <View className="flex-1">
@@ -35,7 +37,7 @@ export function QuizCard({ subject, assignment, source, isFlipped, onFlip, onGra
           <CardContent className="flex-1 py-6">
             {isFlipped ? (
               isFlashcard ? (
-                <FlashcardBack subject={subject} />
+                <FlashcardBack subject={subject} autoPlaySentenceAudio={autoPlayAudio} />
               ) : (
                 <CardBack subject={subject} assignment={assignment} />
               )
