@@ -81,10 +81,7 @@ export function useAvailableReviews(
         }
       })()
 
-      // Apply item limit if set
-      const assignments = effectiveLimit && effectiveLimit > 0
-        ? orderedAssignments.slice(0, effectiveLimit)
-        : orderedAssignments
+      const assignments = orderedAssignments
 
       // Get subject IDs from assignments
       const subjectIds = assignments.map((a) => a.subjectId)
@@ -190,9 +187,17 @@ export function useAvailableReviews(
         virtualAssignmentId -= 1
       }
 
-      const limitedItems = effectiveLimit && effectiveLimit > 0
-        ? reviewItems.slice(0, effectiveLimit)
+      const orderedItems = isExpress
+        ? [...reviewItems].sort((a, b) =>
+            (a.assignment.srsStage - b.assignment.srsStage) ||
+            (a.assignment.level - b.assignment.level) ||
+            (a.assignment.id - b.assignment.id)
+          )
         : reviewItems
+
+      const limitedItems = effectiveLimit && effectiveLimit > 0
+        ? orderedItems.slice(0, effectiveLimit)
+        : orderedItems
 
       setItems(limitedItems)
     } catch (err) {
